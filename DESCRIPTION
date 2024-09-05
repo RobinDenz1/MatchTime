@@ -1,0 +1,24 @@
+Package: MatchTD
+Title: Perform Time-Dependent Matching for Time-To-Event Outcomes
+Version: 0.1.0
+Authors@R: 
+    person("Robin", "Denz", , "robin.denz@rub.de", role = c("aut", "cre"))
+Maintainer: Robin Denz <robin.denz@rub.de>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: GPL (>= 3)
+Imports: 
+    data.table
+Suggests:
+	MatchIt,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.2.1),
+    covr
+VignetteBuilder: 
+    knitr
+Config/testthat/edition: 3
+Contact: <robin.denz@rub.de>
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
