@@ -1,0 +1,197 @@
+
+# TODO:
+# - (1) needs to also add information about previous values of time-varying
+#   variables. This could work by supplying one dataset per time-varying variable
+#   each one should include the time of all occurrences per .id
+# - (2) currently assumes that there every person in d_baseline is a potential
+#   control regardless of time. Needs some function to check if it is actually
+#   a potential control, conditional on t
+
+## perform time-dependent matching
+#' @importFrom data.table .N
+#' @importFrom data.table .I
+#' @importFrom data.table :=
+#' @importFrom data.table .SD
+#' @importFrom data.table rbindlist
+#' @importFrom data.table setcolorder
+#' @export
+td_matching <- function(id, time, d_treat, d_event, d_baseline,
+                        replace_over_t=FALSE, replace_at_t=FALSE,
+                        replace_cases=TRUE, censor_pairs=TRUE,
+                        estimand="ATT", if_lt_n_at_t="stop",
+                        use_matchit=FALSE, matchit_method="nearest",
+                        keep_all_columns=FALSE, ...) {
+
+  # initialize needed id collections
+  ids_pot_controls <- unique(d_baseline[[eval(id)]])
+
+  # identify all points in time at which at least one case happened
+  case_times <- sort(unique(d_treat[[eval(time)]]))
+
+  out <- vector(mode="list", length=length(case_times))
+  for (i in seq_len(length(case_times))) {
+
+    # identify new cases
+    ids_cases_i <- d_treat[eval(parse(text=time))==case_times[i]][[eval(id)]]
+
+    # get dataset of all potential controls and new cases
+    if (replace_cases) {
+      all_ids <- c(ids_pot_controls, ids_cases_i)
+    } else {
+      all_ids <- ids_pot_controls
+    }
+
+    d_all_i <- d_baseline[eval(parse(text=id)) %in% all_ids]
+    d_all_i[, .treat := eval(parse(text=id)) %in% ids_cases_i]
+
+    # skip this time point if there are no cases to be matched
+    # (this may only happen when setting replace_cases=FALSE)
+    if (sum(d_all_i$.treat)==0) {
+      next
+    }
+
+    ## perform matching at t
+    if (use_matchit) {
+
+      requireNamespace("MatchIt")
+
+      # create formulas for matchit call
+      exact_formula <- paste0("~ ", paste0(colnames(d_all_i)[
+        !colnames(d_all_i) %in% c(id, ".treat")], collapse=" + "))
+      main_formula <- paste0(".treat ", exact_formula)
+
+      # perform exact 1:1 matching on baseline covariates
+      args <- list(formula=stats::as.formula(main_formula),
+                   data=d_all_i,
+                   method=matchit_method,
+                   exact=stats::as.formula(exact_formula),
+                   estimand=estimand,
+                   replace=replace_at_t)
+
+      if (matchit_method!="nearest") {
+        args$exact <- NULL
+      }
+      args <- c(args, list(...))
+
+      d_match_i <- do.call(MatchIt::matchit, args=args)
+      d_match_i <- MatchIt::match.data(d_match_i)
+
+      # assign pair_id
+      d_match_i[, pair_id := paste0(i, "_", subclass)]
+      d_match_i[, .treat_time := case_times[i]]
+      d_match_i[, c("distance", "weights", "subclass") := NULL]
+
+    } else {
+
+      # create strata variable
+      cnames <- colnames(d_baseline)[!colnames(d_baseline) %in% c(id, time,
+                                                                  ".treat")]
+      d_all_i[, .strata := do.call(paste0, .SD), .SDcols=cnames]
+
+      # perform matching
+      d_match_i <- fast_exact_matching(d_all_i,
+                                       treat=".treat",
+                                       strata=".strata",
+                                       replace=replace_at_t,
+                                       if_lt_n=if_lt_n_at_t)
+      d_match_i[, pair_id := paste0(i, "_", pair_id)]
+      d_match_i[, .treat_time := case_times[i]]
+    }
+
+    # remove new cases from potential controls
+    ids_pot_controls <- ids_pot_controls[!ids_pot_controls %in% ids_cases_i]
+
+    # remove used controls from potential controls as well, if specified
+    if (!replace_over_t) {
+      ids_controls_i <- d_match_i[.treat==FALSE][[eval(id)]]
+      ids_pot_controls <- ids_pot_controls[!ids_pot_controls %in%
+                                             ids_controls_i]
+    }
+
+    # append to output
+    out[[i]] <- d_match_i
+  }
+
+  # full dataset
+  data <- rbindlist(out)
+
+  # create new .id_new to differentiate between persons
+  data[, .id_new := .I]
+
+  # for controls, add time of next treatment
+  colnames(d_treat)[colnames(d_treat)==time] <- ".next_treat_time"
+  data <- merge(data, d_treat, by=id, all.x=TRUE)
+  data[.treat==TRUE, .next_treat_time := NA]
+
+  # add event information
+  data <- add_next_event_time(data=data, d_event=d_event, id=id, time=time)
+
+  # shift times according to start
+  data[, .next_treat_time := .next_treat_time - .treat_time]
+  data[, .next_event_time := .next_event_time - .treat_time]
+
+  # get event status indicator
+  data[, status := FALSE]
+  data[is.na(.next_treat_time) & !is.na(.next_event_time), status := TRUE]
+  data[.next_treat_time > .next_event_time, status := TRUE]
+
+  # calculate corresponding event time
+  # TODO: 365 should not be hardcoded here
+  data[, event_time := pmin(.next_treat_time, .next_event_time,
+                            365 - .treat_time, na.rm=TRUE)]
+
+  # if specified and a control is censored because it became a case later,
+  # also censor the corresponding pair to which it is a control at the same time
+  if (censor_pairs) {
+
+    # identify all such cases
+    d_cens <- data[.next_treat_time < .next_event_time]
+    d_cens <- d_cens[, c("pair_id", "event_time"), with=FALSE]
+    colnames(d_cens) <- c("pair_id", "pair_id_event_time")
+
+    # merge them to data, update variables accordingly
+    data <- merge(data, d_cens, by="pair_id", all.x=TRUE)
+    data[pair_id_event_time < event_time, status := FALSE]
+    data[pair_id_event_time < event_time, event_time := pair_id_event_time]
+    data[, pair_id_event_time := NULL]
+  }
+
+  data[, .strata := NULL]
+
+  # change order of columns
+  first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
+                  ".next_treat_time", ".next_event_time", "event_time",
+                  "status")
+  last_cols <- colnames(data)[!colnames(data) %in% first_cols]
+  setcolorder(data, c(first_cols, last_cols))
+
+  if (!keep_all_columns) {
+    data[, .treat_time := NULL]
+    data[, .next_treat_time := NULL]
+    data[, .next_event_time := NULL]
+  }
+
+  return(data)
+}
+
+## given the current matched data and a data.table containing none, one or
+## multiple events per person, add the next event after .treat_time
+add_next_event_time <- function(data, d_event, id, time) {
+
+  # merge to matched data, creating new rows
+  colnames(d_event)[colnames(d_event)==time] <- ".next_event_time"
+  data <- merge(data, d_event, by=id, all.x=TRUE)
+
+  # check if event is after inclusion time
+  data[, is_after := .next_event_time >= .treat_time, by=.id_new]
+
+  # calculate time of first influenza after inclusion time
+  data[is_after==FALSE, .next_event_time := NA]
+  data[, .next_event_time := min(.next_event_time, na.rm=TRUE), by=.id_new]
+  data[, is_after := NULL]
+
+  # remove duplicate rows
+  data <- unique(data)
+
+  return(data)
+}
