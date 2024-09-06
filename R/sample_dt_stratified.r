@@ -23,18 +23,26 @@ sample_dt_stratified <- function(data, n, strata, replace=FALSE,
 
   ldata <- split(data, by=strata)
 
-  if (!all(names(n) %in% names(ldata))) {
-    not_in_dt <- names(n)[!names(n) %in% names(ldata)]
+  # in case the data does not contain the strata specified by n
+  if (!all(names(n) %fin% names(ldata))) {
+    not_in_dt <- names(n)[!names(n) %fin% names(ldata)]
 
     if (if_lt_n=="stop") {
-      stop("Cannot sample ", n[not_in_dt], " rows from 'data' that does not",
-           " contain any rows of strata: ", not_in_dt)
+      stop("Cannot sample ", n[not_in_dt], " rows from strata '", not_in_dt,
+           "' in 'data' because there are no rows in these strata.")
     } else if (if_lt_n=="warn") {
       warning("Ignoring strata: ", not_in_dt, " because there are no rows with",
               " such strata in 'data'.")
     } else {
-      n <- n[!names(n) %in% not_in_dt]
+      n <- n[!names(n) %fin% not_in_dt]
     }
+  }
+
+  # in case the strata specified by n do not include all strata in data
+  # add them and set them to 0
+  if (!all(names(ldata) %fin% names(n))) {
+    not_in_n <- names(ldata)[!names(ldata) %fin% names(n)]
+    n[not_in_n] <- 0
   }
 
   out <- Map(sample_dt, ldata, n, replace=replace, if_lt_n=if_lt_n) |>

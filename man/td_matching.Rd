@@ -9,11 +9,12 @@ Perform Time-Dependent Matching with a Time-To-Event Outcome
 }
 \usage{
 td_matching(id, time, d_treat, d_event, d_baseline,
-            replace_over_t=FALSE, replace_at_t=FALSE,
-            replace_cases=TRUE, censor_pairs=TRUE,
-            estimand="ATT", ratio=1, if_lt_n_at_t="stop",
+            d_inclusion=NULL, replace_over_t=FALSE,
+            replace_at_t=FALSE, replace_cases=TRUE,
+            censor_pairs=TRUE, estimand="ATT",
+            ratio=1, if_lt_n_at_t="stop",
             use_matchit=FALSE, matchit_method="nearest",
-            ...)
+            keep_all_columns=FALSE, ...)
 }
 \arguments{
   \item{id}{
@@ -30,6 +31,9 @@ A \code{data.table} in the long format, containing exactly two columns with the 
   }
   \item{d_baseline}{
 A \code{data.table} containing baseline information for each \code{id}. The matching at each point in time will be done on these variables.
+  }
+  \item{d_inclusion}{
+An optional \code{data.table} containing exactly three columns, the \code{id} and two columns called \code{"start"} and \code{"stop"}. The intervals defined by the \code{start} and \code{stop} columns define times at which the respective \code{id} fufills all inclusion criteria and may be included in the study. If not supplied, it will be assumed that every \code{id} in the \code{d_baseline} dataset fufills the inclusion criteria at all point in time.
   }
   \item{replace_over_t}{
 Whether to allow usage of the same persons as controls at multiple points in time.
@@ -57,6 +61,9 @@ Whether to use the \code{\link[MatchIt]{matchit}} function from the \pkg{MatchIt
   }
   \item{matchit_method}{
 Passed to the \code{method} argument of the \code{\link[MatchIt]{matchit}} function when using \code{use_matchit=TRUE}.
+  }
+  \item{keep_all_columns}{
+Whether to keep all columns created internally or to only keep the most relevant columns.
   }
   \item{...}{
 Further arguments passed to \code{\link[MatchIt]{matchit}} when using \code{use_matchit=TRUE}.
