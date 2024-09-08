@@ -8,6 +8,7 @@ library(doRNG)
 library(ggplot2)
 library(fastmatch)
 library(data.table)
+library(dplyr)
 
 ## compare standard cox with time-dependent matching
 sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
@@ -51,20 +52,25 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
     d_meds <- get_event_times(sim, "meds")
     d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
 
+    dlist <- list(d_influ)
+    names(dlist) <- c("influenza")
+    d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
+                                             max_t=max_t, durations=20)
+    d_inclusion <- d_inclusion[influenza==FALSE]
+
     d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
                            d_event=d_influ, d_baseline=d_baseline,
-                           keep_all_column=TRUE,
+                           keep_all_column=TRUE, d_inclusion=d_inclusion,
                            ...)
-    d_match <- add_previous_event_time(data=d_match, d_prev=d_meds,
+    d_match <- MatchTD:::add_previous_event_time(data=d_match, d_prev=d_meds,
                                        id=".id", time=".time", duration=Inf,
                                        name="meds")
-    d_match <- add_previous_event_time(data=d_match, d_prev=d_influ,
-                                       id=".id", time=".time", duration=20,
-                                       name="influ")
-    d_match[, not_in := any(influ), by=pair_id]
+
+    # remove cases without controls
+    d_match[, n_per_pair := .N, by=pair_id]
 
     mod <- coxph(Surv(event_time, status) ~ .treat + mac + meds + .treat*mac,
-                 data=subset(d_match, !not_in))
+                 data=subset(d_match, n_per_pair == 2))
     out_2 <- as.data.frame(summary(mod)$conf.int)
     rownames(out_2) <- NULL
     out_2$name <- c("vacc", "mac", "meds", "vacc*mac")
@@ -109,33 +115,23 @@ dag <- empty_dag() +
           event_duration=20, parents=c("mac", "vacc_event"),
           base_p=0.01, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5)
 
-set.seed(2432454)
-out <- sim_comp(dag=dag,
-                n_sim=3000,
-                n_repeats=500,
-                max_t=365,
-                n_cores=8,
-                if_lt_n_at_t="warn")
+set.seed(32457)
+sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
 
+dmod <- sim2data(sim, to="start_stop", target_event="influenza",
+                 overlap=TRUE, keep_only_first=TRUE)
 
-true_rr <- data.table(name=c("vacc", "mac", "meds", "vacc*mac"),
-                      rr=c(0.5, 1.5, 4, 1.6))
-out <- merge(out, true_rr, by="name", all.x=TRUE)
-out[, bias := `exp(coef)` - rr]
+mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc, data=dmod)
+summary(mod)
 
-# bias
-ggplot(out, aes(x=name, y=bias, fill=name)) +
-  geom_boxplot() +
-  facet_wrap(~type) +
-  theme_bw() +
-  theme(legend.position="none") +
-  geom_hline(yintercept=0, linetype="dashed") #+
-  ylim(c(-1, 1))
+d_treat <- get_event_times(sim, "vacc")
+d_event <- get_event_times(sim, "influenza")
+d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
+                       d_baseline=d_baseline, d_event=d_event)
 
-
-out %>%
-  group_by(type, name) %>%
-  summarise(mean(bias, na.rm=T))
+mod <- coxph(Surv(event_time, status) ~ mac + .treat + mac*.treat, data=d_match)
+summary(mod)
 
 #### With time-fixed confounder ####
 
@@ -180,7 +176,7 @@ dag <- empty_dag() +
           rr_meds=5) +
   node_td("influenza", type="time_to_event", prob_fun=prob_influ,
           event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
-          base_p=0.01, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_meds=4)
 
 sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
@@ -206,23 +202,52 @@ d_inclusion <- d_inclusion[influenza==FALSE]
 
 d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
                        d_event=d_influ, d_baseline=d_baseline,
-                       keep_all_columns=TRUE, d_inclusion=d_inclusion)
+                       keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                       replace_at_t=FALSE, verbose=TRUE)
 
 mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac,
              data=d_match)
 summary(mod)
 
-data <- add_previous_event_time(data=d_match, id=".id", time=".time",
+d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
                                 d_prev=d_meds, duration=Inf, name="meds")
-data <- add_previous_event_time(data, id=".id", time=".time",
-                                d_prev=d_influ, duration=20, name="influ")
+#data <- add_previous_event_time(data, id=".id", time=".time",
+#                                d_prev=d_influ, duration=20, name="influ")
+
+d_match[, n_per_pair := .N, by=pair_id]
+d_match <- d_match[n_per_pair==2]
 
 mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac + meds,
-             data=subset(data, !influ))
+             data=d_match, cluster=pair_id)
 summary(mod)
 
 
-test <- data
-test[, not_in := any(influ), by=pair_id]
+############# run simulation
 
-setkey(test, "pair_id")
+set.seed(2432454)
+out <- sim_comp(dag=dag,
+                n_sim=3000,
+                n_repeats=500,
+                max_t=365,
+                n_cores=8,
+                if_lt_n_at_t="warn")
+
+
+true_rr <- data.table(name=c("vacc", "mac", "meds", "vacc*mac"),
+                      rr=c(0.5, 1.5, 4, 1.6))
+out <- merge(out, true_rr, by="name", all.x=TRUE)
+out[, bias := `exp(coef)` - rr]
+
+# bias
+ggplot(out, aes(x=name, y=bias, fill=name)) +
+  geom_boxplot() +
+  facet_wrap(~type) +
+  theme_bw() +
+  theme(legend.position="none") +
+  geom_hline(yintercept=0, linetype="dashed") #+
+ylim(c(-1, 1))
+
+
+out %>%
+  group_by(type, name) %>%
+  summarise(mean(bias, na.rm=T))

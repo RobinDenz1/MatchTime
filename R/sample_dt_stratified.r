@@ -45,7 +45,12 @@ sample_dt_stratified <- function(data, n, strata, replace=FALSE,
     n[not_in_n] <- 0
   }
 
-  out <- Map(sample_dt, ldata, n, replace=replace, if_lt_n=if_lt_n) |>
-    rbindlist()
-  return(out)
+  # sample from each stratum
+  out <- vector(mode="list", length=length(n))
+  for (i in names(n)) {
+    out[[i]] <- sample_dt(data=ldata[[i]], n=n[[i]], replace=replace,
+                          if_lt_n=if_lt_n)
+  }
+
+  return(rbindlist(out))
 }

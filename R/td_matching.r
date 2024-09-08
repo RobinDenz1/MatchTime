@@ -2,7 +2,7 @@
 # TODO:
 # - max_t integrieren
 # - warnmeldung mapply(FUN=f, ...) (???)
-# - d_inclusion needs to be integrated in the for loop as well
+# - leute mit influenza an t = 0 wirklich nicht drin behalten?
 
 ## perform time-dependent matching
 #' @importFrom data.table .N
@@ -18,15 +18,10 @@ td_matching <- function(id, time, d_treat, d_event, d_baseline,
                         censor_pairs=TRUE, estimand="ATT", ratio=1,
                         if_lt_n_at_t="stop", use_matchit=FALSE,
                         matchit_method="nearest", keep_all_columns=FALSE,
-                        ...) {
+                        verbose=FALSE, ...) {
 
-  # identify all points in time at which at least one case happened
-  case_times <- sort(unique(d_treat[[eval(time)]]))
-
-  # initialize needed id collections
-  if (is.null(d_inclusion)) {
-    ids_pot_controls <- unique(d_baseline[[eval(id)]])
-  } else {
+  # apply inclusion criteria at treatment time
+  if (!is.null(d_inclusion)) {
 
     # keep only cases that meet inclusion criteria at treatment time
     d_inclusion <- merge(d_inclusion, d_treat, by=id, all.x=TRUE)
@@ -34,36 +29,55 @@ td_matching <- function(id, time, d_treat, d_event, d_baseline,
                            & eval(parse(text=time)) <= stop][[eval(id)]]
     d_treat <- d_treat[eval(parse(text=id)) %fin% include]
     d_inclusion[, eval(time) := NULL]
-
-    # update case times
-    case_times <- sort(unique(d_treat[[eval(time)]]))
-
-    # identify controls that fulfill inclusion criteria at t = 1
-    t1 <- case_times[1]
-    ids_pot_controls <- d_inclusion[t1 >= start & t1 <= stop][[eval(id)]]
   }
+
+  # identify all points in time at which at least one case happened
+  case_times <- sort(unique(d_treat[[eval(time)]]))
+
+  # initialize needed id collections
+  used_as_controls <- c()
+  used_as_cases <- c()
 
   out <- vector(mode="list", length=length(case_times))
   for (i in seq_len(length(case_times))) {
 
-    # identify new cases
+    # identify new cases at t
     ids_cases_i <- d_treat[eval(parse(text=time))==case_times[i]][[eval(id)]]
 
-    # get dataset of all potential controls and new cases
-    if (replace_cases) {
-      all_ids <- c(ids_pot_controls, ids_cases_i)
-    } else {
-      all_ids <- ids_pot_controls
+    # potentially remove cases that were previously used as controls
+    if (!replace_cases) {
+      ids_cases_i <- ids_cases_i[!ids_cases_i %fin% used_as_controls]
     }
-
-    d_all_i <- d_baseline[eval(parse(text=id)) %fin% all_ids]
-    d_all_i[, .treat := eval(parse(text=id)) %fin% ids_cases_i]
 
     # skip this time point if there are no cases to be matched
     # (this may only happen when setting replace_cases=FALSE)
-    if (sum(d_all_i$.treat)==0) {
+    if (length(ids_cases_i)==0) {
       next
     }
+
+    # update collection of ids that were used as cases
+    used_as_cases <- c(used_as_cases, ids_cases_i)
+
+    # identify all potential controls that fulfill inclusion criteria at t
+    if (!is.null(d_inclusion)) {
+      ids_pot_controls_i <- d_inclusion[case_times[i] >= start &
+                                          case_times[i] <= stop][[eval(id)]]
+    } else {
+      ids_pot_controls_i <- d_baseline[[eval(id)]]
+    }
+    ids_pot_controls_i <- ids_pot_controls_i[!ids_pot_controls_i %fin%
+                                               used_as_cases]
+
+    # potentially remove controls that were already used as controls
+    if (!replace_over_t) {
+      ids_pot_controls_i <- ids_pot_controls_i[!ids_pot_controls_i %fin%
+                                                used_as_controls]
+    }
+
+    # get dataset including all relevant ids
+    all_ids <- c(ids_pot_controls_i, ids_cases_i)
+    d_all_i <- d_baseline[eval(parse(text=id)) %fin% all_ids]
+    d_all_i[, .treat := eval(parse(text=id)) %fin% ids_cases_i]
 
     ## perform matching at t
     if (use_matchit) {
@@ -115,19 +129,18 @@ td_matching <- function(id, time, d_treat, d_event, d_baseline,
       d_match_i[, .treat_time := case_times[i]]
     }
 
-    # remove new cases from potential controls
-    ids_pot_controls <- ids_pot_controls[!ids_pot_controls %fin% ids_cases_i]
-
-    # remove used controls from potential controls as well, if specified
-    if (!replace_over_t) {
-      ids_controls_i <- d_match_i[.treat==FALSE][[eval(id)]]
-      ids_pot_controls <- ids_pot_controls[!ids_pot_controls %fin%
-                                             ids_controls_i]
-    }
+    # update used_as_controls vector
+    controls_i <- unique(d_match_i[.treat==FALSE][[eval(id)]])
+    used_as_controls <- c(used_as_controls, controls_i)
 
     # append to output
     out[[i]] <- d_match_i
-    print(i)
+
+    if (verbose) {
+      cat("Matched ", length(controls_i), " unique controls to ",
+          length(ids_cases_i), " cases (with ", length(ids_pot_controls_i),
+          " potential unique controls) at t = ", case_times[i], ".\n", sep="")
+    }
   }
 
   # full dataset

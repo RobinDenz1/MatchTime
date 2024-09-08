@@ -14,7 +14,7 @@ td_matching(id, time, d_treat, d_event, d_baseline,
             censor_pairs=TRUE, estimand="ATT",
             ratio=1, if_lt_n_at_t="stop",
             use_matchit=FALSE, matchit_method="nearest",
-            keep_all_columns=FALSE, ...)
+            keep_all_columns=FALSE, verbose=FALSE, ...)
 }
 \arguments{
   \item{id}{
@@ -64,6 +64,9 @@ Passed to the \code{method} argument of the \code{\link[MatchIt]{matchit}} funct
   }
   \item{keep_all_columns}{
 Whether to keep all columns created internally or to only keep the most relevant columns.
+  }
+  \item{verbose}{
+Whether to print a summary of how many matches were made for each point in time or not (default).
   }
   \item{...}{
 Further arguments passed to \code{\link[MatchIt]{matchit}} when using \code{use_matchit=TRUE}.
