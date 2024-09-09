@@ -1,7 +1,6 @@
 
 # TODO:
 # - max_t integrieren
-# - warnmeldung mapply(FUN=f, ...) (???)
 # - leute mit influenza an t = 0 wirklich nicht drin behalten?
 
 ## perform time-dependent matching
