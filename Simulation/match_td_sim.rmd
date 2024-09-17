@@ -455,8 +455,8 @@ Was hier auffällt ist, dass das HR des zeitabhängigen Confounders beim Matchin
 
 ```{r}
 ## compare standard cox with time-dependent matching
-sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
-                     formula_cox, formula_matching, td_variables=NULL, ...) {
+sim_comp2 <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
+                      td_variables=NULL, ...) {
 
   # parallel processing
   cl <- makeCluster(n_cores, outfile="")
@@ -477,18 +477,6 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
 
     # generate the data
     sim <- sim_discrete_time(dag, n_sim=n_sim, max_t=max_t)
-
-    #### standard time-varying cox model based estimates ####
-    data <- sim2data(sim, to="start_stop", target_event="influenza",
-                     overlap=TRUE, keep_only_first=TRUE)
-
-    form <- stats::as.formula(formula_cox)
-    mod <- coxph(form, data=data)
-
-    out_1 <- as.data.frame(summary(mod)$conf.int)
-    out_1$name <- rownames(out_1)
-    rownames(out_1) <- NULL
-    out_1$type <- "cox"
 
     #### time-dependent matching based estimates ####
 
@@ -527,18 +515,6 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
         )
       }
     }
-
-    # fit cox model
-    form <- stats::as.formula(formula_matching)
-    mod <- coxph(formula=form, data=d_match, x=TRUE)
-
-    # put together
-    out_2 <- as.data.frame(summary(mod)$conf.int)
-    out_2$name <- rownames(out_2)
-    rownames(out_2) <- NULL
-    out_2$type <- "matching"
-
-    #rbind(out_1, out_2)
 
     d_match[, interact := factor(interaction(.treat, mac))]
     mod <- coxph(formula=Surv(event_time, status) ~ interact + meds,
@@ -690,84 +666,133 @@ prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
     rr_vacc_nonmac^(data$vacc_event & !data$mac) * rr_meds^(data$meds_event)
 }
 
-prob_vacc <- function(data, base_p, rr_meds) {
-  1
-}
-
 prob_meds <- function(data, base_p, rr_vacc) {
   base_p * rr_vacc^(data$vacc_event)
 }
 
-dag <- empty_dag() +
-  node("mac", type="rbernoulli", p=0.2) +
-  node_td("meds", type="time_to_event", prob_fun=prob_meds,
+
+
+
+
+sim_true_estimand <- function(n_sim, n_repeats, max_t, n_cores,
+                              seed=runif(1)) {
+
+  # parallel processing
+  cl <- makeCluster(n_cores, outfile="")
+  doSNOW::registerDoSNOW(cl)
+  pckgs <- c("data.table", "simDAG", "survival", "MatchTD", "adjustedCurves")
+  glob_funs <- ls(envir=.GlobalEnv)[sapply(ls(envir=.GlobalEnv), function(obj)
+    "function"==class(eval(parse(text=obj)))[1])]
+
+  # add progress bar
+  pb <- txtProgressBar(max=n_repeats, style=3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+  opts <- list(progress=progress)
+
+  # start simulation
+  set.seed(seed)
+  out_final <- foreach::foreach(i=seq_len(n_repeats), .packages=pckgs,
+                          .export=glob_funs, .options.snow=opts) %dorng% {
+    
+    #seed_i <- runif(1)                        
+    
+    dag <- empty_dag() +
+      node("mac", type="rbernoulli", p=0.2) +
+      node_td("meds", type="time_to_event", prob_fun=prob_meds,
+              event_duration=Inf, parents="vacc_event", base_p=0.001,
+              rr_vacc=4) +
+      node_td("vacc", type="time_to_event", prob_fun=1,
+              event_duration=Inf) +
+      node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+              event_duration=Inf, parents=c("mac", "vacc_event",
+                                            "meds_event"),
+              base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8,
+              rr_vacc_nonmac=0.5, rr_meds=4)
+
+
+    #set.seed(seed_i)
+    sim1 <- sim_discrete_time(dag=dag, n_sim=n_sim, max_t=max_t)
+
+    dag <- empty_dag() +
+      node("mac", type="rbernoulli", p=0.2) +
+      node_td("meds", type="time_to_event", prob_fun=prob_meds,
           event_duration=Inf, parents="vacc_event", base_p=0.001,
           rr_vacc=4) +
-  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
-          event_duration=Inf, parents="meds_event", base_p=0.0005,
-          rr_meds=5) +
-  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
-          event_duration=Inf, parents=c("mac", "vacc_event", "meds_event"),
-          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
-          rr_meds=4)
+      node_td("vacc", type="time_to_event", prob_fun=0,
+          event_duration=Inf) +
+      node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+              event_duration=Inf, parents=c("mac", "vacc_event",
+                                            "meds_event"),
+              base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+              rr_meds=4)
 
+    #set.seed(seed_i)
+    sim0 <- sim_discrete_time(dag=dag, n_sim=n_sim, max_t=max_t)
 
-set.seed(324123)
-sim1 <- sim_discrete_time(dag=dag, n_sim=1000000, max_t=365)
+    d0 <- sim0$data
+    d1 <- sim1$data
+    d_target <- rbind(d0, d1)
 
-prob_vacc <- function(data, base_p, rr_meds) {
-  0
+    d_target[is.na(influenza_time), influenza_time := max_t]
+    d_target[, interact := factor(interaction(vacc_event, mac))]
+
+    km <- adjustedsurv(data=d_target,
+                       variable="interact",
+                       ev_time="influenza_time",
+                       event="influenza_event",
+                       method="km",
+                       times=100)
+
+    # p_vacc_mac
+    p_00 <- 1 - km$adj$surv[km$adj$group=="FALSE.FALSE"]
+    p_11 <- 1 - km$adj$surv[km$adj$group=="TRUE.TRUE"]
+    p_01 <- 1 - km$adj$surv[km$adj$group=="FALSE.TRUE"]
+    p_10 <- 1 - km$adj$surv[km$adj$group=="TRUE.FALSE"]
+
+    rr_mac <- p_11 / p_01
+    rr_nonmac <- p_10 / p_00
+
+    out_i <- data.table(rr_mac=rr_mac,
+                        rr_nonmac=rr_nonmac,
+                        interact=(1 - rr_mac) / (1 - rr_nonmac))
+    out_i
+  }
+  close(pb)
+  stopCluster(cl)
+
+  return(rbindlist(out_final))
 }
 
-dag <- empty_dag() +
-  node("mac", type="rbernoulli", p=0.2) +
-  node_td("meds", type="time_to_event", prob_fun=prob_meds,
-          event_duration=Inf, parents="vacc_event", base_p=0.001,
-          rr_vacc=4) +
-  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
-          event_duration=Inf, parents="meds_event", base_p=0.0005,
-          rr_meds=5) +
-  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
-          event_duration=Inf, parents=c("mac", "vacc_event", "meds_event"),
-          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
-          rr_meds=4)
+test <- sim_true_estimand(n_sim=10000, n_repeats=500, max_t=365,
+                          n_cores=5, seed=443)
 
-set.seed(324123)
-sim0 <- sim_discrete_time(dag=dag, n_sim=1000000, max_t=365)
+true_rr_mac <- mean(test$rr_mac)
+true_rr_nonmac <- mean(test$rr_nonmac)
+true_interact <- mean(test$interact)
 
 
-d0 <- sim0$data
-d1 <- sim1$data
-d_target <- rbind(d0, d1)
+sim1 <- sim_comp2(dag=dag,
+                  n_sim=10000,
+                  max_t=365,
+                  n_repeats=500,
+                  n_cores=5,
+                  td_variables=list(list(name="meds", duration=Inf)))
 
-d_target[is.na(influenza_time), influenza_time := 365]
-d_target[, interact := factor(interaction(vacc_event, mac))]
+sim1[, interact := (1 - rr_mac) / (1 - rr_nonmac)]
 
-library(adjustedCurves)
+true_rr <- data.table(variable=c("rr_mac", "rr_nonmac", "interact"),
+                      true_val=c(true_rr_mac, true_rr_nonmac,
+                                 true_interact))
 
-km <- adjustedsurv(data=d_target,
-                   variable="interact",
-                   ev_time="influenza_time",
-                   event="influenza_event",
-                   method="km",
-                   times=100)
-plot(km)
+plotdata <- melt(sim1)
+plotdata <- merge(plotdata, true_rr, by="variable")
+plotdata[, bias := value - true_val]
 
-# p_vacc_mac
-
-p_00 <- 1 - km$adj$surv[km$adj$group=="FALSE.FALSE"]
-p_11 <- 1 - km$adj$surv[km$adj$group=="TRUE.TRUE"]
-p_01 <- 1 - km$adj$surv[km$adj$group=="FALSE.TRUE"]
-p_10 <- 1 - km$adj$surv[km$adj$group=="TRUE.FALSE"]
-
-rr_mac <- p_11 / p_01
-rr_nonmac <- p_10 / p_00
-
-rr_mac
-rr_nonmac
-rr_mac / rr_nonmac
-
-median(out$rr_mac)
-median(out$rr_nonmac)
+ggplot(plotdata, aes(x=variable, y=bias, fill=variable)) +
+  geom_boxplot() +
+  geom_hline(yintercept=0, linetype="dashed") +
+  theme_bw() +
+  theme(legend.position="none") + 
+  ylim(c(-1, 1))
 ```
 
