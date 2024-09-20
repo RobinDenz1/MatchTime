@@ -84,22 +84,16 @@ td_matching <- function(id, time, d_treat, d_event, d_baseline,
       requireNamespace("MatchIt")
 
       # create formulas for matchit call
-      exact_formula <- paste0("~ ", paste0(colnames(d_all_i)[
+      main_formula <- paste0(".treat ~ ", paste0(colnames(d_all_i)[
         !colnames(d_all_i) %fin% c(id, ".treat")], collapse=" + "))
-      main_formula <- paste0(".treat ", exact_formula)
 
       # perform matching on baseline covariates
       args <- list(formula=stats::as.formula(main_formula),
                    data=d_all_i,
                    method=matchit_method,
-                   exact=stats::as.formula(exact_formula),
                    estimand=estimand,
                    replace=replace_at_t,
                    ratio=ratio)
-
-      if (matchit_method!="nearest") {
-        args$exact <- NULL
-      }
       args <- c(args, list(...))
 
       d_match_i <- do.call(MatchIt::matchit, args=args)
@@ -239,8 +233,9 @@ add_previous_event_time <- function(data, d_prev, id, time, duration,
   data <- merge(data, d_prev, by=id, all.x=TRUE)
 
   # check if .treat_time is in any of the previous risk periods by event
-  data[, .in_risk := .treat_time < (.prev_time + eval(duration)) &
-         .treat_time >= .prev_time]
+  # NOTE: not sure if it should be >= or > in second line
+  data[, .in_risk := .treat_time <= (.prev_time + eval(duration)) &
+         .treat_time > .prev_time]
   data[is.na(.in_risk), .in_risk := FALSE]
   data[, .in_risk := any(.in_risk), by=.id_new]
   data[, .prev_time := NULL]

@@ -1,0 +1,784 @@
+---
+title: "Simulation mit gesuchtem Target Estimand"
+author: "Robin Denz"
+date: "2024-09-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+
+library(simDAG)
+library(survival)
+library(foreach)
+library(parallel)
+library(doSNOW)
+library(doRNG)
+library(ggplot2)
+library(fastmatch)
+library(data.table)
+library(dplyr)
+library(devtools)
+library(adjustedCurves)
+
+load_all()
+```
+
+# Vorbemerkungen
+
+Zuvor habe ich nur die Hazard-Ratios betrachtet. Unser Target Estimand bezieht sich aber nicht auf diese, sondern auf die tatsächlichen zeitabhängigen RR und die Interaktion der Impfwirksamkeiten. Im Anschluss wird daher die Simulation von oben teilweise wiederholt. Es werden die selben Szenarien betrachtet, wobei die Schätzung aber immer nur mit dem Matching durchgeführt wird (da mit dem reinen Cox-Modell nicht möglich).
+
+Betrachtet werden hier die gleichen Szenarien wie in dem anderen Dokument. Es werden weiterhin künstliche und damit unrealistische Beispiele verwendet um die Funktionsweise der Methodik zu prüfen.
+
+# Definition Target Estimand
+
+Der Target Estimand ist hier definiert als:
+
+$$\Psi(t) = \frac{\theta_{1}(t)}{\theta_{0}(t)},$$
+
+mit:
+
+$$\theta_h(t) = 1 - RR_h(t),$$
+
+wobei der index $h$ die MAC Gruppenzugehörigkeit angibt mit 0 = non-mac und 1 = mac. Dabei gilt:
+
+$$RR_h(t) = \frac{P(Y^{A = 1}|H = h)}{P(Y^{A = 0}|H = h)},$$
+
+wobei $Y^{A=1}$ das Outcome angibt, welches wir beobachten würden wenn die Impfung $A$ auf den Wert 1 (geimpft) gesetzt werden würde, und $Y^{A=0}$ das entsprechende Outcome für die selbe Person wenn die Impfung auf 0 (ungeimpft) gesetzt werden würde. Der Target Estimand ist hier nur bezogen auf Personen die sich tatsächlich impfen lassen und entspricht damit dem *Average Treatment Effect on the Treated* (ATT).
+
+Die hier verwendete Definition entspricht nicht exakt dem Target Estimand den wir in der tatsächlichen Studie verwenden wollen, aber sie ist sehr nah dran. Es fehlt lediglich die Adjustierung für Alter und Geschlecht. Diese wird hier aus Gründen der Einfachheit rausgelassen.
+
+# Bestimmung des wahren Target Estimands
+
+Die wahren HR sind zwar bekannt, der wahre Target Estimand allerdings nicht direkt. Um diesen zu bestimmen wird ein simulationsverfahren verwendet. Dazu wird zunächst eine modifizierte Version des DAGs erstellt, bei welcher das wahre outcome und ein hypothetisches Outcome simultan simuliert werden. Dazu habe ich neben der korrekten `node()` Definition für die Influenza eine Kopie dieser Definition ebenfalls zum DAG hinzugefügt, mit dem einzigen Unterschied das bei der Kopie die komplette Simulation so abläuft, als wären alle Personen dauerhaft ungeimpft. So erhalten wir für alle Personen das Outcome unter dem beobachtbaren Datengenerierungsprozess und das Outcome unter $A = 0$. Da uns nur der ATT (also der Average treatment effect bei tatsächlich geimpften) interessiert, reicht dies aus um den kontrafaktischen Vergleich zu machen.
+
+Von dem generierten Datensatz werden nur Personen genommen die im Verlauf geimpft wurden. Diese gehen jeweils zweimal in den neuen Datensatz ein, einmal als ungeimpft und einmal als geimpft mit dem entsprechend simulierten Outcome. Der Target Estimand wird dann schlicht über einen Kaplan-Meier Schätzer berechnet, in dem nach der Interaktion zwischen MAC und Impfung stratifiziert wird. Dieses Vorgehen wird oft wiederholt, die mittleren Schätzungen werden als "wahrere target estimand" verwendet.
+
+```{r}
+## estimate the true estimand under intervention on vacc
+sim_true_estimand <- function(modified_dag, n_sim, n_repeats, max_t, n_cores,
+                              seed=runif(1), t) {
+
+  # parallel processing
+  cl <- makeCluster(n_cores, outfile="")
+  doSNOW::registerDoSNOW(cl)
+  pckgs <- c("data.table", "simDAG", "survival", "MatchTD", "adjustedCurves")
+  glob_funs <- ls(envir=.GlobalEnv)[sapply(ls(envir=.GlobalEnv), function(obj)
+    "function"==class(eval(parse(text=obj)))[1])]
+
+  # add progress bar
+  pb <- txtProgressBar(max=n_repeats, style=3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+  opts <- list(progress=progress)
+
+  # start simulation
+  set.seed(seed)
+  out_final <- foreach::foreach(i=seq_len(n_repeats), .packages=pckgs,
+                          .export=glob_funs, .options.snow=opts) %dorng% {
+    
+    # simulate data from modified DAG
+    sim <- sim_discrete_time(dag=modified_dag, n_sim=n_sim, max_t=max_t)
+
+    # put together counterfactual data
+    d_influ <- get_event_times(sim, "influenza")
+    d_influ_2 <- get_event_times(sim, "influenza_2")
+
+    d1 <- get_data_01(sim, d_influ)
+    d0 <- get_data_01(sim, d_influ_2)
+
+    d0$.treat <- FALSE
+    d1$.treat <- TRUE
+    d_target <- rbind(d0, d1)
+    
+    d_target[, interact := factor(interaction(.treat, mac))]
+    
+    km <- adjustedsurv(data=d_target,
+                       variable="interact",
+                       ev_time="event_time",
+                       event="status",
+                       method="km",
+                       times=t)
+
+    # p_vacc_mac
+    p_00 <- 1 - km$adj$surv[km$adj$group=="FALSE.FALSE"]
+    p_11 <- 1 - km$adj$surv[km$adj$group=="TRUE.TRUE"]
+    p_01 <- 1 - km$adj$surv[km$adj$group=="FALSE.TRUE"]
+    p_10 <- 1 - km$adj$surv[km$adj$group=="TRUE.FALSE"]
+
+    rr_mac <- p_11 / p_01
+    rr_nonmac <- p_10 / p_00
+
+    out_i <- data.table(rr_mac=rr_mac,
+                        rr_nonmac=rr_nonmac,
+                        interact=(1 - rr_mac) / (1 - rr_nonmac))
+    out_i
+  }
+  close(pb)
+  stopCluster(cl)
+
+  return(rbindlist(out_final))
+}
+
+## creates a dataset containing only the vaccinated people who fufilled the
+## inclusion criteria at vaccination + their time to event from vaccination
+get_data_01 <- function(sim, d_influ) {
+  
+  # keep all vaccinated individuals
+  d1 <- subset(sim$data, vacc_event==TRUE)
+  d1 <- d1[, c(".id", "mac", "vacc_time"), with=FALSE]
+  colnames(d1) <- c(".id", "mac", ".treat_time")
+  d1$.id_new <- d1$.id
+
+  # keep only those who fit inclusion criteria at vaccination
+  d1 <- MatchTD:::add_previous_event_time(d1, d_influ, id=".id", time=".time",
+                                duration=20, name="prev_influenza")
+  d1 <- subset(d1, !prev_influenza)
+
+  # add information on next influenza time
+  d1 <- MatchTD:::add_next_event_time(d1, d_influ, id=".id", time=".time")
+
+  # get event time and status
+  d1[, event_time := .next_event_time - .treat_time]
+  d1[, status := !is.na(event_time)]
+  d1[is.na(event_time), event_time := 365 - .treat_time]
+  d1 <- d1[, c(".id", "mac", "event_time", "status"), with=FALSE]
+  
+  return(d1)
+}
+
+## estimate real target estimand using time-dependent matching
+sim_matching <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
+                         td_variables=NULL, form_cox, t, baseline_vars=c("mac"),
+                         ...) {
+
+  # parallel processing
+  cl <- makeCluster(n_cores, outfile="")
+  doSNOW::registerDoSNOW(cl)
+  pckgs <- c("data.table", "simDAG", "survival", "MatchTD", "adjustedCurves")
+  glob_funs <- ls(envir=.GlobalEnv)[sapply(ls(envir=.GlobalEnv), function(obj)
+    "function"==class(eval(parse(text=obj)))[1])]
+
+  # add progress bar
+  pb <- txtProgressBar(max=n_repeats, style=3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+  opts <- list(progress=progress)
+
+  # start simulation
+  set.seed(seed)
+  out_final <- foreach::foreach(i=seq_len(n_repeats), .packages=pckgs,
+                          .export=glob_funs, .options.snow=opts) %dorng% {
+
+    # generate the data
+    sim <- sim_discrete_time(dag, n_sim=n_sim, max_t=max_t)
+
+    #### time-dependent matching based estimates ####
+
+    # extract required data
+    d_treat <- get_event_times(sim, "vacc")
+    d_influ <- get_event_times(sim, "influenza")
+    d_baseline <- sim$data[, c(".id", baseline_vars), with=FALSE]
+
+    # construct inclusion criteria start-stop
+    dlist <- list(d_influ)
+    names(dlist) <- c("influenza")
+    d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
+                                             max_t=max_t, durations=20)
+    d_inclusion <- d_inclusion[influenza==FALSE]
+
+    # perform the matching
+    d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
+                           d_event=d_influ, d_baseline=d_baseline,
+                           keep_all_column=TRUE, d_inclusion=d_inclusion,
+                           ...)
+
+    # add information about time-dependent covariates
+    if (length(td_variables) > 0) {
+
+      for (i in seq_len(length(td_variables))) {
+
+        d_temp <- get_event_times(sim, td_variables[[i]]$name)
+
+        d_match <- MatchTD:::add_previous_event_time(
+          data=d_match,
+          d_prev=d_temp,
+          id=".id",
+          time=".time",
+          duration=td_variables[[i]]$duration,
+          name=td_variables[[i]]$name
+        )
+      }
+    }
+    
+    # get target estimand
+    out_i <- estimate_target(d_match=d_match,
+                             form_cox=form_cox,
+                             t=t)
+
+    out_i
+  }
+  close(pb)
+  stopCluster(cl)
+
+  return(rbindlist(out_final))
+}
+
+## extract all unique event times from a simDT object
+get_event_times <- function(sim, name) {
+
+  ldat <- sim$tte_past_events[[name]]
+  out <- vector(mode="list", length=length(ldat))
+  for (i in seq_len(length(ldat))) {
+    if (length(ldat[[i]]) > 0) {
+      out[[i]] <- data.table(.id=ldat[[i]], .time=i)
+    }
+  }
+  d_prev <- rbindlist(out)
+  setkeyv(d_prev, c(".id", ".time"))
+
+  return(d_prev)
+}
+
+## using matched data, get target estimand
+estimate_target <- function(d_match, form_cox, t) {
+  
+  # create interaction
+  d_match[, interact := factor(interaction(.treat, mac))]
+  
+  # fit cox model
+  formula <- stats::as.formula(form_cox)
+  mod <- coxph(formula=formula, data=d_match, x=TRUE)
+  
+  # estimate (adjusted) survival probability at t
+  surv <- adjustedsurv(data=d_match,
+                       variable="interact",
+                       ev_time="event_time",
+                       event="status",
+                       method="direct",
+                       times=t,
+                       outcome_model=mod)
+  
+  # transform to target estimand
+  p_00 <- 1 - surv$adj$surv[surv$adj$group=="FALSE.FALSE"]
+  p_11 <- 1 - surv$adj$surv[surv$adj$group=="TRUE.TRUE"]
+  p_01 <- 1 - surv$adj$surv[surv$adj$group=="FALSE.TRUE"]
+  p_10 <- 1 - surv$adj$surv[surv$adj$group=="TRUE.FALSE"]
+
+  out <- data.table(rr_mac=p_11 / p_01,
+                    rr_nonmac=p_10 / p_00)
+  out[, interact := (1 - rr_mac) / (1 - rr_nonmac)]
+  
+  return(out)
+}
+
+## plot bias of the target estimands
+plot_bias_target <- function(sim1, true_rr_mac, true_rr_nonmac,
+                             true_interact) {
+  
+  true_rr <- data.table(variable=c("rr_mac", "rr_nonmac", "interact"),
+                      true_val=c(true_rr_mac, true_rr_nonmac,
+                                 true_interact))
+
+  plotdata <- suppressWarnings(melt(sim1))
+  plotdata <- merge(plotdata, true_rr, by="variable")
+  plotdata[, bias := value - true_val]
+
+  ggplot(plotdata, aes(x=variable, y=bias, fill=variable)) +
+    geom_boxplot() +
+    geom_hline(yintercept=0, linetype="dashed") +
+    theme_bw() +
+    theme(legend.position="none")
+}
+```
+
+# Kein Confounding
+
+```{r}
+prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac) {
+  base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
+    rr_vacc_nonmac^(data$vacc_event & !data$mac)
+}
+
+dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node_td("vacc", type="time_to_event", prob_fun=0.001,
+          event_duration=Inf) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event"),
+          base_p=0.01, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5)
+```
+
+## Target Estimand
+
+Zunächst wird der wahre target estimand bestimmt:
+
+```{r}
+prob_influ_2 <- function(data, base_p, rr_mac) {
+  p <- base_p * rr_mac^(data$mac)
+  fifelse(!data$vacc_event, as.numeric(data$influenza_event),
+          fifelse(data$vacc_event &
+                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+}
+
+modified_dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node_td("vacc", type="time_to_event", prob_fun=0.001,
+          event_duration=Inf) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event"),
+          base_p=0.01, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5) +
+  node_td("influenza_2", type="time_to_event", prob_fun=prob_influ_2,
+          event_duration=20, parents=c("mac", "vacc_event", "vacc_time",
+                                       "influenza_event", "influenza_time"),
+          base_p=0.01, rr_mac=1.5)
+
+true_target <- sim_true_estimand(modified_dag, n_sim=50000, n_repeats=500,
+                                 max_t=365, n_cores=7, seed=443, t=100)
+
+true_rr_mac <- mean(true_target$rr_mac)
+true_rr_nonmac <- mean(true_target$rr_nonmac)
+true_interact <- mean(true_target$interact)
+
+cat("True RR Mac: ", true_rr_mac, "\n")
+cat("True RR Non-Mac: ", true_rr_nonmac, "\n")
+cat("True Interaction: ", true_interact, "\n")
+```
+
+Hier zeigt sich direkt, dass die zeitabhängigen RR nicht den Hazard-Ratios entsprechen die reingesteckt wurden. Das ergibt Sinn, da bei einem konstanten HR sich die Survival Kurven über die Zeit annähern und damit unterschiedliche RR je nach $t$ haben.
+
+## Beispiel
+
+```{r}
+# simulate data
+set.seed(32457)
+sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
+
+# perform matching
+d_treat <- get_event_times(sim, "vacc")
+d_event <- get_event_times(sim, "influenza")
+d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+
+dlist <- list(d_event)
+names(dlist) <- c("influenza")
+d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
+                                         max_t=365, durations=20)
+d_inclusion <- d_inclusion[influenza==FALSE]
+
+d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
+                       d_baseline=d_baseline, d_event=d_event,
+                       d_inclusion=d_inclusion, verbose=FALSE)
+
+out <- estimate_target(d_match=d_match, t=100,
+                       form_cox=Surv(event_time, status) ~ interact)
+head(out)
+```
+
+## Monte-Carlo Simulation
+
+```{r}
+sim1 <- sim_matching(
+  dag=dag,
+  n_sim=5000,
+  n_repeats=300,
+  max_t=365,
+  n_cores=8,
+  seed=23452345,
+  td_variables=NULL,
+  form_cox="Surv(event_time, status) ~ interact",
+  t=100
+)
+
+plot_bias_target(sim1,
+                 true_rr_mac=true_rr_mac,
+                 true_rr_nonmac=true_rr_nonmac,
+                 true_interact=true_interact)
+```
+
+
+# Time-Fixed Confounder
+
+```{r}
+prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
+                       rr_sex) {
+  base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
+    rr_vacc_nonmac^(data$vacc_event & !data$mac) * rr_sex^(data$sex)
+}
+
+prob_vacc <- function(data, base_p, rr_sex) {
+  base_p * rr_sex^(data$sex)
+}
+
+dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node("sex", type="rbernoulli", p=0.5) +
+  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
+          event_duration=Inf, parents="sex", base_p=0.0005,
+          rr_sex=5) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event", "sex"),
+          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+          rr_sex=4)
+```
+
+## Target Estimand
+
+```{r}
+prob_influ_2 <- function(data, base_p, rr_mac, rr_sex) {
+  p <- base_p * rr_mac^(data$mac) * rr_sex^(data$sex)
+  fifelse(!data$vacc_event, as.numeric(data$influenza_event),
+          fifelse(data$vacc_event &
+                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+}
+
+modified_dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node("sex", type="rbernoulli", p=0.5) +
+  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
+          event_duration=Inf, parents="sex", base_p=0.0005,
+          rr_sex=5) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event", "sex"),
+          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+          rr_sex=4) +
+  node_td("influenza_2", type="time_to_event", prob_fun=prob_influ_2,
+          event_duration=20, parents=c("mac", "sex", "vacc_event",
+                                       "vacc_time", "influenza_event",
+                                       "influenza_time"),
+          base_p=0.001, rr_mac=1.5, rr_sex=4)
+
+true_target <- sim_true_estimand(modified_dag, n_sim=50000, n_repeats=500,
+                                 max_t=365, n_cores=7, seed=443, t=100)
+
+true_rr_mac <- mean(true_target$rr_mac)
+true_rr_nonmac <- mean(true_target$rr_nonmac)
+true_interact <- mean(true_target$interact)
+
+cat("True RR Mac: ", true_rr_mac, "\n")
+cat("True RR Non-Mac: ", true_rr_nonmac, "\n")
+cat("True Interaction: ", true_interact, "\n")
+```
+
+Wichtig zu beachten: Die Werte sind nicht gleich denen oben da hier eine andere Grundwahrscheinlichkeit reingesteckt wurde und diese die zeitabhängigen RR beeinflusst.
+
+## Beispiel
+
+```{r}
+set.seed(324574)
+sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
+
+d_treat <- get_event_times(sim, "vacc")
+d_event <- get_event_times(sim, "influenza")
+d_baseline <- sim$data[, c(".id", "mac", "sex"), with=FALSE]
+
+dlist <- list(d_event)
+names(dlist) <- c("influenza")
+d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
+                                         max_t=365, durations=20)
+d_inclusion <- d_inclusion[influenza==FALSE]
+
+d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
+                       d_baseline=d_baseline, d_event=d_event,
+                       d_inclusion=d_inclusion, verbose=FALSE)
+
+out <- estimate_target(d_match=d_match,
+                       form_cox="Surv(event_time, status) ~ interact + sex",
+                       t=100)
+head(out)
+```
+
+## Monte-Carlo Simulation
+
+```{r}
+sim1 <- sim_matching(
+  dag=dag,
+  n_sim=4000,
+  n_repeats=300,
+  max_t=365,
+  n_cores=8,
+  seed=23452345,
+  td_variables=NULL,
+  baseline_vars=c("mac", "sex"),
+  form_cox="Surv(event_time, status) ~ interact + sex",
+  t=100
+)
+
+plot_bias_target(sim1,
+                 true_rr_mac=true_rr_mac,
+                 true_rr_nonmac=true_rr_nonmac,
+                 true_interact=true_interact)
+```
+
+
+# Time-Varying Confounder
+
+```{r}
+prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
+                       rr_meds) {
+  base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
+    rr_vacc_nonmac^(data$vacc_event & !data$mac) * rr_meds^(data$meds_event)
+}
+
+prob_vacc <- function(data, base_p, rr_meds) {
+  base_p * rr_meds^(data$meds_event)
+}
+
+dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node_td("meds", type="time_to_event", prob_fun=0.001, event_duration=Inf) +
+  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
+          event_duration=Inf, parents="meds_event", base_p=0.0005,
+          rr_meds=5) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
+          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+          rr_meds=4)
+```
+
+## Target Estimand
+
+```{r}
+prob_influ_2 <- function(data, base_p, rr_mac, rr_meds) {
+  p <- base_p * rr_mac^(data$mac) * rr_meds^(data$meds_event)
+  fifelse(!data$vacc_event, as.numeric(data$influenza_event),
+          fifelse(data$vacc_event &
+                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+}
+
+modified_dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node_td("meds", type="time_to_event", prob_fun=0.001, event_duration=Inf) +
+  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
+          event_duration=Inf, parents="meds_event", base_p=0.0005,
+          rr_meds=5) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
+          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+          rr_meds=4) +
+  node_td("influenza_2", type="time_to_event", prob_fun=prob_influ_2,
+          event_duration=20, parents=c("mac", "meds_event", "vacc_event",
+                                       "vacc_time", "influenza_event",
+                                       "influenza_time"),
+          base_p=0.001, rr_mac=1.5, rr_meds=4)
+
+true_target <- sim_true_estimand(modified_dag, n_sim=50000, n_repeats=500,
+                                 max_t=365, n_cores=8, seed=443, t=100)
+
+true_rr_mac <- mean(true_target$rr_mac)
+true_rr_nonmac <- mean(true_target$rr_nonmac)
+true_interact <- mean(true_target$interact)
+
+cat("True RR Mac: ", true_rr_mac, "\n")
+cat("True RR Non-Mac: ", true_rr_nonmac, "\n")
+cat("True Interaction: ", true_interact, "\n")
+```
+
+## Beispiel
+
+```{r}
+set.seed(3245745)
+sim <- sim_discrete_time(dag, n_sim=1000000, max_t=365)
+
+d_treat <- get_event_times(sim, "vacc")
+d_influ <- get_event_times(sim, "influenza")
+d_meds <- get_event_times(sim, "meds")
+d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+
+dlist <- list(d_influ)
+names(dlist) <- c("influenza")
+d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                               durations=20)
+d_inclusion <- d_inclusion[influenza==FALSE]
+
+d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
+                       d_event=d_influ, d_baseline=d_baseline,
+                       keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                       replace_at_t=FALSE, verbose=FALSE)
+
+d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
+                                   d_prev=d_meds, duration=Inf, name="meds")
+
+out <- estimate_target(d_match=d_match,
+                       form_cox="Surv(event_time, status) ~ interact + meds",
+                       t=100)
+head(out)
+```
+
+## Monte-Carlo Simulation
+
+```{r}
+sim1 <- sim_matching(
+  dag=dag,
+  n_sim=10000,
+  n_repeats=500,
+  max_t=365,
+  n_cores=8,
+  seed=2345235,
+  td_variables=list(list(name="meds", duration=Inf)),
+  form_cox="Surv(event_time, status) ~ interact + meds",
+  t=100
+)
+sim2 <- sim1
+sim2$interact <- NULL
+plot_bias_target(sim2,
+                 true_rr_mac=true_rr_mac,
+                 true_rr_nonmac=true_rr_nonmac,
+                 true_interact=true_interact)
+
+ggplot(sim1, aes(x=rr_mac)) +
+  geom_histogram() +
+  geom_vline(xintercept=median(true_target$rr_mac)) +
+  geom_vline(xintercept=mean(sim1$rr_mac), linetype="dashed") +
+  geom_vline(xintercept=median(sim1$rr_mac), linetype="dotted")
+```
+
+
+# Treatment-Confounder Feedback
+
+```{r}
+prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
+                       rr_meds) {
+  base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
+    rr_vacc_nonmac^(data$vacc_event & !data$mac) * rr_meds^(data$meds_event)
+}
+
+prob_vacc <- function(data, base_p, rr_meds) {
+  base_p * rr_meds^(data$meds_event)
+}
+
+prob_meds <- function(data, base_p, rr_vacc) {
+  base_p * rr_vacc^(data$vacc_event)
+}
+
+dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node_td("meds", type="time_to_event", prob_fun=prob_meds,
+          event_duration=Inf, parents="vacc_event", base_p=0.001,
+          rr_vacc=4) +
+  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
+          event_duration=Inf, parents="meds_event", base_p=0.0005,
+          rr_meds=5) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
+          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+          rr_meds=4)
+```
+
+## Target Estimand
+
+```{r}
+# influenza probability is the same, but unrelated to vaccination
+# (which is equal to setting vacc = FALSE)
+# BUT, uses augmented "meds" variable
+prob_influ_2 <- function(data, base_p, rr_mac, rr_meds) {
+  p <- base_p * rr_mac^(data$mac) * rr_meds^(data$meds_2_event)
+  fifelse(!data$vacc_event, as.numeric(data$influenza_event),
+          fifelse(data$vacc_event &
+                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+}
+
+# before vaccination: same as meds 
+# after vaccination, if already set to TRUE: same as meds
+# after vaccination, if not yet TRUE: sames as meds with vacc = FALSE
+prob_meds_2 <- function(data, base_p) {
+  fifelse(!data$vacc_event & data$meds_event, 1,
+          fifelse(!data$vacc_event & !data$meds_event, 0, base_p))
+}
+
+modified_dag <- empty_dag() +
+  node("mac", type="rbernoulli", p=0.2) +
+  node_td("meds", type="time_to_event", prob_fun=prob_meds,
+          event_duration=Inf, parents="vacc_event", base_p=0.001,
+          rr_vacc=4) +
+  node_td("meds_2", type="time_to_event", prob_fun=prob_meds_2,
+          parents=c("vacc_event", "meds_event"), base_p=0.001,
+          event_duration=Inf) +
+  node_td("vacc", type="time_to_event", prob_fun=prob_vacc,
+          event_duration=Inf, parents="meds_event", base_p=0.0005,
+          rr_meds=5) +
+  node_td("influenza", type="time_to_event", prob_fun=prob_influ,
+          event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
+          base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
+          rr_meds=4) +
+  node_td("influenza_2", type="time_to_event", prob_fun=prob_influ_2,
+          event_duration=20, parents=c("mac", "meds_2_event", "vacc_event",
+                                       "vacc_time", "influenza_time",
+                                       "influenza_event"),
+          base_p=0.001, rr_mac=1.5, rr_meds=4)
+
+test <- sim_discrete_time(modified_dag, n_sim=100000, max_t=365)
+
+true_target <- sim_true_estimand(modified_dag, n_sim=10000, n_repeats=500,
+                                 max_t=365, n_cores=8, seed=443, t=100)
+
+true_rr_mac <- mean(true_target$rr_mac)
+true_rr_nonmac <- mean(true_target$rr_nonmac)
+true_interact <- mean(true_target$interact)
+
+cat("True RR Mac: ", true_rr_mac, "\n")
+cat("True RR Non-Mac: ", true_rr_nonmac, "\n")
+cat("True Interaction: ", true_interact, "\n")
+```
+
+## Beispiel
+
+```{r}
+set.seed(324574546)
+sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
+
+d_treat <- get_event_times(sim, "vacc")
+d_influ <- get_event_times(sim, "influenza")
+d_meds <- get_event_times(sim, "meds")
+d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+
+dlist <- list(d_influ)
+names(dlist) <- c("influenza")
+d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                               durations=20)
+d_inclusion <- d_inclusion[influenza==FALSE]
+
+d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
+                       d_event=d_influ, d_baseline=d_baseline,
+                       keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                       replace_at_t=FALSE, verbose=FALSE)
+
+d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
+                                   d_prev=d_meds, duration=Inf, name="meds")
+
+out <- estimate_target(d_match=d_match,
+                       form_cox="Surv(event_time, status) ~ interact + meds",
+                       t=100)
+head(out)
+```
+
+## Monte-Carlo Simulation
+
+```{r}
+sim1 <- sim_matching(
+  dag=dag,
+  n_sim=5000,
+  n_repeats=300,
+  max_t=365,
+  n_cores=8,
+  seed=23452345,
+  td_variables=list(list(name="meds", duration=Inf)),
+  form_cox="Surv(event_time, status) ~ interact + meds",
+  t=100
+)
+
+plot_bias_target(sim1,
+                 true_rr_mac=true_rr_mac,
+                 true_rr_nonmac=true_rr_nonmac,
+                 true_interact=true_interact)
+```
+
+
+```{r}
+dat1 <- km2$adj
+dat1$surv_est <- surv$adj$surv
+dat1$diff <- (1 - dat1$surv) - (1 - dat1$surv_est)
+
+ggplot(dat1, aes(x=time, y=diff, color=group)) +
+  geom_line() +
+  theme_bw()
+
+```
+

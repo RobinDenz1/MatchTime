@@ -1,5 +1,5 @@
 ---
-title: "Simulation Study"
+title: "Simulation mit Hazard Ratios"
 author: "Robin Denz"
 date: "2024-09-09"
 output: html_document
@@ -19,6 +19,7 @@ library(fastmatch)
 library(data.table)
 library(dplyr)
 library(devtools)
+library(adjustedCurves)
 
 load_all()
 ```
@@ -33,11 +34,7 @@ Es werden zunächst 3 Simulationszenarien betrachtet, in denen es kein treatment
 * (2) Simulation mit zeit-konstantem Confounder
 * (3) Simulation mit zeitabhängigem Confounder
 
-Erst danach werden Simulationen mit treatment-confounder feedback durchgeführt. Dabei ist dann nicht mehr zu erwarten das die HRs aus den Cox Modellen gleich sind. Es muss dann der tatsächliche Target Estimand über eine Simulation des Target Trials bestimmt werden.
-
-# Validierungssimulationen
-
-In diesem Abschnitt zunächst die Simulationen ohne treatment-confounder feedback.
+Erst danach werden Simulationen mit treatment-confounder feedback durchgeführt. Dabei ist dann nicht mehr zu erwarten das die HRs aus den Cox Modellen gleich sind. Dies soll überprüft werden.
 
 ```{r}
 ## compare standard cox with time-dependent matching
@@ -175,7 +172,7 @@ plot_bias <- function(out, true_rr) {
 }
 ```
 
-## Kein Confounding
+# Kein Confounding
 
 Im ersten Schritt werden nur Daten zu MAC, Impfung und Influenza simuliert, ohne jede Form von Confounding.
 
@@ -199,7 +196,7 @@ set.seed(32457)
 sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
 ```
 
-### Beispiel Cox Modell
+## Beispiel Cox Modell
 
 ```{r}
 dmod <- sim2data(sim, to="start_stop", target_event="influenza",
@@ -209,7 +206,7 @@ mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc, data=dmod)
 summary(mod)
 ```
 
-### Beispiel Matching
+## Beispiel Matching
 
 ```{r}
 d_treat <- get_event_times(sim, "vacc")
@@ -230,7 +227,7 @@ mod <- coxph(Surv(event_time, status) ~ mac + .treat + mac*.treat, data=d_match)
 summary(mod)
 ```
 
-### Monte-Carlo Vergleich
+## Monte-Carlo Vergleich
 
 ```{r}
 set.seed(1344145)
@@ -250,7 +247,7 @@ true_rr <- c("mac"=1.5, "vacc"=0.5, "mac*vacc"=1.6)
 plot_bias(out, true_rr)
 ```
 
-## Time-Fixed Confounder
+# Time-Fixed Confounder
 
 Hier wird die obige Simulation erweitert, indem ein zeitunabhängiger Confounder (Sex) hnzugefügt wird. Dieser hat einen direkten kausalen Einfluss auf die Impfwahrscheinlichkeit und auf die Wahrscheinlichkeit Influenza zu bekommen.
 
@@ -322,7 +319,7 @@ mod <- coxph(Surv(event_time, status) ~ mac + .treat + mac*.treat + sex,
 summary(mod)
 ```
 
-### Monte-Carlo Vergleich
+## Monte-Carlo Vergleich
 
 ```{r}
 set.seed(13441454)
@@ -343,7 +340,7 @@ true_rr <- c("mac"=1.5, "vacc"=0.5, "mac*vacc"=1.6, "sex"=4)
 plot_bias(out, true_rr)
 ```
 
-## Time-Varying Confounder
+# Time-Varying Confounder
 
 Hier wird statt einem zeitunabhängigem Confounder ein zeitabhängiger Confounder mit simuliert. Auch dieser erhöht sowohl die Wahrscheinlichkeit geimpft zu werden, als auch die Wahrscheinlichkeit eine Influenza zu bekommen.
 
@@ -375,7 +372,7 @@ set.seed(3245767)
 sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
 ```
 
-### Cox Beispiel (ohne Adjustierung)
+## Cox Beispiel (ohne Adjustierung)
 
 ```{r}
 dmod <- sim2data(sim, to="start_stop", target_event="influenza",
@@ -385,7 +382,7 @@ mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc, data=dmod)
 summary(mod)
 ```
 
-### Cox Beispiel (mit Adjustierung)
+## Cox Beispiel (mit Adjustierung)
 
 ```{r}
 mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc + meds,
@@ -393,7 +390,7 @@ mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc + meds,
 summary(mod)
 ```
 
-### Matching Beispiel (ohne Adjustierung)
+## Matching Beispiel (ohne Adjustierung)
 
 ```{r}
 d_treat <- get_event_times(sim, "vacc")
@@ -417,7 +414,7 @@ mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac,
 summary(mod)
 ```
 
-### Matching Beispiel (mit Adjustierung)
+## Matching Beispiel (mit Adjustierung)
 
 ```{r}
 d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
@@ -428,7 +425,7 @@ mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac + meds,
 summary(mod)
 ```
 
-### Monte-Carlo Vergleich
+## Monte-Carlo Vergleich
 
 ```{r}
 set.seed(2432454)
@@ -451,101 +448,7 @@ plot_bias(out, true_rr)
 
 Was hier auffällt ist, dass das HR des zeitabhängigen Confounders beim Matching unterschätzt wird. Das liegt daran, dass dieser nur als zeitunabhängige Variable mit ins Modell geht. Sprich, wenn eine Person zum Studieneinschluss noch FALSE bei dieser Variable hatte, aber zu einem späteren Zeitpunkt TRUE hat, wird dies nicht berücksichtigt. Damit gehen einige Zeiträume mit erhöhtem Risiko durch "meds" als Zeiträume unter nicht-"meds" in das Modell ein. Das hat (wie in der Simulation zu sehen ist) aber keinen Einfluss auf die korrekte Schätzung der relevanten HRs. Das Confounding wird korrekt weg-adjustiert, wie erwartet. Nur der Effekt der "meds" selbst ist verzerrt.
 
-# Simulation mit Treatment-Confounder Feedback
-
-```{r}
-## compare standard cox with time-dependent matching
-sim_comp2 <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
-                      td_variables=NULL, ...) {
-
-  # parallel processing
-  cl <- makeCluster(n_cores, outfile="")
-  doSNOW::registerDoSNOW(cl)
-  pckgs <- c("data.table", "simDAG", "survival", "MatchTD", "adjustedCurves")
-  glob_funs <- ls(envir=.GlobalEnv)[sapply(ls(envir=.GlobalEnv), function(obj)
-    "function"==class(eval(parse(text=obj)))[1])]
-
-  # add progress bar
-  pb <- txtProgressBar(max=n_repeats, style=3)
-  progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress=progress)
-
-  # start simulation
-  set.seed(seed)
-  out_final <- foreach::foreach(i=seq_len(n_repeats), .packages=pckgs,
-                          .export=glob_funs, .options.snow=opts) %dorng% {
-
-    # generate the data
-    sim <- sim_discrete_time(dag, n_sim=n_sim, max_t=max_t)
-
-    #### time-dependent matching based estimates ####
-
-    # extract required data
-    d_treat <- get_event_times(sim, "vacc")
-    d_influ <- get_event_times(sim, "influenza")
-    d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
-
-    # construct inclusion criteria start-stop
-    dlist <- list(d_influ)
-    names(dlist) <- c("influenza")
-    d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
-                                             max_t=max_t, durations=20)
-    d_inclusion <- d_inclusion[influenza==FALSE]
-
-    # perform the matching
-    d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                           d_event=d_influ, d_baseline=d_baseline,
-                           keep_all_column=TRUE, d_inclusion=d_inclusion,
-                           ...)
-
-    # add information about time-dependent covariates
-    if (length(td_variables) > 0) {
-
-      for (i in seq_len(length(td_variables))) {
-
-        d_temp <- get_event_times(sim, td_variables[[i]]$name)
-
-        d_match <- MatchTD:::add_previous_event_time(
-          data=d_match,
-          d_prev=d_temp,
-          id=".id",
-          time=".time",
-          duration=td_variables[[i]]$duration,
-          name=td_variables[[i]]$name
-        )
-      }
-    }
-
-    d_match[, interact := factor(interaction(.treat, mac))]
-    mod <- coxph(formula=Surv(event_time, status) ~ interact + meds,
-                 data=d_match, x=TRUE)
-
-    km <- adjustedsurv(data=d_match,
-                       variable="interact",
-                       ev_time="event_time",
-                       event="status",
-                       method="direct",
-                       times=100,
-                       outcome_model=mod)
-
-    p_00 <- 1 - km$adj$surv[km$adj$group=="FALSE.FALSE"]
-    p_11 <- 1 - km$adj$surv[km$adj$group=="TRUE.TRUE"]
-    p_01 <- 1 - km$adj$surv[km$adj$group=="FALSE.TRUE"]
-    p_10 <- 1 - km$adj$surv[km$adj$group=="TRUE.FALSE"]
-
-    out_i <- data.table(rr_mac=p_11 / p_01,
-                        rr_nonmac=p_10 / p_00)
-
-    out_i
-  }
-  close(pb)
-  stopCluster(cl)
-
-  return(rbindlist(out_final))
-}
-```
-
-## Vergleich der Hazard-Ratios
+# Treatment-Confounder Feedback
 
 Wenn treatment-confounder feedback existiert und man schlicht ein einfaches Cox Modell mit start-stop Daten verwendet, wird ein teil des totalen kausalen Effekts weg-adjustiert: nämlich der indirekte Effekt der über die Variable geht welche sowohl Confounder als auch Mediator ist. Dieses Problem sollte beim zeitabhängigen Matching nicht vorliegen. Demnach müssten sich die HRs der beiden Methoden unterscheiden. Dies wird zunächst hier überprüft.
 
@@ -583,7 +486,7 @@ set.seed(32457656)
 sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
 ```
 
-### Cox Beispiel (ohne Adjustierung)
+## Cox Beispiel (ohne Adjustierung)
 
 ```{r}
 dmod <- sim2data(sim, to="start_stop", target_event="influenza",
@@ -593,7 +496,7 @@ mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc, data=dmod)
 summary(mod)
 ```
 
-### Cox Beispiel (mit Adjustierung)
+## Cox Beispiel (mit Adjustierung)
 
 ```{r}
 mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc + meds,
@@ -601,7 +504,7 @@ mod <- coxph(Surv(start, stop, influenza) ~ mac + vacc + mac*vacc + meds,
 summary(mod)
 ```
 
-### Matching Beispiel (ohne Adjustierung)
+## Matching Beispiel (ohne Adjustierung)
 
 ```{r}
 d_treat <- get_event_times(sim, "vacc")
@@ -625,7 +528,7 @@ mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac,
 summary(mod)
 ```
 
-### Matching Beispiel (mit Adjustierung)
+## Matching Beispiel (mit Adjustierung)
 
 ```{r}
 d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
@@ -636,7 +539,7 @@ mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac + meds,
 summary(mod)
 ```
 
-### Monte-Carlo Vergleich
+## Monte-Carlo Vergleich
 
 ```{r}
 set.seed(2432454)
@@ -656,143 +559,3 @@ out <- sim_comp(
 true_rr <- c("mac"=1.5, "vacc"=0.5, "mac*vacc"=1.6, "meds"=4)
 plot_bias(out, true_rr)
 ```
-
-# Weiteres
-
-```{r}
-prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
-                       rr_meds) {
-  base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
-    rr_vacc_nonmac^(data$vacc_event & !data$mac) * rr_meds^(data$meds_event)
-}
-
-prob_meds <- function(data, base_p, rr_vacc) {
-  base_p * rr_vacc^(data$vacc_event)
-}
-
-
-
-
-
-sim_true_estimand <- function(n_sim, n_repeats, max_t, n_cores,
-                              seed=runif(1)) {
-
-  # parallel processing
-  cl <- makeCluster(n_cores, outfile="")
-  doSNOW::registerDoSNOW(cl)
-  pckgs <- c("data.table", "simDAG", "survival", "MatchTD", "adjustedCurves")
-  glob_funs <- ls(envir=.GlobalEnv)[sapply(ls(envir=.GlobalEnv), function(obj)
-    "function"==class(eval(parse(text=obj)))[1])]
-
-  # add progress bar
-  pb <- txtProgressBar(max=n_repeats, style=3)
-  progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress=progress)
-
-  # start simulation
-  set.seed(seed)
-  out_final <- foreach::foreach(i=seq_len(n_repeats), .packages=pckgs,
-                          .export=glob_funs, .options.snow=opts) %dorng% {
-    
-    #seed_i <- runif(1)                        
-    
-    dag <- empty_dag() +
-      node("mac", type="rbernoulli", p=0.2) +
-      node_td("meds", type="time_to_event", prob_fun=prob_meds,
-              event_duration=Inf, parents="vacc_event", base_p=0.001,
-              rr_vacc=4) +
-      node_td("vacc", type="time_to_event", prob_fun=1,
-              event_duration=Inf) +
-      node_td("influenza", type="time_to_event", prob_fun=prob_influ,
-              event_duration=Inf, parents=c("mac", "vacc_event",
-                                            "meds_event"),
-              base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8,
-              rr_vacc_nonmac=0.5, rr_meds=4)
-
-
-    #set.seed(seed_i)
-    sim1 <- sim_discrete_time(dag=dag, n_sim=n_sim, max_t=max_t)
-
-    dag <- empty_dag() +
-      node("mac", type="rbernoulli", p=0.2) +
-      node_td("meds", type="time_to_event", prob_fun=prob_meds,
-          event_duration=Inf, parents="vacc_event", base_p=0.001,
-          rr_vacc=4) +
-      node_td("vacc", type="time_to_event", prob_fun=0,
-          event_duration=Inf) +
-      node_td("influenza", type="time_to_event", prob_fun=prob_influ,
-              event_duration=Inf, parents=c("mac", "vacc_event",
-                                            "meds_event"),
-              base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
-              rr_meds=4)
-
-    #set.seed(seed_i)
-    sim0 <- sim_discrete_time(dag=dag, n_sim=n_sim, max_t=max_t)
-
-    d0 <- sim0$data
-    d1 <- sim1$data
-    d_target <- rbind(d0, d1)
-
-    d_target[is.na(influenza_time), influenza_time := max_t]
-    d_target[, interact := factor(interaction(vacc_event, mac))]
-
-    km <- adjustedsurv(data=d_target,
-                       variable="interact",
-                       ev_time="influenza_time",
-                       event="influenza_event",
-                       method="km",
-                       times=100)
-
-    # p_vacc_mac
-    p_00 <- 1 - km$adj$surv[km$adj$group=="FALSE.FALSE"]
-    p_11 <- 1 - km$adj$surv[km$adj$group=="TRUE.TRUE"]
-    p_01 <- 1 - km$adj$surv[km$adj$group=="FALSE.TRUE"]
-    p_10 <- 1 - km$adj$surv[km$adj$group=="TRUE.FALSE"]
-
-    rr_mac <- p_11 / p_01
-    rr_nonmac <- p_10 / p_00
-
-    out_i <- data.table(rr_mac=rr_mac,
-                        rr_nonmac=rr_nonmac,
-                        interact=(1 - rr_mac) / (1 - rr_nonmac))
-    out_i
-  }
-  close(pb)
-  stopCluster(cl)
-
-  return(rbindlist(out_final))
-}
-
-test <- sim_true_estimand(n_sim=10000, n_repeats=500, max_t=365,
-                          n_cores=5, seed=443)
-
-true_rr_mac <- mean(test$rr_mac)
-true_rr_nonmac <- mean(test$rr_nonmac)
-true_interact <- mean(test$interact)
-
-
-sim1 <- sim_comp2(dag=dag,
-                  n_sim=10000,
-                  max_t=365,
-                  n_repeats=500,
-                  n_cores=5,
-                  td_variables=list(list(name="meds", duration=Inf)))
-
-sim1[, interact := (1 - rr_mac) / (1 - rr_nonmac)]
-
-true_rr <- data.table(variable=c("rr_mac", "rr_nonmac", "interact"),
-                      true_val=c(true_rr_mac, true_rr_nonmac,
-                                 true_interact))
-
-plotdata <- melt(sim1)
-plotdata <- merge(plotdata, true_rr, by="variable")
-plotdata[, bias := value - true_val]
-
-ggplot(plotdata, aes(x=variable, y=bias, fill=variable)) +
-  geom_boxplot() +
-  geom_hline(yintercept=0, linetype="dashed") +
-  theme_bw() +
-  theme(legend.position="none") + 
-  ylim(c(-1, 1))
-```
-
