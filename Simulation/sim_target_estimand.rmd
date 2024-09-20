@@ -131,16 +131,18 @@ get_data_01 <- function(sim, d_influ) {
 
   # keep only those who fit inclusion criteria at vaccination
   d1 <- MatchTD:::add_previous_event_time(d1, d_influ, id=".id", time=".time",
-                                duration=20, name="prev_influenza")
+                                duration=20, name="prev_influenza",
+                                include_same_t=FALSE)
   d1 <- subset(d1, !prev_influenza)
 
   # add information on next influenza time
-  d1 <- MatchTD:::add_next_event_time(d1, d_influ, id=".id", time=".time")
+  d1 <- MatchTD:::add_next_event_time(d1, d_influ, id=".id", time=".time",
+                                      include_same_t=TRUE)
 
   # get event time and status
-  d1[, event_time := .next_event_time - .treat_time]
+  d1[, event_time := (.next_event_time - .treat_time) + 1]
   d1[, status := !is.na(event_time)]
-  d1[is.na(event_time), event_time := 365 - .treat_time]
+  d1[is.na(event_time), event_time := (365 - .treat_time) + 1]
   d1 <- d1[, c(".id", "mac", "event_time", "status"), with=FALSE]
   
   return(d1)
@@ -175,21 +177,26 @@ sim_matching <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
 
     # extract required data
     d_treat <- get_event_times(sim, "vacc")
-    d_influ <- get_event_times(sim, "influenza")
+    d_event <- get_event_times(sim, "influenza")
     d_baseline <- sim$data[, c(".id", baseline_vars), with=FALSE]
+    d_baseline[, start := 1]
+    d_baseline[, stop := max_t]
 
     # construct inclusion criteria start-stop
-    dlist <- list(d_influ)
+    d_event2 <- copy(d_event)
+    d_event2[, .time := .time + 1]
+
+    dlist <- list(d_event2)
     names(dlist) <- c("influenza")
     d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
-                                             max_t=max_t, durations=20)
+                                             max_t=max_t, durations=20-1)
     d_inclusion <- d_inclusion[influenza==FALSE]
 
     # perform the matching
-    d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                           d_event=d_influ, d_baseline=d_baseline,
-                           keep_all_column=TRUE, d_inclusion=d_inclusion,
-                           ...)
+    d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                        d_event=d_event, d_covars=d_baseline,
+                        keep_all_column=TRUE, d_inclusion=d_inclusion,
+                        ...)
 
     # add information about time-dependent covariates
     if (length(td_variables) > 0) {
@@ -204,10 +211,17 @@ sim_matching <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
           id=".id",
           time=".time",
           duration=td_variables[[i]]$duration,
-          name=td_variables[[i]]$name
+          name=td_variables[[i]]$name,
+          include_same_t=TRUE
         )
       }
     }
+    
+    # increase even_time by 1
+    # NOTE: consider this: an event happens at the same day as the vaccination
+    #       since the event is dependent on the vaccination at the same day,
+    #       this should count towards the hazard. By adding 1 this happens.
+    d_match[, event_time := event_time + 1]
     
     # get target estimand
     out_i <- estimate_target(d_match=d_match,
@@ -239,23 +253,57 @@ get_event_times <- function(sim, name) {
 }
 
 ## using matched data, get target estimand
-estimate_target <- function(d_match, form_cox, t) {
+estimate_target <- function(d_match, form_cox, t, method="g_cox") {
   
   # create interaction
   d_match[, interact := factor(interaction(.treat, mac))]
   
-  # fit cox model
-  formula <- stats::as.formula(form_cox)
-  mod <- coxph(formula=formula, data=d_match, x=TRUE)
+  if (method=="g_cox") {
+    # fit cox model
+    formula <- stats::as.formula(form_cox)
+    mod <- coxph(formula=formula, data=d_match, x=TRUE)
   
-  # estimate (adjusted) survival probability at t
-  surv <- adjustedsurv(data=d_match,
-                       variable="interact",
-                       ev_time="event_time",
-                       event="status",
-                       method="direct",
-                       times=t,
-                       outcome_model=mod)
+    # estimate (adjusted) survival probability at t
+    surv <- adjustedsurv(data=d_match,
+                         variable="interact",
+                         ev_time="event_time",
+                         event="status",
+                         method="direct",
+                         times=t,
+                         outcome_model=mod)
+      
+  } else if (method=="g_aalen") {
+    # fit aalen additive hazards model
+    formula <- stats::as.formula(form_cox)
+    mod <- timereg::aalen(Surv(event_time, status) ~ interact + meds, data=d_match)
+    
+    # estimate (adjusted) survival probability at t
+    surv <- adjustedsurv(data=d_match,
+                         variable="interact",
+                         ev_time="event_time",
+                         event="status",
+                         method="direct",
+                         times=t,
+                         outcome_model=mod)
+  } else if (method=="iptw") {
+    
+    mod <- nnet::multinom(interact ~ meds, data=d_match)
+    
+    surv <- adjustedsurv(data=d_match,
+                         variable="interact",
+                         ev_time="event_time",
+                         event="status",
+                         method="iptw_km",
+                         times=t,
+                         treatment_model=mod)
+  } else if (method=="km") {
+    surv <- adjustedsurv(data=d_match,
+                         variable="interact",
+                         ev_time="event_time",
+                         event="status",
+                         method="km",
+                         times=t)
+  }
   
   # transform to target estimand
   p_00 <- 1 - surv$adj$surv[surv$adj$group=="FALSE.FALSE"]
@@ -316,7 +364,7 @@ prob_influ_2 <- function(data, base_p, rr_mac) {
   p <- base_p * rr_mac^(data$mac)
   fifelse(!data$vacc_event, as.numeric(data$influenza_event),
           fifelse(data$vacc_event &
-                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+                  (data$vacc_time - data$influenza_time) > 0, 1, p, na=p))
 }
 
 modified_dag <- empty_dag() +
@@ -332,7 +380,7 @@ modified_dag <- empty_dag() +
           base_p=0.01, rr_mac=1.5)
 
 true_target <- sim_true_estimand(modified_dag, n_sim=50000, n_repeats=500,
-                                 max_t=365, n_cores=7, seed=443, t=100)
+                                 max_t=365, n_cores=8, seed=443, t=100)
 
 true_rr_mac <- mean(true_target$rr_mac)
 true_rr_nonmac <- mean(true_target$rr_nonmac)
@@ -352,20 +400,27 @@ Hier zeigt sich direkt, dass die zeitabhängigen RR nicht den Hazard-Ratios ents
 set.seed(32457)
 sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
 
-# perform matching
+# extract data
 d_treat <- get_event_times(sim, "vacc")
 d_event <- get_event_times(sim, "influenza")
 d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
 
-dlist <- list(d_event)
+# construct inclusion criteria start-stop
+d_event2 <- copy(d_event)
+d_event2[, .time := .time + 1]
+
+dlist <- list(d_event2)
 names(dlist) <- c("influenza")
 d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
-                                         max_t=365, durations=20)
+                                         max_t=365, durations=20-1)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_baseline=d_baseline, d_event=d_event,
-                       d_inclusion=d_inclusion, verbose=FALSE)
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_covars=d_baseline, d_event=d_event,
+                    d_inclusion=d_inclusion, verbose=FALSE)
+d_match[, event_time := event_time + 1]
 
 out <- estimate_target(d_match=d_match, t=100,
                        form_cox=Surv(event_time, status) ~ interact)
@@ -378,7 +433,7 @@ head(out)
 sim1 <- sim_matching(
   dag=dag,
   n_sim=5000,
-  n_repeats=300,
+  n_repeats=500,
   max_t=365,
   n_cores=8,
   seed=23452345,
@@ -426,7 +481,7 @@ prob_influ_2 <- function(data, base_p, rr_mac, rr_sex) {
   p <- base_p * rr_mac^(data$mac) * rr_sex^(data$sex)
   fifelse(!data$vacc_event, as.numeric(data$influenza_event),
           fifelse(data$vacc_event &
-                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+                  (data$vacc_time - data$influenza_time) > 0, 1, p, na=p))
 }
 
 modified_dag <- empty_dag() +
@@ -463,21 +518,26 @@ Wichtig zu beachten: Die Werte sind nicht gleich denen oben da hier eine andere 
 
 ```{r}
 set.seed(324574)
-sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
+sim <- sim_discrete_time(dag, n_sim=1000000, max_t=365)
 
 d_treat <- get_event_times(sim, "vacc")
 d_event <- get_event_times(sim, "influenza")
 d_baseline <- sim$data[, c(".id", "mac", "sex"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
 
-dlist <- list(d_event)
+d_event2 <- copy(d_event)
+d_event2[, .time := .time + 1]
+
+dlist <- list(d_event2)
 names(dlist) <- c("influenza")
-d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
-                                         max_t=365, durations=20)
+d_inclusion <- MatchTD:::list2start_stop(dlist=dlist, n=nrow(d_baseline),
+                                         max_t=365, durations=20-1)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_baseline=d_baseline, d_event=d_event,
-                       d_inclusion=d_inclusion, verbose=FALSE)
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_covars=d_baseline, d_event=d_event,
+                    d_inclusion=d_inclusion, verbose=FALSE)
 
 out <- estimate_target(d_match=d_match,
                        form_cox="Surv(event_time, status) ~ interact + sex",
@@ -540,7 +600,7 @@ prob_influ_2 <- function(data, base_p, rr_mac, rr_meds) {
   p <- base_p * rr_mac^(data$mac) * rr_meds^(data$meds_event)
   fifelse(!data$vacc_event, as.numeric(data$influenza_event),
           fifelse(data$vacc_event &
-                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+                  (data$vacc_time - data$influenza_time) > 0, 1, p, na=p))
 }
 
 modified_dag <- empty_dag() +
@@ -571,30 +631,74 @@ cat("True RR Non-Mac: ", true_rr_nonmac, "\n")
 cat("True Interaction: ", true_interact, "\n")
 ```
 
-## Beispiel
-
 ```{r}
 set.seed(3245745)
-sim <- sim_discrete_time(dag, n_sim=1000000, max_t=365)
+sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
+```
 
+## Beispiel ohne Matching auf zeitabhängige Variable
+
+```{r}
 d_treat <- get_event_times(sim, "vacc")
-d_influ <- get_event_times(sim, "influenza")
+d_event <- get_event_times(sim, "influenza")
+d_meds <- get_event_times(sim, "meds")
+d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
+
+d_event2 <- copy(d_event)
+d_event2[, .time := .time + 1]
+
+dlist <- list(d_event2)
+names(dlist) <- c("influenza")
+d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                               durations=20-1)
+d_inclusion <- d_inclusion[influenza==FALSE]
+
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_event=d_event, d_covars=d_baseline,
+                    keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                    replace_at_t=FALSE, verbose=TRUE)
+
+d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
+                                   d_prev=d_meds, duration=Inf, name="meds",
+                                   include_same_t=TRUE)
+
+out <- estimate_target(d_match=d_match,
+                       form_cox="Surv(event_time, status) ~ interact + meds",
+                       t=100)
+head(out)
+```
+
+## Beispiel mit Matching auf zeitabhängige Variable
+
+```{r}
+d_treat <- get_event_times(sim, "vacc")
+d_event <- get_event_times(sim, "influenza")
 d_meds <- get_event_times(sim, "meds")
 d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
 
-dlist <- list(d_influ)
+## d_covars
+dlist <- list(d_meds)
+names(dlist) <- c("meds")
+d_covars <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                            durations=Inf)
+d_covars <- merge(d_covars, d_baseline, by=".id", all.x=TRUE)
+
+## inclusion
+d_event2 <- copy(d_event)
+d_event2[, .time := .time + 1]
+
+dlist <- list(d_event2)
 names(dlist) <- c("influenza")
 d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
-                               durations=20)
+                               durations=20-1)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_event=d_influ, d_baseline=d_baseline,
-                       keep_all_columns=TRUE, d_inclusion=d_inclusion,
-                       replace_at_t=FALSE, verbose=FALSE)
-
-d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
-                                   d_prev=d_meds, duration=Inf, name="meds")
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_event=d_event, d_covars=d_covars,
+                    keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                    replace_at_t=FALSE, verbose=TRUE)
 
 out <- estimate_target(d_match=d_match,
                        form_cox="Surv(event_time, status) ~ interact + meds",
@@ -616,18 +720,11 @@ sim1 <- sim_matching(
   form_cox="Surv(event_time, status) ~ interact + meds",
   t=100
 )
-sim2 <- sim1
-sim2$interact <- NULL
-plot_bias_target(sim2,
+
+plot_bias_target(sim1,
                  true_rr_mac=true_rr_mac,
                  true_rr_nonmac=true_rr_nonmac,
                  true_interact=true_interact)
-
-ggplot(sim1, aes(x=rr_mac)) +
-  geom_histogram() +
-  geom_vline(xintercept=median(true_target$rr_mac)) +
-  geom_vline(xintercept=mean(sim1$rr_mac), linetype="dashed") +
-  geom_vline(xintercept=median(sim1$rr_mac), linetype="dotted")
 ```
 
 
@@ -672,7 +769,7 @@ prob_influ_2 <- function(data, base_p, rr_mac, rr_meds) {
   p <- base_p * rr_mac^(data$mac) * rr_meds^(data$meds_2_event)
   fifelse(!data$vacc_event, as.numeric(data$influenza_event),
           fifelse(data$vacc_event &
-                  (data$vacc_time - data$influenza_time) > 1, 1, p, na=p))
+                  (data$vacc_time - data$influenza_time) > 0, 1, p, na=p))
 }
 
 # before vaccination: same as meds 
@@ -704,8 +801,6 @@ modified_dag <- empty_dag() +
                                        "influenza_event"),
           base_p=0.001, rr_mac=1.5, rr_meds=4)
 
-test <- sim_discrete_time(modified_dag, n_sim=100000, max_t=365)
-
 true_target <- sim_true_estimand(modified_dag, n_sim=10000, n_repeats=500,
                                  max_t=365, n_cores=8, seed=443, t=100)
 
@@ -718,30 +813,74 @@ cat("True RR Non-Mac: ", true_rr_nonmac, "\n")
 cat("True Interaction: ", true_interact, "\n")
 ```
 
-## Beispiel
-
 ```{r}
 set.seed(324574546)
 sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
+```
 
+## Beispiel ohne Matching auf zeitabhängige Variable
+
+```{r}
 d_treat <- get_event_times(sim, "vacc")
-d_influ <- get_event_times(sim, "influenza")
+d_event <- get_event_times(sim, "influenza")
+d_meds <- get_event_times(sim, "meds")
+d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
+
+d_event2 <- copy(d_event)
+d_event2[, .time := .time + 1]
+
+dlist <- list(d_event2)
+names(dlist) <- c("influenza")
+d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                               durations=20-1)
+d_inclusion <- d_inclusion[influenza==FALSE]
+
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_event=d_event, d_covars=d_baseline,
+                    keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                    replace_at_t=FALSE, verbose=TRUE)
+
+d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
+                                   d_prev=d_meds, duration=Inf, name="meds",
+                                   include_same_t=TRUE)
+
+out <- estimate_target(d_match=d_match,
+                       form_cox="Surv(event_time, status) ~ interact + meds",
+                       t=100)
+head(out)
+```
+
+## Beispiel mit Matching auf zeitabhängige Variable
+
+```{r}
+d_treat <- get_event_times(sim, "vacc")
+d_event <- get_event_times(sim, "influenza")
 d_meds <- get_event_times(sim, "meds")
 d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
 
-dlist <- list(d_influ)
+## d_covars
+dlist <- list(d_meds)
+names(dlist) <- c("meds")
+d_covars <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                            durations=Inf)
+d_covars <- merge(d_covars, d_baseline, by=".id", all.x=TRUE)
+
+## inclusion
+d_event2 <- copy(d_event)
+d_event2[, .time := .time + 1]
+
+dlist <- list(d_event2)
 names(dlist) <- c("influenza")
 d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
-                               durations=20)
+                               durations=20-1)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_event=d_influ, d_baseline=d_baseline,
-                       keep_all_columns=TRUE, d_inclusion=d_inclusion,
-                       replace_at_t=FALSE, verbose=FALSE)
-
-d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
-                                   d_prev=d_meds, duration=Inf, name="meds")
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_event=d_event, d_covars=d_covars,
+                    keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                    replace_at_t=FALSE, verbose=TRUE)
 
 out <- estimate_target(d_match=d_match,
                        form_cox="Surv(event_time, status) ~ interact + meds",
@@ -769,16 +908,3 @@ plot_bias_target(sim1,
                  true_rr_nonmac=true_rr_nonmac,
                  true_interact=true_interact)
 ```
-
-
-```{r}
-dat1 <- km2$adj
-dat1$surv_est <- surv$adj$surv
-dat1$diff <- (1 - dat1$surv) - (1 - dat1$surv_est)
-
-ggplot(dat1, aes(x=time, y=diff, color=group)) +
-  geom_line() +
-  theme_bw()
-
-```
-

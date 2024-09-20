@@ -16,9 +16,20 @@ list2start_stop <- function(dlist, n, max_t, durations, ...) {
   # construct fake tte_past_events object
   tte_past_events <- vector(mode="list", length=length(names))
   for (i in seq_len(length(names))) {
-    tte_past_events[[i]] <- lapply(split(dlist[[i]], by=".time", sorted=TRUE),
-                                   function(x) {x$.id})
-    names(tte_past_events[[i]]) <- NULL
+
+    # split by .time
+    splitted <- split(dlist[[i]], by=".time", sorted=TRUE)
+
+    out_ij <- vector(mode="list", length=max_t)
+    names(out_ij) <- paste(seq_len(max_t))
+    for (j in seq_len(max_t)) {
+      t_name <- as.character(j)
+
+      if (t_name %fin% names(splitted)) {
+        out_ij[[t_name]] <- splitted[[t_name]]$.id
+      }
+    }
+    tte_past_events[[i]] <- out_ij
   }
   names(tte_past_events) <- names
 

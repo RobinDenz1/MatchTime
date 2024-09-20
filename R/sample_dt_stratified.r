@@ -33,9 +33,8 @@ sample_dt_stratified <- function(data, n, strata, replace=FALSE,
     } else if (if_lt_n=="warn") {
       warning("Ignoring strata: ", not_in_dt, " because there are no rows with",
               " such strata in 'data'.")
-    } else {
-      n <- n[!names(n) %fin% not_in_dt]
     }
+    n <- n[!names(n) %fin% not_in_dt]
   }
 
   # in case the strata specified by n do not include all strata in data

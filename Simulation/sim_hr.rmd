@@ -40,7 +40,7 @@ Erst danach werden Simulationen mit treatment-confounder feedback durchgeführt.
 ## compare standard cox with time-dependent matching
 sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
                      formula_cox, formula_matching, td_variables=NULL,
-                     baseline_covars=c("mac"), ...) {
+                     baseline_covars=c("mac"), progressbar=TRUE, ...) {
 
   # parallel processing
   cl <- makeCluster(n_cores, outfile="")
@@ -50,14 +50,24 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
     "function"==class(eval(parse(text=obj)))[1])]
 
   # add progress bar
-  pb <- txtProgressBar(max=n_repeats, style=3)
-  progress <- function(n) setTxtProgressBar(pb, n)
-  opts <- list(progress=progress)
-
+  if (progressbar) {
+    pb <- utils::txtProgressBar(max=n_repeats, style=3)
+    progress <- function(n) {utils::setTxtProgressBar(pb, n)}
+    opts <- list(progress=progress)
+  } else {
+    opts <- NULL
+  }
+  
+  if (n_cores==1) {
+    `%dofun%` <- `%do%`
+  } else {
+    `%dofun%` <- `%dorng%`
+  }
+  
   # start simulation
   set.seed(seed)
   out_final <- foreach::foreach(i=seq_len(n_repeats), .packages=pckgs,
-                          .export=glob_funs, .options.snow=opts) %dorng% {
+                          .export=glob_funs, .options.snow=opts) %dofun% {
 
     # generate the data
     sim <- sim_discrete_time(dag, n_sim=n_sim, max_t=max_t)
@@ -75,11 +85,38 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
     out_1$type <- "cox"
 
     #### time-dependent matching based estimates ####
-
+    
     # extract required data
     d_treat <- get_event_times(sim, "vacc")
     d_influ <- get_event_times(sim, "influenza")
     d_baseline <- sim$data[, c(".id", baseline_covars), with=FALSE]
+    
+    # add information about time-dependent covariates
+    if (length(td_variables) > 0) {
+      
+      td_names <- vapply(td_variables, FUN=function(x){x$name},
+                         FUN.VALUE=character(1))
+      durations <- vapply(td_variables, FUN=function(x){x$duration},
+                         FUN.VALUE=numeric(1))
+      
+      # create dlist
+      dlist <- lapply(td_names, FUN=function(x, sim){
+        get_event_times(sim=sim, name=x)}, sim=sim)
+      names(dlist) <- td_names
+      
+      # create start-stop data
+      d_covars <- MatchTD:::list2start_stop(dlist,
+                                            n=nrow(d_baseline),
+                                            max_t=max_t,
+                                            durations=durations)
+      # merge with baseline info
+      d_covars <- merge(d_covars, d_baseline, by=".id", all.x=TRUE)
+      
+    } else {
+      d_covars <- d_baseline
+      d_covars[, start := 1]
+      d_covars[, stop := max_t]
+    }
 
     # construct inclusion criteria start-stop
     dlist <- list(d_influ)
@@ -89,28 +126,9 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
     d_inclusion <- d_inclusion[influenza==FALSE]
 
     # perform the matching
-    d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                           d_event=d_influ, d_baseline=d_baseline,
-                           keep_all_column=TRUE, d_inclusion=d_inclusion,
-                           ...)
-
-    # add information about time-dependent covariates
-    if (length(td_variables) > 0) {
-
-      for (i in seq_len(length(td_variables))) {
-
-        d_temp <- get_event_times(sim, td_variables[[i]]$name)
-
-        d_match <- MatchTD:::add_previous_event_time(
-          data=d_match,
-          d_prev=d_temp,
-          id=".id",
-          time=".time",
-          duration=td_variables[[i]]$duration,
-          name=td_variables[[i]]$name
-        )
-      }
-    }
+    d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                        d_event=d_influ, d_covars=d_covars,
+                        keep_all_column=TRUE, d_inclusion=d_inclusion, ...)
 
     # fit cox model
     form <- stats::as.formula(formula_matching)
@@ -176,7 +194,7 @@ plot_bias <- function(out, true_rr) {
 
 Im ersten Schritt werden nur Daten zu MAC, Impfung und Influenza simuliert, ohne jede Form von Confounding.
 
-```{r}
+```{r, echo=TRUE}
 prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac) {
   base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
     rr_vacc_nonmac^(data$vacc_event & !data$mac)
@@ -189,6 +207,8 @@ dag <- empty_dag() +
   node_td("influenza", type="time_to_event", prob_fun=prob_influ,
           event_duration=20, parents=c("mac", "vacc_event"),
           base_p=0.01, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5)
+
+plot(dag)
 ```
 
 ```{r}
@@ -212,6 +232,8 @@ summary(mod)
 d_treat <- get_event_times(sim, "vacc")
 d_event <- get_event_times(sim, "influenza")
 d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
 
 dlist <- list(d_event)
 names(dlist) <- c("influenza")
@@ -219,9 +241,9 @@ d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
                                          max_t=365, durations=20)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_baseline=d_baseline, d_event=d_event,
-                       d_inclusion=d_inclusion, verbose=FALSE)
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_covars=d_baseline, d_event=d_event,
+                    d_inclusion=d_inclusion, verbose=FALSE)
 
 mod <- coxph(Surv(event_time, status) ~ mac + .treat + mac*.treat, data=d_match)
 summary(mod)
@@ -240,7 +262,8 @@ out <- sim_comp(
   n_cores=8,
   if_lt_n_at_t="warn",
   formula_cox="Surv(start, stop, influenza) ~ mac + vacc + mac*vacc",
-  formula_matching="Surv(event_time, status) ~ mac + .treat + mac*.treat"
+  formula_matching="Surv(event_time, status) ~ mac + .treat + mac*.treat",
+  progressbar=FALSE
 )
 
 true_rr <- c("mac"=1.5, "vacc"=0.5, "mac*vacc"=1.6)
@@ -251,7 +274,7 @@ plot_bias(out, true_rr)
 
 Hier wird die obige Simulation erweitert, indem ein zeitunabhängiger Confounder (Sex) hnzugefügt wird. Dieser hat einen direkten kausalen Einfluss auf die Impfwahrscheinlichkeit und auf die Wahrscheinlichkeit Influenza zu bekommen.
 
-```{r}
+```{r, echo=TRUE}
 prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
                        rr_sex) {
   base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
@@ -272,6 +295,7 @@ dag <- empty_dag() +
           event_duration=20, parents=c("mac", "vacc_event", "sex"),
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_sex=4)
+plot(dag)
 ```
 
 ```{r}
@@ -303,6 +327,8 @@ summary(mod)
 d_treat <- get_event_times(sim, "vacc")
 d_event <- get_event_times(sim, "influenza")
 d_baseline <- sim$data[, c(".id", "mac", "sex"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
 
 dlist <- list(d_event)
 names(dlist) <- c("influenza")
@@ -310,9 +336,9 @@ d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
                                          max_t=365, durations=20)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_baseline=d_baseline, d_event=d_event,
-                       d_inclusion=d_inclusion, verbose=FALSE)
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_covars=d_baseline, d_event=d_event,
+                    d_inclusion=d_inclusion, verbose=FALSE)
 
 mod <- coxph(Surv(event_time, status) ~ mac + .treat + mac*.treat + sex,
              data=d_match)
@@ -333,7 +359,8 @@ out <- sim_comp(
   if_lt_n_at_t="warn",
   formula_cox="Surv(start, stop, influenza) ~ mac + vacc + mac*vacc + sex",
   formula_matching="Surv(event_time, status) ~ mac + .treat + mac*.treat + sex",
-  baseline_covars=c("mac", "sex")
+  baseline_covars=c("mac", "sex"),
+  progressbar=FALSE
 )
 
 true_rr <- c("mac"=1.5, "vacc"=0.5, "mac*vacc"=1.6, "sex"=4)
@@ -344,7 +371,7 @@ plot_bias(out, true_rr)
 
 Hier wird statt einem zeitunabhängigem Confounder ein zeitabhängiger Confounder mit simuliert. Auch dieser erhöht sowohl die Wahrscheinlichkeit geimpft zu werden, als auch die Wahrscheinlichkeit eine Influenza zu bekommen.
 
-```{r}
+```{r, echo=TRUE}
 prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
                        rr_meds) {
   base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
@@ -365,6 +392,7 @@ dag <- empty_dag() +
           event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_meds=4)
+plot(dag)
 ```
 
 ```{r}
@@ -397,6 +425,8 @@ d_treat <- get_event_times(sim, "vacc")
 d_influ <- get_event_times(sim, "influenza")
 d_meds <- get_event_times(sim, "meds")
 d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
 
 dlist <- list(d_influ)
 names(dlist) <- c("influenza")
@@ -404,17 +434,17 @@ d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
                                durations=20)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_event=d_influ, d_baseline=d_baseline,
-                       keep_all_columns=TRUE, d_inclusion=d_inclusion,
-                       replace_at_t=FALSE, verbose=FALSE)
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_event=d_influ, d_covars=d_baseline,
+                    keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                    replace_at_t=FALSE, verbose=FALSE)
 
 mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac,
              data=d_match)
 summary(mod)
 ```
 
-## Matching Beispiel (mit Adjustierung)
+## Matching Beispiel (mit Adjustierung, ohne Matching für meds)
 
 ```{r}
 d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
@@ -425,21 +455,54 @@ mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac + meds,
 summary(mod)
 ```
 
+## Matching Beispiel (mit Adjustierung, mit Matching für meds)
+
+```{r}
+d_treat <- get_event_times(sim, "vacc")
+d_influ <- get_event_times(sim, "influenza")
+d_meds <- get_event_times(sim, "meds")
+d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+
+# get d_covars
+dlist <- list(d_meds)
+names(dlist) <- c("meds")
+d_covars <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                            durations=Inf)
+d_covars <- merge(d_covars, d_baseline, by=".id", all.x=TRUE)
+
+# get d_inclusion
+dlist <- list(d_influ)
+names(dlist) <- c("influenza")
+d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
+                               durations=20)
+d_inclusion <- d_inclusion[influenza==FALSE]
+
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                    d_event=d_influ, d_covars=d_covars,
+                    keep_all_columns=TRUE, d_inclusion=d_inclusion,
+                    replace_at_t=FALSE, verbose=FALSE)
+
+mod <- coxph(Surv(event_time, status) ~ .treat + mac + .treat*mac,
+             data=d_match)
+summary(mod)
+```
+
 ## Monte-Carlo Vergleich
 
 ```{r}
-set.seed(2432454)
+set.seed(24324554)
 
 out <- sim_comp(
   dag=dag,
   n_sim=4000,
-  n_repeats=500,
+  n_repeats=300,
   max_t=365,
   n_cores=8,
   if_lt_n_at_t="warn",
   formula_cox="Surv(start, stop, influenza) ~ mac + vacc + mac*vacc + meds",
   formula_matching="Surv(event_time, status) ~ mac + .treat + mac*.treat + meds",
-  td_variables=list(list(name="meds", duration=Inf))
+  td_variables=list(list(name="meds", duration=Inf)),
+  progressbar=FALSE
 )
 
 true_rr <- c("mac"=1.5, "vacc"=0.5, "mac*vacc"=1.6, "meds"=4)
@@ -452,7 +515,7 @@ Was hier auffällt ist, dass das HR des zeitabhängigen Confounders beim Matchin
 
 Wenn treatment-confounder feedback existiert und man schlicht ein einfaches Cox Modell mit start-stop Daten verwendet, wird ein teil des totalen kausalen Effekts weg-adjustiert: nämlich der indirekte Effekt der über die Variable geht welche sowohl Confounder als auch Mediator ist. Dieses Problem sollte beim zeitabhängigen Matching nicht vorliegen. Demnach müssten sich die HRs der beiden Methoden unterscheiden. Dies wird zunächst hier überprüft.
 
-```{r}
+```{r, echo=TRUE}
 prob_influ <- function(data, base_p, rr_mac, rr_vacc_mac, rr_vacc_nonmac,
                        rr_meds) {
   base_p * rr_mac^(data$mac) * rr_vacc_mac^(data$mac & data$vacc_event) *
@@ -479,6 +542,7 @@ dag <- empty_dag() +
           event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_meds=4)
+plot(dag)
 ```
 
 ```{r}
@@ -553,7 +617,8 @@ out <- sim_comp(
   if_lt_n_at_t="warn",
   formula_cox="Surv(start, stop, influenza) ~ mac + vacc + mac*vacc + meds",
   formula_matching="Surv(event_time, status) ~ mac + .treat + mac*.treat + meds",
-  td_variables=list(list(name="meds", duration=Inf))
+  td_variables=list(list(name="meds", duration=Inf)),
+  progressbar=FALSE
 )
 
 true_rr <- c("mac"=1.5, "vacc"=0.5, "mac*vacc"=1.6, "meds"=4)
