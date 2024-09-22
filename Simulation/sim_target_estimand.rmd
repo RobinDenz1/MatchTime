@@ -275,7 +275,7 @@ estimate_target <- function(d_match, form_cox, t, method="g_cox") {
   } else if (method=="g_aalen") {
     # fit aalen additive hazards model
     formula <- stats::as.formula(form_cox)
-    mod <- timereg::aalen(Surv(event_time, status) ~ interact + meds, data=d_match)
+    mod <- aalen(Surv(event_time, status) ~ interact, data=d_match)
     
     # estimate (adjusted) survival probability at t
     surv <- adjustedsurv(data=d_match,
@@ -306,6 +306,12 @@ estimate_target <- function(d_match, form_cox, t, method="g_cox") {
   }
   
   # transform to target estimand
+  out <- get_target_from_surv(surv)
+  
+  return(out)
+}
+
+get_target_from_surv <- function(surv) {
   p_00 <- 1 - surv$adj$surv[surv$adj$group=="FALSE.FALSE"]
   p_11 <- 1 - surv$adj$surv[surv$adj$group=="TRUE.TRUE"]
   p_01 <- 1 - surv$adj$surv[surv$adj$group=="FALSE.TRUE"]
@@ -314,7 +320,6 @@ estimate_target <- function(d_match, form_cox, t, method="g_cox") {
   out <- data.table(rr_mac=p_11 / p_01,
                     rr_nonmac=p_10 / p_00)
   out[, interact := (1 - rr_mac) / (1 - rr_nonmac)]
-  
   return(out)
 }
 
@@ -353,6 +358,8 @@ dag <- empty_dag() +
   node_td("influenza", type="time_to_event", prob_fun=prob_influ,
           event_duration=20, parents=c("mac", "vacc_event"),
           base_p=0.01, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5)
+plot(dag)
+summary(dag)
 ```
 
 ## Target Estimand
@@ -472,6 +479,9 @@ dag <- empty_dag() +
           event_duration=20, parents=c("mac", "vacc_event", "sex"),
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_sex=4)
+
+plot(dag)
+summary(dag)
 ```
 
 ## Target Estimand
@@ -591,6 +601,9 @@ dag <- empty_dag() +
           event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_meds=4)
+
+plot(dag)
+summary(dag)
 ```
 
 ## Target Estimand
@@ -757,6 +770,9 @@ dag <- empty_dag() +
           event_duration=20, parents=c("mac", "vacc_event", "meds_event"),
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_meds=4)
+
+plot(dag)
+summary(dag)
 ```
 
 ## Target Estimand
@@ -852,6 +868,8 @@ out <- estimate_target(d_match=d_match,
 head(out)
 ```
 
+Hier sieht man bereits das es nicht sonderlich gut funktioniert. Das liegt aber nicht daran, dass nicht für die zeitabhängige Variable gematcht wurde, sondern daran das die Annahmen für das Cox Modell hier tatsächlich nicht mehr gelten! Im Anschluss zunächst die Auswertung der gleichen Daten, aber mit perfektem Matching auch auf "meds".
+
 ## Beispiel mit Matching auf zeitabhängige Variable
 
 ```{r}
@@ -877,7 +895,7 @@ d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
                                durations=20-1)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+d_match2 <- match_td(id=".id", time=".time", d_treat=d_treat,
                     d_event=d_event, d_covars=d_covars,
                     keep_all_columns=TRUE, d_inclusion=d_inclusion,
                     replace_at_t=FALSE, verbose=TRUE)
@@ -887,6 +905,31 @@ out <- estimate_target(d_match=d_match,
                        t=100)
 head(out)
 ```
+
+Hier zeigt sich fast genau der gleiche Bias. Aber da hier durch das vollständige Matching kein Confounding mehr vorliegt könnten wir hier auch einfache Kaplan-Meier Schätzer verwenden:
+
+```{r}
+out <- estimate_target(d_match=d_match2,
+                       method="km",
+                       form_cox="Surv(event_time, status) ~ interact + meds",
+                       t=100)
+head(out)
+```
+
+Der Bias scheint dadurch nahezu vollständig zu verschwinden. Hier die vollständigen Kaplan-Meier Kurven:
+
+```{r}
+surv_km <- adjustedsurv(data=d_match2,
+                        variable="interact",
+                        ev_time="event_time",
+                        event="status",
+                        method="km")
+plot(surv_km)
+```
+
+Hierbei steht das erste TRUE/FALSE dafür ob jemand geimpft wurde oder nicht und das zweite TRUE/FALSE dafür ob jemand ein MAC Patient ist oder nicht. Wie klar zu sehen ist kreuzen sich die beiden Kurven bei den MAC Patienten. Die Proportional Hazards Annahme ist damit nicht mehr gegeben. Der Grund dafür könnte sein, dass in der Gruppe der geimpften die Personen öfter "meds" bekommen, welche dann unendlich lange auf TRUE bleiben und die Wahrscheinlichkeit für Influenza erhöhen. Es liegt also sicher an den speziellen Einstellungen dieses unrealistischen Beispiels, könnte aber durchaus auch in der Realität passieren.
+
+Das Problem lässt sich entweder durch vollständiges Matching lösen, oder durch die Verwendung einer anderen Adjustierungsmethode, welche nicht auf der Proportional-Hazards Annahme beruhen.
 
 ## Monte-Carlo Simulation
 

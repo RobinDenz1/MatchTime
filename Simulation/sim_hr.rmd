@@ -142,7 +142,9 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
 
     rbind(out_1, out_2)
   }
-  close(pb)
+  if (progressbar) {
+    close(pb)  
+  }
   stopCluster(cl)
 
   return(rbindlist(out_final))
@@ -207,8 +209,8 @@ dag <- empty_dag() +
   node_td("influenza", type="time_to_event", prob_fun=prob_influ,
           event_duration=20, parents=c("mac", "vacc_event"),
           base_p=0.01, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5)
-
 plot(dag)
+summary(dag)
 ```
 
 ```{r}
@@ -256,7 +258,7 @@ set.seed(1344145)
 
 out <- sim_comp(
   dag=dag,
-  n_sim=4000,
+  n_sim=6000,
   n_repeats=500,
   max_t=365,
   n_cores=8,
@@ -296,6 +298,7 @@ dag <- empty_dag() +
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_sex=4)
 plot(dag)
+summary(dag)
 ```
 
 ```{r}
@@ -393,6 +396,7 @@ dag <- empty_dag() +
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_meds=4)
 plot(dag)
+summary(dag)
 ```
 
 ```{r}
@@ -543,6 +547,7 @@ dag <- empty_dag() +
           base_p=0.001, rr_mac=1.5, rr_vacc_mac=0.8, rr_vacc_nonmac=0.5,
           rr_meds=4)
 plot(dag)
+summary(dag)
 ```
 
 ```{r}
@@ -575,6 +580,8 @@ d_treat <- get_event_times(sim, "vacc")
 d_influ <- get_event_times(sim, "influenza")
 d_meds <- get_event_times(sim, "meds")
 d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
+d_baseline[, start := 1]
+d_baseline[, stop := 365]
 
 dlist <- list(d_influ)
 names(dlist) <- c("influenza")
@@ -582,8 +589,8 @@ d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
                                durations=20)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- td_matching(id=".id", time=".time", d_treat=d_treat,
-                       d_event=d_influ, d_baseline=d_baseline,
+d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
+                       d_event=d_influ, d_covars=d_baseline,
                        keep_all_columns=TRUE, d_inclusion=d_inclusion,
                        replace_at_t=FALSE, verbose=FALSE)
 
