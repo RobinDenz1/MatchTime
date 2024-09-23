@@ -1,6 +1,5 @@
 
 # TODO:
-# - max_t integrieren
 # - in Zukunft: d_inclusion argument ersetzen mit "include" o.ä.
 #   - entweder data.table wie jetzt
 #   - oder logische Abfrage auf d_covars
@@ -174,10 +173,19 @@ match_td <- function(id, time, d_treat, d_event, d_covars,
   data[is.na(.next_treat_time) & !is.na(.next_event_time), status := TRUE]
   data[.next_treat_time > .next_event_time, status := TRUE]
 
+  # get maximum follow-up time per person
+  if (!is.null(d_inclusion)) {
+    d_longest <- d_inclusion[, (.max_t = max(stop)), by=eval(id)]
+  } else {
+    d_longest <- d_covars[, (.max_t = max(stop)), by=eval(id)]
+  }
+  colnames(d_longest) <- c(".id", ".max_t")
+  data <- merge(data, d_longest, by=id, all.x=TRUE)
+
   # calculate corresponding event time
-  # TODO: 365 should not be hardcoded here
   data[, event_time := pmin(.next_treat_time, .next_event_time,
-                            365 - .treat_time, na.rm=TRUE)]
+                            .max_t - .treat_time, na.rm=TRUE)]
+  data[, .max_t := NULL]
 
   # if specified and a control is censored because it became a case later,
   # also censor the corresponding pair to which it is a control at the same time
@@ -195,7 +203,6 @@ match_td <- function(id, time, d_treat, d_event, d_covars,
     data[pair_id_event_time < event_time, event_time := pair_id_event_time]
     data[, pair_id_event_time := NULL]
   }
-
   data[, .strata := NULL]
 
   # change order of columns
@@ -216,8 +223,7 @@ match_td <- function(id, time, d_treat, d_event, d_covars,
 
 ## given the current matched data and a data.table containing none, one or
 ## multiple events per person, add the next event after .treat_time
-add_next_event_time <- function(data, d_event, id, time,
-                                include_same_t=TRUE) {
+add_next_event_time <- function(data, d_event, id, time, include_same_t=TRUE) {
 
   # merge to matched data, creating new rows
   colnames(d_event)[colnames(d_event)==time] <- ".next_event_time"

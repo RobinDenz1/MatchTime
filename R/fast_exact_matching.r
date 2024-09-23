@@ -6,7 +6,11 @@
 #' @importFrom data.table :=
 #' @export
 fast_exact_matching <- function(data, treat, strata, replace=FALSE,
-                                ratio=1, if_lt_n="stop", estimand="ATT") {
+                                ratio=1, estimand="ATT", if_lt_n="stop") {
+
+  if (!is.data.table(data)) {
+    data <- as.data.table(data)
+  }
 
   if (estimand=="ATC") {
     data[, eval(parse(text=treat)) := !eval(parse(text=treat))]
@@ -24,11 +28,11 @@ fast_exact_matching <- function(data, treat, strata, replace=FALSE,
   size <- d_count$N
   names(size) <- d_count[[strata]]
 
-  d_samp <- sample_dt_stratified(data=d_controls,
-                                 n=size * ratio,
-                                 strata=strata,
-                                 replace=replace,
-                                 if_lt_n=if_lt_n)
+  d_samp <- stratified_sample(data=d_controls,
+                              n=size * ratio,
+                              strata=strata,
+                              replace=replace,
+                              if_lt_n=if_lt_n)
 
   # add pair id for cases
   d_cases[, pair_id := paste0(eval(parse(text=strata)), "_", seq_len(.N)),
