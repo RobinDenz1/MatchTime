@@ -86,7 +86,7 @@ Robin Denz
 }
 
 \seealso{
-\code{\link{fast_exact_matching}}, \code{\link{sample_dt_stratified}}, \code{\link[MatchIt]{matchit}}
+\code{\link{fast_exact_matching}}, \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}
 }
 \examples{
 
