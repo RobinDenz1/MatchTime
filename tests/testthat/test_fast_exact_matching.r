@@ -93,3 +93,24 @@ test_that("2:1 matching with replacement", {
   # pair_id correctly assigned
   expect_true(all(table(out$pair_id)==3))
 })
+
+test_that("4:1 matching with replacement", {
+  set.seed(123431)
+  out <- fast_exact_matching(data=dat, treat="treatment", strata="strat",
+                             replace=TRUE, ratio=4)
+
+  # one match per treated
+  expect_true(nrow(out)==nrow(dat[treatment==TRUE])*5)
+
+  # A and B equally distributed among treated / untreated
+  tabA <- table(out$treatment, out$A)
+  tabB <- table(out$treatment, out$B)
+  expect_equal(tabA[1,], tabA[2,]*4)
+  expect_equal(tabB[1,], tabB[2,]*4)
+
+  # no duplicate id
+  expect_true(max(table(out$id))!=1)
+
+  # pair_id correctly assigned
+  expect_true(all(table(out$pair_id)==5))
+})

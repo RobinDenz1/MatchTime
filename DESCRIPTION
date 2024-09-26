@@ -12,6 +12,7 @@ Imports:
 	fastmatch
 Suggests:
 	MatchIt,
+	simDAG,
     knitr,
     rmarkdown,
     testthat (>= 3.2.1),

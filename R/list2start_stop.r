@@ -2,6 +2,7 @@
 ## transforms a list of data.tables containing event times per person in
 ## the long format into a single data.table in the start-stop format,
 ## using the sim2start_stop.last() function from simDAG package
+#' @importFrom data.table data.table
 list2start_stop <- function(dlist, n, max_t, durations, ...) {
 
   names <- names(dlist)

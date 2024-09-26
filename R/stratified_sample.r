@@ -19,6 +19,7 @@ sample_dt <- function(data, n, replace, if_lt_n) {
 }
 
 ## fast and efficient stratified random sampling from a data.table
+#' @importFrom fastmatch %fin%
 #' @importFrom data.table rbindlist
 #' @importFrom data.table is.data.table
 #' @importFrom data.table as.data.table

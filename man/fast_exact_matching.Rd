@@ -9,7 +9,8 @@ This function matches one or multiple controls to cases that have exactly the sa
 }
 \usage{
 fast_exact_matching(data, treat, strata, replace=FALSE,
-                    ratio=1, estimand="ATT", if_lt_n="stop")
+                    ratio=1, estimand="ATT", if_lt_n="stop",
+                    check_inputs=TRUE)
 }
 \arguments{
   \item{data}{
@@ -30,8 +31,11 @@ How many control units should be matched to each treated unit in k:1 matching. S
   \item{estimand}{
 Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset with which to estimate the average treatment effect on the treated, or to \code{"ATC"} which would target the average treatment effect for the untreated.
   }
-  \item{if_lt_n_at_t}{
+  \item{if_lt_n}{
 Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases.
+  }
+  \item{check_inputs}{
+Whether to perform input checks or not. Can be set to \code{FALSE} for a very small speed-up if the user is sure that the input is correct.
   }
 }
 \details{
@@ -48,9 +52,8 @@ Returns a single \code{data.table} containing the same columns as \code{data} pl
 \author{
 Robin Denz
 }
-
 \seealso{
-\code{\link{sample_dt_stratified}}
+\code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}
 }
 \examples{
 

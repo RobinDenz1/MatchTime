@@ -24,7 +24,7 @@ A single character string specifying the integer, character or factor variable r
   \item{replace}{
 Either \code{TRUE} or \code{FALSE} (default). Specifies whether the sampling should be performed with or without replacement.
   }
-  \item{if_lt_n_at_t}{
+  \item{if_lt_n}{
 Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when the number of rows in a stratum specified by \code{strata} is smaller than the number that should be sampled from it and \code{replace=FALSE} is used.
   }
 }

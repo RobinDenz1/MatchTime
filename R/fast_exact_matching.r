@@ -6,10 +6,21 @@
 #' @importFrom data.table :=
 #' @export
 fast_exact_matching <- function(data, treat, strata, replace=FALSE,
-                                ratio=1, estimand="ATT", if_lt_n="stop") {
+                                ratio=1, estimand="ATT", if_lt_n="stop",
+                                check_inputs=TRUE) {
 
+  pair_id <- temp_id <- N <- NULL
+
+  # coerce to data.table
   if (!is.data.table(data)) {
     data <- as.data.table(data)
+  }
+
+  # check inputs if specified
+  if (check_inputs) {
+    check_inputs_fast_exact_matching(data=data, treat=treat, strata=strata,
+                                     replace=replace, ratio=ratio,
+                                     estimand=estimand, if_lt_n=if_lt_n)
   }
 
   if (estimand=="ATC") {
@@ -37,6 +48,11 @@ fast_exact_matching <- function(data, treat, strata, replace=FALSE,
   # add pair id for cases
   d_cases[, pair_id := paste0(eval(parse(text=strata)), "_", seq_len(.N)),
           by=strata]
+
+  # edge case where no controls could be found
+  if (nrow(d_samp)==0) {
+    return(d_cases)
+  }
 
   # add pair id for controls
   if (ratio==1) {

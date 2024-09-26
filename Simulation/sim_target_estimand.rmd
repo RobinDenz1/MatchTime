@@ -381,6 +381,67 @@ plot_bias_target <- function(sim1, true_rr_mac, true_rr_nonmac,
     theme_bw() +
     theme(legend.position="none")
 }
+
+## convenience function to get data for match_td() function from simDT object
+get_data_for_match_td <- function(sim, treat="vacc", event="influenza",
+                                  baseline_vars="mac", td_vars=NULL,
+                                  durations=NULL, dur_event=20, dur_treat=Inf,
+                                  max_t=365, all_in_one=TRUE) {
+  
+  # time-dependent variables info
+  if (!is.null(td_vars)) {
+    dlist <- vector(mode="list", length=length(td_vars))
+    for (i in seq_len(length(td_vars))) {
+      dlist[[i]] <- get_event_times(sim, td_vars[i])
+    }
+    names(dlist) <- td_vars
+  } else {
+    dlist <- list()
+    durations <- numeric(0)
+  }
+  
+  # treatment times
+  d_treat <- get_event_times(sim, treat)
+  
+  if (all_in_one) {
+    dlist[[treat]] <- d_treat
+    durations <- c(durations, dur_treat)
+  }
+  
+  # outcome times
+  d_event <- get_event_times(sim, event)
+  
+  if (all_in_one) {
+    dlist[[event]] <- d_event
+    durations <- c(durations, 1)
+  }
+  
+  # times at which persons should be included
+  d_event2 <- copy(d_event)
+  d_event2[, .time := .time + 1]
+  dlist[["inclusion"]] <- d_event2
+  durations <- c(durations, dur_event-1)
+  
+  # baseline info
+  d_baseline <- sim$data[, c(".id", baseline_vars), with=FALSE]
+  
+  # transform to start-stop format
+  data <- list2start_stop(dlist, n=nrow(d_baseline), max_t=max_t,
+                          durations=durations)
+  data[, inclusion := !inclusion]
+  
+  # add baseline info
+  data <- merge(data, d_baseline, by=".id", all.x=TRUE)
+  
+  if (all_in_one) {
+    return(data)
+  } else {
+    out <- list(d_treat=d_treat,
+                d_event=d_event,
+                d_covars=data)
+    return(out)
+  }
+}
 ```
 
 # Kein Confounding
@@ -464,9 +525,13 @@ d_inclusion <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline),
                                          max_t=365, durations=20-1)
 d_inclusion <- d_inclusion[influenza==FALSE]
 
-d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
-                    d_covars=d_baseline, d_event=d_event,
-                    d_inclusion=d_inclusion, verbose=FALSE)
+d_input <- get_data_for_match_td(sim, all_in_one=FALSE)
+
+d_match <- match_td.fit(id=".id", time=".time",
+                        d_treat=d_input$d_treat,
+                        d_covars=d_input$d_covars,
+                        d_event=d_input$d_event,
+                        verbose=TRUE)
 d_match[, event_time := event_time + 1]
 
 out <- estimate_target(d_match=d_match, t=100,
@@ -692,27 +757,16 @@ sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
 ## Beispiel ohne Matching auf zeitabhängige Variable
 
 ```{r}
-d_treat <- get_event_times(sim, "vacc")
-d_event <- get_event_times(sim, "influenza")
+
+
+
+data <- get_data_for_match_td(sim, treat="vacc", event="influenza",
+                              baseline_vars="mac")
+
+d_match <- match_td(vacc ~ mac, data=data, id=".id", event="influenza",
+                    inclusion="inclusion", verbose=TRUE)
+
 d_meds <- get_event_times(sim, "meds")
-d_baseline <- sim$data[, c(".id", "mac"), with=FALSE]
-d_baseline[, start := 1]
-d_baseline[, stop := 365]
-
-d_event2 <- copy(d_event)
-d_event2[, .time := .time + 1]
-
-dlist <- list(d_event2)
-names(dlist) <- c("influenza")
-d_inclusion <- list2start_stop(dlist, n=nrow(d_baseline), max_t=365,
-                               durations=20-1)
-d_inclusion <- d_inclusion[influenza==FALSE]
-
-d_match <- match_td(id=".id", time=".time", d_treat=d_treat,
-                    d_event=d_event, d_covars=d_baseline,
-                    keep_all_columns=TRUE, d_inclusion=d_inclusion,
-                    replace_at_t=FALSE, verbose=TRUE)
-
 d_match <- add_previous_event_time(data=d_match, id=".id", time=".time",
                                    d_prev=d_meds, duration=Inf, name="meds",
                                    include_same_t=TRUE)

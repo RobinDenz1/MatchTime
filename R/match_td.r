@@ -1,11 +1,75 @@
 
-# TODO:
-# - in Zukunft: d_inclusion argument ersetzen mit "include" o.ä.
-#   - entweder data.table wie jetzt
-#   - oder logische Abfrage auf d_covars
-# - eine schönere nutzeroberfläche mit formula argument erstellen
+## main function of the package, but is only a wrapper around the true
+## estimation function called match_td.fit()
+#' @importFrom data.table is.data.table
+#' @importFrom data.table copy
+#' @export
+match_td <- function(formula, data, id, inclusion=NA, event=NA,
+                     replace_over_t=FALSE, replace_at_t=replace_over_t,
+                     replace_cases=TRUE, estimand="ATT", ratio=1,
+                     if_lt_n_at_t="stop", censor_pairs=TRUE,
+                     use_matchit=FALSE, matchit_method="nearest",
+                     keep_all_columns=FALSE, verbose=FALSE, ...) {
+
+  # coerce to data.table
+  if (!is.data.table(data)) {
+    data <- as.data.table(data)
+  } else {
+    data <- copy(data)
+  }
+
+  # check inputs
+  check_inputs_match_td(formula=formula, data=data, id=id,
+                        inclusion=inclusion, event=event,
+                        replace_over_t=replace_over_t,
+                        replace_at_t=replace_at_t,
+                        replace_cases=replace_cases,
+                        estimand=estimand, ratio=ratio,
+                        if_lt_n_at_t=if_lt_n_at_t,
+                        censor_pairs=censor_pairs,
+                        use_matchit=use_matchit,
+                        matchit_method=matchit_method,
+                        verbose=verbose,
+                        keep_all_columns=keep_all_columns)
+
+  # extract needed things from formula
+  vars <- all.vars(formula)
+  treat <- vars[1]
+  match_vars <- vars[2:length(vars)]
+
+  # extract relevant treatment times
+  d_treat <- times_from_start_stop(data=data, name=treat, id=id)
+  data[, eval(treat) := NULL]
+
+  # remove all rows when inclusion criteria are not met
+  if (!is.na(inclusion)) {
+    data <- data[eval(inclusion)==TRUE]
+    data[, eval(inclusion) := NULL]
+  }
+
+  # extract relevant event times
+  if (!is.na(event)) {
+    d_event <- times_from_start_stop(data=data, name=event, id=id)
+    data[, eval(event) := NULL]
+  } else {
+    d_event <- NULL
+  }
+
+  # call function that does all the work
+  out <- match_td.fit(id=id, time=".time", d_treat=d_treat,
+                      d_event=d_event, d_covars=data,
+                      match_vars=match_vars, replace_over_t=replace_over_t,
+                      replace_at_t=replace_at_t, replace_cases=replace_cases,
+                      censor_pairs=censor_pairs, estimand=estimand,
+                      ratio=ratio, if_lt_n_at_t=if_lt_n_at_t,
+                      use_matchit=use_matchit, matchit_method=matchit_method,
+                      keep_all_columns=keep_all_columns, verbose=verbose)
+
+  return(out)
+}
 
 ## perform time-dependent matching
+#' @importFrom fastmatch %fin%
 #' @importFrom data.table .N
 #' @importFrom data.table .I
 #' @importFrom data.table :=
@@ -13,31 +77,32 @@
 #' @importFrom data.table rbindlist
 #' @importFrom data.table setcolorder
 #' @export
-match_td <- function(id, time, d_treat, d_event, d_covars,
-                     d_inclusion=NULL, match_vars=NULL,
-                     replace_over_t=FALSE, replace_at_t=FALSE,
-                     replace_cases=TRUE, censor_pairs=TRUE,
-                     estimand="ATT", ratio=1, if_lt_n_at_t="stop",
-                     use_matchit=FALSE, matchit_method="nearest",
-                     keep_all_columns=FALSE, verbose=FALSE, ...) {
+match_td.fit <- function(id, time, d_treat, d_event, d_covars,
+                         match_vars=NULL, replace_over_t=FALSE,
+                         replace_at_t=replace_over_t, replace_cases=TRUE,
+                         censor_pairs=TRUE, estimand="ATT", ratio=1,
+                         if_lt_n_at_t="stop", use_matchit=FALSE,
+                         matchit_method="nearest", keep_all_columns=FALSE,
+                         verbose=FALSE, ...) {
+
+  start <- .treat <- pair_id <- subclass <- .treat_time <- .strata <-
+    .id_new <- .next_treat_time <- .next_event_time <- NULL
 
   # get variables that should be matched on
   if (is.null(match_vars)) {
     cnames <- colnames(d_covars)
     match_vars <- cnames[!cnames %fin% c(id, time, ".treat", "start", "stop")]
   }
-  select_vars <- c(id, match_vars)
+  cnames <- colnames(d_covars)
+  select_vars <- cnames[!cnames %fin% c("start", "stop")]
 
-  # apply inclusion criteria at treatment time
-  if (!is.null(d_inclusion)) {
-
-    # keep only cases that meet inclusion criteria at treatment time
-    d_inclusion <- merge(d_inclusion, d_treat, by=id, all.x=TRUE)
-    include <- d_inclusion[eval(parse(text=time)) >= start
+  # keep only cases that meet inclusion criteria at treatment time
+  # NOTE: maybe change >= <= stuff to overlapping start-stop
+  d_inclusion <- merge(d_covars, d_treat, by=id, all.x=TRUE)
+  include <- d_inclusion[eval(parse(text=time)) >= start
                            & eval(parse(text=time)) <= stop][[eval(id)]]
-    d_treat <- d_treat[eval(parse(text=id)) %fin% include]
-    d_inclusion[, eval(time) := NULL]
-  }
+  d_treat <- d_treat[eval(parse(text=id)) %fin% include]
+  rm(d_inclusion)
 
   # identify all points in time at which at least one case happened
   case_times <- sort(unique(d_treat[[eval(time)]]))
@@ -67,12 +132,7 @@ match_td <- function(id, time, d_treat, d_event, d_covars,
     used_as_cases <- c(used_as_cases, ids_cases_i)
 
     # identify all potential controls that fulfill inclusion criteria at t
-    if (!is.null(d_inclusion)) {
-      ids_pot_controls_i <- d_inclusion[case_times[i] >= start &
-                                          case_times[i] <= stop][[eval(id)]]
-    } else {
-      ids_pot_controls_i <- unique(d_covars[[eval(id)]])
-    }
+    ids_pot_controls_i <- unique(d_covars[[eval(id)]])
     ids_pot_controls_i <- ids_pot_controls_i[!ids_pot_controls_i %fin%
                                                used_as_cases]
 
@@ -129,7 +189,8 @@ match_td <- function(id, time, d_treat, d_event, d_covars,
                                        strata=".strata",
                                        replace=replace_at_t,
                                        if_lt_n=if_lt_n_at_t,
-                                       ratio=ratio)
+                                       ratio=ratio,
+                                       check_inputs=FALSE)
       d_match_i[, pair_id := paste0(i, "_", pair_id)]
       d_match_i[, .treat_time := case_times[i]]
     }
@@ -160,124 +221,55 @@ match_td <- function(id, time, d_treat, d_event, d_covars,
   data <- merge(data, d_treat, by=id, all.x=TRUE)
   data[.treat==TRUE, .next_treat_time := NA]
 
-  # add event information
-  data <- add_next_event_time(data=data, d_event=d_event, id=id, time=time,
-                              include_same_t=TRUE)
-
-  # shift times according to start
-  data[, .next_treat_time := .next_treat_time - .treat_time]
-  data[, .next_event_time := .next_event_time - .treat_time]
-
-  # get event status indicator
-  data[, status := FALSE]
-  data[is.na(.next_treat_time) & !is.na(.next_event_time), status := TRUE]
-  data[.next_treat_time > .next_event_time, status := TRUE]
-
-  # get maximum follow-up time per person
-  if (!is.null(d_inclusion)) {
-    d_longest <- d_inclusion[, (.max_t = max(stop)), by=eval(id)]
+  # add event_time and status if specified
+  if (!is.null(d_event)) {
+    data <- add_tte_outcome(id=id, time=time, data=data, d_event=d_event,
+                            censor_pairs=censor_pairs, d_covars=d_covars)
+    first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
+                    ".next_treat_time", ".next_event_time", "event_time",
+                    "status")
   } else {
-    d_longest <- d_covars[, (.max_t = max(stop)), by=eval(id)]
+    first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
+                    ".next_treat_time")
   }
-  colnames(d_longest) <- c(".id", ".max_t")
-  data <- merge(data, d_longest, by=id, all.x=TRUE)
-
-  # calculate corresponding event time
-  data[, event_time := pmin(.next_treat_time, .next_event_time,
-                            .max_t - .treat_time, na.rm=TRUE)]
-  data[, .max_t := NULL]
-
-  # if specified and a control is censored because it became a case later,
-  # also censor the corresponding pair to which it is a control at the same time
-  # NOTE: does this work with ratio > 1?
-  if (censor_pairs) {
-
-    # identify all such cases
-    d_cens <- data[.next_treat_time < .next_event_time]
-    d_cens <- d_cens[, c("pair_id", "event_time"), with=FALSE]
-    colnames(d_cens) <- c("pair_id", "pair_id_event_time")
-
-    # merge them to data, update variables accordingly
-    data <- merge(data, d_cens, by="pair_id", all.x=TRUE)
-    data[pair_id_event_time < event_time, status := FALSE]
-    data[pair_id_event_time < event_time, event_time := pair_id_event_time]
-    data[, pair_id_event_time := NULL]
-  }
-  data[, .strata := NULL]
 
   # change order of columns
-  first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
-                  ".next_treat_time", ".next_event_time", "event_time",
-                  "status")
   last_cols <- colnames(data)[!colnames(data) %fin% first_cols]
   setcolorder(data, c(first_cols, last_cols))
 
+  # remove some columns if specified
   if (!keep_all_columns) {
     data[, .treat_time := NULL]
     data[, .next_treat_time := NULL]
-    data[, .next_event_time := NULL]
+
+    if (!is.null(d_event)) {
+      data[, .next_event_time := NULL]
+    }
   }
 
   return(data)
 }
 
-## given the current matched data and a data.table containing none, one or
-## multiple events per person, add the next event after .treat_time
-add_next_event_time <- function(data, d_event, id, time, include_same_t=TRUE) {
+## extract new event times from data in start-stop format
+#' @importFrom data.table :=
+#' @importFrom data.table shift
+#' @importFrom data.table setkeyv
+times_from_start_stop <- function(data, id, name) {
 
-  # merge to matched data, creating new rows
-  colnames(d_event)[colnames(d_event)==time] <- ".next_event_time"
-  data <- merge(data, d_event, by=id, all.x=TRUE, allow.cartesian=TRUE)
+  .temp_shift <- NULL
 
-  # check if event is after inclusion time
-  # NOTE: the way I simulated the data this argument should be TRUE for
-  #       outcomes, but FALSE for time-dependent variables
-  #       (although it is unclear why it would be used for the latter)
-  if (include_same_t) {
-    data[, is_after := .next_event_time >= .treat_time, by=.id_new]
-  } else {
-    data[, is_after := .next_event_time > .treat_time, by=.id_new]
-  }
+  # identify times of new events
+  data[, .temp_shift := shift(eval(parse(text=name)), n=1, type="lag",
+                              fill=FALSE), by=eval(id)]
 
-  # calculate time of first influenza after inclusion time
-  data[is_after==FALSE, .next_event_time := NA]
-  data[, .next_event_time := min(.next_event_time, na.rm=TRUE), by=.id_new]
-  data[, is_after := NULL]
+  # keep only those rows with new events
+  out <- data[.temp_shift==FALSE & eval(parse(text=name))==TRUE
+              ][, c(id, "start"), with=FALSE]
+  data[, .temp_shift := NULL]
 
-  # remove duplicate rows
-  data <- unique(data)
+  # rename & sort
+  colnames(out) <- c(".id", ".time")
+  setkeyv(out, c(".id", ".time"))
 
-  return(data)
-}
-
-## given a data.table containing event times per person and a duration of
-## that event, adds an indicator to the matched data which is TRUE if the
-## event was currently going on when the person got matched and FALSE otherwise
-add_previous_event_time <- function(data, d_prev, id, time, duration,
-                                    name, include_same_t=FALSE) {
-
-  # merge to matched data, creating new rows
-  colnames(d_prev)[colnames(d_prev)==time] <- ".prev_time"
-  data <- merge(data, d_prev, by=id, all.x=TRUE)
-
-  # check if .treat_time is in any of the previous risk periods by event
-  # NOTE: the way I simulated the data this argument should be TRUE for
-  #       time-dependent covariates, but FALSE for outcomes
-  if (include_same_t) {
-    data[, .in_risk := .treat_time < (.prev_time + eval(duration)) &
-           .treat_time >= .prev_time]
-  } else {
-    data[, .in_risk := .treat_time < (.prev_time + eval(duration)) &
-           .treat_time > .prev_time]
-  }
-
-  data[is.na(.in_risk), .in_risk := FALSE]
-  data[, .in_risk := any(.in_risk), by=.id_new]
-  data[, .prev_time := NULL]
-
-  # remove duplicate rows
-  data <- unique(data)
-  colnames(data)[colnames(data)==".in_risk"] <- name
-
-  return(data)
+  return(out)
 }
