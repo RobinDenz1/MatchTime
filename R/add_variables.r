@@ -1,11 +1,12 @@
 
 ## add time-to-event outcome to matched data
 #' @importFrom data.table :=
+#' @importFrom data.table fifelse
 add_tte_outcome <- function(id, time, data, d_event, d_covars,
                             censor_pairs) {
 
   .next_treat_time <- .treat_time <- .next_event_time <- status <-
-    event_time <- pair_id_event_time <- .strata <- NULL
+    event_time <- pair_id_event_time <- .artificial_cens_time <- pair_id <- NULL
 
   # add event information
   data <- add_next_event_time(data=data, d_event=d_event, id=id, time=time,
@@ -32,23 +33,20 @@ add_tte_outcome <- function(id, time, data, d_event, d_covars,
 
   # if specified and a control is censored because it became a case later,
   # also censor the corresponding pair to which it is a control at the same time
-  # TODO:
-  #   - this does not work with ratio > 1
-  #   - there is weird stuff going on here that needs to be investigated
   if (censor_pairs) {
 
-    # identify all such cases
-    d_cens <- data[.next_treat_time < .next_event_time]
-    d_cens <- d_cens[, c("pair_id", "event_time"), with=FALSE]
-    colnames(d_cens) <- c("pair_id", "pair_id_event_time")
+    # new variable that is Inf if no artificial censoring is needed or the
+    # minimum of the artificial censoring times inside matched pair groups
+    data[, .artificial_cens_time := fifelse(.next_treat_time < .next_event_time,
+                                            event_time, Inf, na=Inf)]
+    data[, .artificial_cens_time := min(.artificial_cens_time), by=pair_id]
 
-    # merge them to data, update variables accordingly
-    data <- merge(data, d_cens, by="pair_id", all.x=TRUE)
-    data[pair_id_event_time < event_time, status := FALSE]
-    data[pair_id_event_time < event_time, event_time := pair_id_event_time]
-    data[, pair_id_event_time := NULL]
+    # update the data according to this
+    data[.artificial_cens_time < event_time, status := FALSE]
+    data[.artificial_cens_time < event_time,
+         event_time := .artificial_cens_time]
+    data[, .artificial_cens_time := NULL]
   }
-  data[, .strata := NULL]
 
   return(data)
 }

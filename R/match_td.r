@@ -74,6 +74,7 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 #' @importFrom data.table .I
 #' @importFrom data.table :=
 #' @importFrom data.table .SD
+#' @importFrom data.table copy
 #' @importFrom data.table rbindlist
 #' @importFrom data.table setcolorder
 #' @export
@@ -174,6 +175,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
       d_match_i <- MatchIt::match.data(d_match_i)
 
       # assign pair_id
+      d_match_i <- copy(d_match_i)
       d_match_i[, pair_id := paste0(i, "_", subclass)]
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, c("distance", "weights", "subclass") := NULL]
@@ -193,6 +195,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                                        check_inputs=FALSE)
       d_match_i[, pair_id := paste0(i, "_", pair_id)]
       d_match_i[, .treat_time := case_times[i]]
+      d_match_i[, .strata := NULL]
     }
 
     # update used_as_controls vector
