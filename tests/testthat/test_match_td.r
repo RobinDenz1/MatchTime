@@ -8,6 +8,11 @@ d_multi <- readRDS(system.file("testdata",
                                 package="MatchTD"))
 d_multi$d_covars[, inclusion := NULL]
 
+# TODO:
+# - test if add_previous_event returns the same results as match_td()
+#   when not matching on meds
+# - check if actual continuous input and datetime input works
+
 test_that("matching on time-fixed variable", {
 
   set.seed(134)

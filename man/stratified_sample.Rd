@@ -29,21 +29,40 @@ Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whethe
   }
 }
 \details{
-Internally splits the \code{data.table} into parts as defined by the \code{strata} variable and then uses the \code{sample.int} function to sample rows from these strata. By using only \code{data.table} functions and \code{sample.int} instead of \code{sample}, this function is very efficient even for very large \code{data.tables} and many possible strata.
+Internally splits the \code{data.table} into parts as defined by the \code{strata} variable and then uses the \code{\link{sample.int}} function to sample rows from these strata. By using only \code{data.table} functions and \code{\link{sample.int}} instead of \code{sample}, this function is very efficient even for very large \code{data.tables} and many possible strata.
 }
 \value{
 Returns a single \code{data.table} containing the sampled rows.
 }
 \references{
-
+Lohr, Sharon L. (2010). Sampling: Design and Analysis. Bd. 2. Boston: Cengage Learning.
 }
 \author{
 Robin Denz
 }
-
 \seealso{
 \code{\link{fast_exact_matching}}
 }
 \examples{
+library(MatchTD)
+library(data.table)
+library(fastmatch)
 
+set.seed(344)
+
+data <- data.table(A=stats::rnorm(n=100),
+                   B=sample(c("A", "B", "C"), size=100, replace=TRUE),
+                   strat=sample(c("1", "2", "3")))
+
+n <- c(10, 25, 31)
+names(n) <- c("2", "1", "3")
+
+# sample (without replacement):
+# - 25 rows from strat=="1"
+# - 10 rows from strat=="2"
+# - 31 rows from strat=="3"
+samp <- stratified_sample(data, n=n, strata="strat")
+
+# take the same stratified sample with replacement
+samp <- stratified_sample(data, n=n, strata="strat", replace=TRUE)
 }

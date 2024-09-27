@@ -5,7 +5,7 @@
 Perform Time-Dependent Matching on Time-Fixed and Time-Dependent Covariates in Discrete and Continuous Time
 }
 \description{
-This function utilizies the approach described in XX and XX to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as sequential target trial emulation. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the excellent \code{MatchIt} package to perform the actual matching at each point in time for more flexibility.
+This function utilizies the approach described in XX and XX to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as sequential target trial emulation. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \code{MatchIt} package to perform the actual matching at each point in time for more flexibility.
 }
 \usage{
 match_td(formula, data, id, inclusion=NA, event=NA,
@@ -26,25 +26,25 @@ A \code{data.table} like object in the start-stop format, containing information
 A single character string specifying the unique person identifier in \code{data}.
   }
   \item{inclusion}{
-A single character string specifying an optional logical variable which should be \code{TRUE} if the period specified by the \code{start} and \code{stop} columns in \code{data} corresponds to a period in which the individual fufills the inclusion criteria and \code{FALSE} if the individual does not. All periods where the variable is \code{FALSE} will be excluded from the matching process dynamically. Set to \code{NA} to not use this functionality (default).
+A single character string specifying an optional logical variable in \code{data} which should be \code{TRUE} if the period specified by the \code{start} and \code{stop} columns in \code{data} corresponds to a period in which the individual fufills the inclusion criteria and \code{FALSE} if the individual does not. All periods where the variable is \code{FALSE} will be excluded from the matching process dynamically. Set to \code{NA} to not use this functionality (default).
   }
   \item{event}{
-A single character string specifying an optional logical variable which specifies whether an event happened in the period specified by the \code{start} and \code{stop} columns in \code{data}. If specified, two columns will be added to the final matched dataset: \code{event_time} and \code{status}, corresponding to the time from entry into the study until the event or censoring happened and the respective status indicator, as used in standard survival analysis.
+A single character string specifying an optional logical variable in \code{data} which specifies whether an event happened in the period specified by the \code{start} and \code{stop} columns in \code{data}. If specified, two columns will be added to the final matched dataset: \code{event_time} and \code{status}, corresponding to the time from entry into the study until the event or censoring happened and the respective status indicator, as used in standard survival analysis.
   }
   \item{replace_over_t}{
-Whether to allow usage of the same persons as controls at multiple points in time.
+Whether to allow usage of the same individuals as controls at multiple points in time. If \code{TRUE}, the same person may be used as control at every point in time until it switches from being a control to being a case.
   }
   \item{replace_at_t}{
-Whether to allow usage of the same persons as controls at the same point in time.
+Whether to allow usage of the same individuals as controls at the same point in time. If \code{use_matchit=TRUE} this argument will be passed to the \code{replace} argument of the \code{\link[MatchIt]{matchit}} function.
   }
   \item{replace_cases}{
-Whether to include persons that have already been used as controls as cases if they also get the treatment later.
+Whether to include individuals that have already been used as controls as cases if they also get the treatment later. This should usually stay at its default value of \code{TRUE}, unless there are some good reasons to change it.
   }
   \item{estimand}{
 Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset with which to estimate the average treatment effect on the treated, or to \code{"ATC"} which would target the average treatment effect for the untreated. May also allow other inputs when using \code{use_matchit=TRUE}.
   }
   \item{ratio}{
-How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching.
+How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching. If \code{use_matchit=TRUE} this argument will be passed to the argument of the same name in the \code{\link[MatchIt]{matchit}} function.
   }
   \item{if_lt_n_at_t}{
 Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{use_matchit=FALSE}.
@@ -72,6 +72,7 @@ Further arguments passed to \code{\link[MatchIt]{matchit}} when using \code{use_
 
 }
 \value{
+Returns a single \code{data.table} containing the following columns:
 
 }
 \references{
@@ -80,7 +81,6 @@ Further arguments passed to \code{\link[MatchIt]{matchit}} when using \code{use_
 \author{
 Robin Denz
 }
-
 \seealso{
 \code{\link{fast_exact_matching}}, \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}
 }

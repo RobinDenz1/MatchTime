@@ -37,7 +37,7 @@ add_tte_outcome <- function(id, time, data, d_event, d_covars,
 
     # new variable that is Inf if no artificial censoring is needed or the
     # minimum of the artificial censoring times inside matched pair groups
-    data[, .artificial_cens_time := fifelse(.next_treat_time < .next_event_time,
+    data[, .artificial_cens_time := fifelse(.next_treat_time == event_time,
                                             event_time, Inf, na=Inf)]
     data[, .artificial_cens_time := min(.artificial_cens_time), by=pair_id]
 
