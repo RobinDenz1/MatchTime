@@ -10,6 +10,10 @@ dat <- data.table(
 )
 dat[, strat := paste0(A, B)]
 
+# TODO:
+#  - fails if strata is named "strata", probably has similar issues with
+#    other variable names. Check everywhere, write test for it
+
 test_that("1:1 matching without replacement", {
   set.seed(123431)
   out <- fast_exact_matching(data=dat, treat="treatment", strata="strat",

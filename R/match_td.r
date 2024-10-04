@@ -8,8 +8,8 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                      replace_over_t=FALSE, replace_at_t=replace_over_t,
                      replace_cases=TRUE, estimand="ATT", ratio=1,
                      if_lt_n_at_t="stop", censor_pairs=TRUE,
-                     use_matchit=FALSE, matchit_method="nearest",
-                     keep_all_columns=FALSE, verbose=FALSE, ...) {
+                     match_method="fast_exact", keep_all_columns=FALSE,
+                     verbose=FALSE, ...) {
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -27,15 +27,18 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                         estimand=estimand, ratio=ratio,
                         if_lt_n_at_t=if_lt_n_at_t,
                         censor_pairs=censor_pairs,
-                        use_matchit=use_matchit,
-                        matchit_method=matchit_method,
+                        match_method=match_method,
                         verbose=verbose,
                         keep_all_columns=keep_all_columns)
 
   # extract needed things from formula
   vars <- all.vars(formula)
   treat <- vars[1]
-  match_vars <- vars[2:length(vars)]
+  if (length(vars) > 1) {
+    match_vars <- vars[2:length(vars)]
+  } else {
+    match_vars <- NULL
+  }
 
   # extract relevant treatment times
   d_treat <- times_from_start_stop(data=data, name=treat, id=id)
@@ -62,7 +65,7 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                       replace_at_t=replace_at_t, replace_cases=replace_cases,
                       censor_pairs=censor_pairs, estimand=estimand,
                       ratio=ratio, if_lt_n_at_t=if_lt_n_at_t,
-                      use_matchit=use_matchit, matchit_method=matchit_method,
+                      match_method=match_method,
                       keep_all_columns=keep_all_columns, verbose=verbose)
 
   return(out)
@@ -82,9 +85,8 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                          match_vars=NULL, replace_over_t=FALSE,
                          replace_at_t=replace_over_t, replace_cases=TRUE,
                          censor_pairs=TRUE, estimand="ATT", ratio=1,
-                         if_lt_n_at_t="stop", use_matchit=FALSE,
-                         matchit_method="nearest", keep_all_columns=FALSE,
-                         verbose=FALSE, ...) {
+                         if_lt_n_at_t="stop", match_method="fast_exact",
+                         keep_all_columns=FALSE, verbose=FALSE, ...) {
 
   start <- .treat <- pair_id <- subclass <- .treat_time <- .strata <-
     .id_new <- .next_treat_time <- .next_event_time <- NULL
@@ -154,8 +156,42 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
     # identify cases
     d_all_i[, .treat := eval(parse(text=id)) %fin% ids_cases_i]
 
-    ## perform matching at t
-    if (use_matchit) {
+    ## perform matching at t, if specified
+    if (match_method=="none") {
+
+      n_treat <- sum(d_all_i$.treat)
+      size <- c(n_treat, n_treat*ratio)
+      names(size) <- c("TRUE", "FALSE")
+
+      d_match_i <- stratified_sample(data=d_all_i,
+                                     n=size,
+                                     strata=".treat",
+                                     replace=replace_at_t,
+                                     if_lt_n=if_lt_n_at_t)
+
+      d_match_i[, pair_id := rep(seq_len(n_treat), ratio+1)]
+      d_match_i[, pair_id := paste0(i, "_", pair_id)]
+      d_match_i[, .treat_time := case_times[i]]
+
+    } else if (match_method=="fast_exact") {
+
+      # create strata variable
+      d_all_i[, .strata := do.call(paste0, .SD), .SDcols=match_vars]
+
+      # perform exact matching
+      d_match_i <- fast_exact_matching(d_all_i,
+                                       treat=".treat",
+                                       strata=".strata",
+                                       replace=replace_at_t,
+                                       if_lt_n=if_lt_n_at_t,
+                                       ratio=ratio,
+                                       check_inputs=FALSE,
+                                       copy_data=FALSE)
+      d_match_i[, pair_id := paste0(i, "_", pair_id)]
+      d_match_i[, .treat_time := case_times[i]]
+      d_match_i[, .strata := NULL]
+
+    } else {
 
       requireNamespace("MatchIt")
 
@@ -165,7 +201,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
       # perform matching on baseline covariates
       args <- list(formula=stats::as.formula(main_formula),
                    data=d_all_i,
-                   method=matchit_method,
+                   method=match_method,
                    estimand=estimand,
                    replace=replace_at_t,
                    ratio=ratio)
@@ -179,23 +215,6 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
       d_match_i[, pair_id := paste0(i, "_", subclass)]
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, c("distance", "weights", "subclass") := NULL]
-
-    } else {
-
-      # create strata variable
-      d_all_i[, .strata := do.call(paste0, .SD), .SDcols=match_vars]
-
-      # perform exact matching
-      d_match_i <- fast_exact_matching(d_all_i,
-                                       treat=".treat",
-                                       strata=".strata",
-                                       replace=replace_at_t,
-                                       if_lt_n=if_lt_n_at_t,
-                                       ratio=ratio,
-                                       check_inputs=FALSE)
-      d_match_i[, pair_id := paste0(i, "_", pair_id)]
-      d_match_i[, .treat_time := case_times[i]]
-      d_match_i[, .strata := NULL]
     }
 
     # update used_as_controls vector

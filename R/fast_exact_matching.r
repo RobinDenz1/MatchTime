@@ -2,18 +2,21 @@
 ## given a data.table containing potential controls and cases,
 ## return a data.table with all cases and one control with the same strata
 ## value per case (ratio:1 exact matching on strata)
-#' @importFrom data.table .N
+#' @importFrom data.table copy
 #' @importFrom data.table :=
+#' @importFrom data.table .N
 #' @export
 fast_exact_matching <- function(data, treat, strata, replace=FALSE,
                                 ratio=1, estimand="ATT", if_lt_n="stop",
-                                check_inputs=TRUE) {
+                                check_inputs=TRUE, copy_data=TRUE) {
 
   pair_id <- temp_id <- N <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
     data <- as.data.table(data)
+  } else if (copy_data) {
+    data <- copy(data)
   }
 
   # check inputs if specified
@@ -24,7 +27,7 @@ fast_exact_matching <- function(data, treat, strata, replace=FALSE,
   }
 
   if (estimand=="ATC") {
-    data[, eval(parse(text=treat)) := !eval(parse(text=treat))]
+    data[, eval(treat) := !eval(parse(text=treat))]
   }
 
   # split into cases and controls

@@ -28,8 +28,7 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
                                   replace_over_t, replace_at_t,
                                   replace_cases, estimand, ratio,
                                   if_lt_n_at_t, censor_pairs,
-                                  use_matchit, matchit_method,
-                                  verbose, keep_all_columns) {
+                                  match_method, verbose, keep_all_columns) {
 
   # correct data
   stopifnotm("start" %fin% colnames(data),
@@ -88,6 +87,14 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
               if_lt_n_at_t %fin% c("stop", "warn", "nothing"),
              "'if_lt_n_at_t' must be either 'stop', 'warn' or 'nothing'.")
 
+  # correct match_method
+  stopifnotm(is_single_character(match_method) &&
+               match_method %in% c("none", "fast_exact", "nearest",
+                                   "optimal", "full", "genetic", "cem",
+                                   "exact", "cardinality", "subclass"),
+             paste0("'match_method' must be either 'none', 'fast_exact' or ",
+                    " a valid 'method' in MatchIt::matchit()."))
+
   # correct logical variables
   stopifnotm(is_single_logical(replace_over_t),
              "'replace_over_t' must be either TRUE or FALSE.")
@@ -97,17 +104,18 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
              "'replace_cases' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(censor_pairs),
              "'censor_pairs' must be either TRUE or FALSE.")
-  stopifnotm(is_single_logical(use_matchit),
-             "'use_matchit' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(verbose),
              "'verbose' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(keep_all_columns),
              "'keep_all_columns' must be either TRUE or FALSE.")
 
   # correct estimand
-  stopifnotm(is_single_character(estimand) && ((use_matchit==FALSE &&
-             estimand %fin% c("ATT", "ATC")) || use_matchit==TRUE),
-             "'estimand' must be either 'ATT' or 'ATC' when use_matchit=FALSE.")
+  stopifnotm(is_single_character(estimand) &&
+             ((match_method %in% c("none", "fast_exact") &&
+               estimand %fin% c("ATT", "ATC")) ||
+               !match_method %in% c("none", "fast_exact")),
+             paste0("'estimand' must be either 'ATT' or 'ATC' ",
+                    "when match_method='fast_exact'."))
 }
 
 ## check inputs for the fast_exact_matching() function
@@ -116,13 +124,13 @@ check_inputs_fast_exact_matching <- function(data, treat, strata, replace,
                                              ratio, estimand, if_lt_n) {
 
   # correct treat
-  stopifnotm(is_single_character(treat) && treat %fin% colnames(data) &&
+  stopifnotm(is_single_character(treat) && treat %in% colnames(data) &&
               is.logical(data[[treat]]),
              paste0("'treat' must be a single character string specifying",
                     " a logical variable in 'data'."))
 
   # correct strata
-  stopifnotm(is_single_character(strata) && strata %fin% colnames(data),
+  stopifnotm(is_single_character(strata) && strata %in% colnames(data),
              paste0("'strata' must be a single character string specifying",
                     " a binary or categorical variable in 'data'."))
 

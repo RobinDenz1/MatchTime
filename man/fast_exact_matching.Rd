@@ -10,7 +10,7 @@ This function matches one or multiple controls to cases that have exactly the sa
 \usage{
 fast_exact_matching(data, treat, strata, replace=FALSE,
                     ratio=1, estimand="ATT", if_lt_n="stop",
-                    check_inputs=TRUE)
+                    check_inputs=TRUE, copy_data=TRUE)
 }
 \arguments{
   \item{data}{
@@ -36,6 +36,9 @@ Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whethe
   }
   \item{check_inputs}{
 Whether to perform input checks or not. Can be set to \code{FALSE} for a very small speed-up if the user is sure that the input is correct.
+  }
+  \item{copy_data}{
+Whether to take a shallow copy of the \code{data} first. Taking the copy ensures that \code{data} is not changed by operations performed in this function. If you do not care about preserving the original \code{data} and want to save some RAM, this can be set to \code{FALSE}, in which case all operations are performed in place.
   }
 }
 \details{
@@ -65,7 +68,8 @@ set.seed(12341)
 n <- 1000
 data <- data.table(sex=sample(c("m", "f"), size=n, replace=TRUE),
                    age_cat=sample(c("10", "20", "30"), size=n, replace=TRUE),
-                   treatment=sample(c(TRUE, FALSE), size=n, probs=c(0.1, 0.9)))
+                   treatment=sample(c(TRUE, FALSE), size=n, prob=c(0.1, 0.9),
+                                    replace=TRUE))
 
 # perform 1:1 exact matching on sex, without replacement
 out <- fast_exact_matching(data=data,
@@ -80,17 +84,18 @@ out <- fast_exact_matching(data=data,
                            ratio=3,
                            replace=TRUE)
 
-# perform 1:1 exact matching on sex, without replacement using the ATC
+# perform 1:1 exact matching on sex, with replacement using the ATC
 out <- fast_exact_matching(data=data,
                            treat="treatment",
                            strata="sex",
                            ratio=1,
-                           estimand="ATC")
+                           estimand="ATC",
+                           replace=TRUE)
 
 # perform 1:1 exact matching on sex and age_cat, without replacement
-data[, strata := paste(sex, age_cat)]
+data[, strat := paste(sex, age_cat)]
 out <- fast_exact_matching(data=data,
                            treat="treatment",
-                           strata="strata",
+                           strata="strat",
                            ratio=1)
 }
