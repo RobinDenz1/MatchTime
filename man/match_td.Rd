@@ -11,9 +11,9 @@ This function utilizies the approach described in XX and XX to match untreated c
 match_td(formula, data, id, inclusion=NA, event=NA,
          replace_over_t=FALSE, replace_at_t=replace_over_t,
          replace_cases=TRUE, estimand="ATT",
-         ratio=1, if_lt_n_at_t="stop", censor_pairs=TRUE,
-         match_method="fast_exact", keep_all_columns=FALSE,
-         verbose=FALSE, ...)
+         ratio=1, if_lt_n_at_t="stop", censor_at_treat=TRUE,
+         censor_pairs=TRUE, match_method="fast_exact",
+         keep_all_columns=FALSE, verbose=FALSE, ...)
 }
 \arguments{
   \item{formula}{
@@ -49,8 +49,11 @@ How many control units should be matched to each treated unit in k:1 matching. S
   \item{if_lt_n_at_t}{
 Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{match_method="fast_exact"}.
   }
+  \item{censor_at_treat}{
+Whether to censor controls at the time at which they subsequently received the treatment. This should usually be set to \code{TRUE} (default) if a per-protocol type effect should be estimated, although it will then be necessary to adjust the analysis for covariate-dependent artificial censoring (see details). If intention-to-treat type effects are of interest, this argument should usually be set to \code{FALSE}. This argument is only used when \code{!is.na(event)}.
+  }
   \item{censor_pairs}{
-Whether to censor the case if one of the matched controls gets censored later due to becoming a case themself. This argument is only used when \code{!is.na(event)}.
+Whether to censor the case if one of the matched controls gets censored later due to becoming a case themself. This argument is only used when \code{!is.na(event)} and when \code{censor_at_treat=TRUE}.
   }
   \item{match_method}{
 A single character string specifying which method should be used to perform matching at each point in time. Allowed values are \code{"none"} (to perform no matching on covariates), \code{"fast_exact"} (default, to use fast exact matching as implemented in the \code{\link{fast_exact_matching}} function of this package) or any valid method of the \code{\link[MatchIt]{matchit}} function. If the latter is used, this argument is passed to the \code{method} argument of the \code{\link[MatchIt]{matchit}} function directly. Further arguments may be passed to \code{\link[MatchIt]{matchit}} in this case using the three-dot syntax.

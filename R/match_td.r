@@ -3,13 +3,14 @@
 ## estimation function called match_td.fit()
 #' @importFrom data.table is.data.table
 #' @importFrom data.table copy
+#' @importFrom data.table :=
 #' @export
 match_td <- function(formula, data, id, inclusion=NA, event=NA,
                      replace_over_t=FALSE, replace_at_t=replace_over_t,
                      replace_cases=TRUE, estimand="ATT", ratio=1,
-                     if_lt_n_at_t="stop", censor_pairs=TRUE,
-                     match_method="fast_exact", keep_all_columns=FALSE,
-                     verbose=FALSE, ...) {
+                     if_lt_n_at_t="stop", censor_at_treat=TRUE,
+                     censor_pairs=TRUE, match_method="fast_exact",
+                     keep_all_columns=FALSE, verbose=FALSE, ...) {
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -26,6 +27,7 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                         replace_cases=replace_cases,
                         estimand=estimand, ratio=ratio,
                         if_lt_n_at_t=if_lt_n_at_t,
+                        censor_at_treat=censor_at_treat,
                         censor_pairs=censor_pairs,
                         match_method=match_method,
                         verbose=verbose,
@@ -44,18 +46,18 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
   d_treat <- times_from_start_stop(data=data, name=treat, id=id)
   data[, eval(treat) := NULL]
 
-  # remove all rows when inclusion criteria are not met
-  if (!is.na(inclusion)) {
-    data <- data[eval(inclusion)==TRUE]
-    data[, eval(inclusion) := NULL]
-  }
-
   # extract relevant event times
   if (!is.na(event)) {
     d_event <- times_from_start_stop(data=data, name=event, id=id)
     data[, eval(event) := NULL]
   } else {
     d_event <- NULL
+  }
+
+  # remove all rows when inclusion criteria are not met
+  if (!is.na(inclusion)) {
+    data <- data[eval(inclusion)==TRUE]
+    data[, eval(inclusion) := NULL]
   }
 
   # call function that does all the work
@@ -84,7 +86,8 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                          match_vars=NULL, replace_over_t=FALSE,
                          replace_at_t=replace_over_t, replace_cases=TRUE,
-                         censor_pairs=TRUE, estimand="ATT", ratio=1,
+                         censor_at_treat=TRUE, censor_pairs=TRUE,
+                         estimand="ATT", ratio=1,
                          if_lt_n_at_t="stop", match_method="fast_exact",
                          keep_all_columns=FALSE, verbose=FALSE, ...) {
 
@@ -99,13 +102,21 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   cnames <- colnames(d_covars)
   select_vars <- cnames[!cnames %fin% c("start", "stop")]
 
+  # get maximum follow-up time per person, if needed later
+  if (!is.null(d_event)) {
+    d_longest <- d_covars[, (.max_t = max(stop)), by=eval(id)]
+    colnames(d_longest) <- c(".id", ".max_t")
+  }
+
   # keep only cases that meet inclusion criteria at treatment time
   # NOTE: maybe change >= <= stuff to overlapping start-stop
-  d_inclusion <- merge(d_covars, d_treat, by=id, all.x=TRUE)
-  include <- d_inclusion[eval(parse(text=time)) >= start
+  d_covars <- merge(d_covars, d_treat, by=id, all.x=TRUE)
+  include <- d_covars[eval(parse(text=time)) >= start
                            & eval(parse(text=time)) <= stop][[eval(id)]]
   d_treat <- d_treat[eval(parse(text=id)) %fin% include]
-  rm(d_inclusion)
+
+  # remove time durations after treatment onset
+  d_covars <- remove_after_treat(data=d_covars, time=time)
 
   # identify all points in time at which at least one case happened
   case_times <- sort(unique(d_treat[[eval(time)]]))
@@ -246,7 +257,8 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   # add event_time and status if specified
   if (!is.null(d_event)) {
     data <- add_tte_outcome(id=id, time=time, data=data, d_event=d_event,
-                            censor_pairs=censor_pairs, d_covars=d_covars)
+                            censor_pairs=censor_pairs, d_longest=d_longest,
+                            censor_at_treat=censor_at_treat)
     first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
                     ".next_treat_time", ".next_event_time", "event_time",
                     "status")

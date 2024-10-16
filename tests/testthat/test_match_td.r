@@ -12,12 +12,13 @@ d_multi$d_covars[, inclusion := NULL]
 # - test if add_previous_event returns the same results as match_td()
 #   when not matching on meds
 # - check if actual continuous input and datetime input works
-# - check only matching on time-dependent variable
+# - needs test on whether variables in final matched dataset at t correspond to
+#   values at t in original dataset
 
 test_that("matching on nothing", {
 
   set.seed(1346)
-  out <- match_td(formula=vacc ~ mac,
+  out <- match_td(formula=vacc ~ 1,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
@@ -45,7 +46,7 @@ test_that("matching on nothing", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(26, 26))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(28, 28))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
@@ -82,7 +83,44 @@ test_that("matching on time-fixed variable", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(33, 33))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(29, 29))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+})
+
+test_that("matching on time-dependent variable", {
+
+  set.seed(13534)
+  out <- match_td(formula=vacc ~ meds,
+                  data=d_single,
+                  id=".id",
+                  inclusion="inclusion",
+                  event="influenza")
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(229, 229))
+
+  # mac not equally distributed in each level of .treat
+  tab <- table(out$.treat, out$mac)
+  expect_true(tab[1,1] != tab[2,1])
+
+  # meds equally distributed in each level of .treat
+  tab <- table(out$.treat, out$meds)
+  expect_equal(tab[1, ], tab[2, ])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$pair_id)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id only occurs once or twice, if twice then once as control and once
+  # as a new case
+  expect_true(max(table(out$.id))==2)
+  out[, n_id := .N, by=.id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(49, 49))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
@@ -119,7 +157,7 @@ test_that("matching on time-fixed and time-dependent variable", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(45, 45))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
@@ -205,7 +243,7 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
                   if_lt_n_at_t="nothing")
 
   # a lot less cases than usual
-  expect_true(length(unique(out$pair_id))==86)
+  expect_true(length(unique(out$pair_id))==88)
 })
 
 test_that("output of match_td() and match_td.fit() is equal", {

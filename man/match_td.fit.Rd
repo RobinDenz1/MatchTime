@@ -11,10 +11,10 @@ This function actually performs the matching. It is an internal function used by
 match_td.fit(id, time, d_treat, d_event, d_covars,
              match_vars=NULL, replace_over_t=FALSE,
              replace_at_t=replace_over_t,
-             replace_cases=TRUE, censor_pairs=TRUE,
-             estimand="ATT", ratio=1, if_lt_n_at_t="stop",
-             match_method="fast_exact", keep_all_columns=FALSE,
-             verbose=FALSE, ...)
+             replace_cases=TRUE, censor_at_treat=TRUE,
+             censor_pairs=TRUE, estimand="ATT", ratio=1,
+             if_lt_n_at_t="stop", match_method="fast_exact",
+             keep_all_columns=FALSE, verbose=FALSE, ...)
 }
 \arguments{
   \item{id}{
@@ -44,8 +44,11 @@ Whether to allow usage of the same individuals as controls at the same point in 
   \item{replace_cases}{
 Whether to include persons that have already been used as controls as cases if they also get the treatment later.
   }
+  \item{censor_at_treat}{
+Whether to censor controls at the time at which they subsequently received the treatment. This should usually be set to \code{TRUE} (default) if a per-protocol type effect should be estimated, although it will then be necessary to adjust the analysis for covariate-dependent artificial censoring (see details). If intention-to-treat type effects are of interest, this argument should usually be set to \code{FALSE}. This argument is only used when \code{!is.na(event)}.
+  }
   \item{censor_pairs}{
-Whether to censor the case if the matched control gets censored later due to becoming a case themself.
+Whether to censor the case if the matched control gets censored later due to becoming a case themself. This argument is only used when \code{!is.na(event)} and \code{censor_at_treat=TRUE}.
   }
   \item{estimand}{
 Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset with which to estimate the average treatment effect on the treated, or to \code{"ATC"} which would target the average treatment effect for the untreated. May also allow other inputs when \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}.

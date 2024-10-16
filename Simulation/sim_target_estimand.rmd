@@ -579,6 +579,7 @@ d_match <- match_td.fit(id=".id",
                         d_covars=d_input$d_covars,
                         d_event=d_input$d_event,
                         verbose=FALSE)
+d_match[, event_time := event_time + 1]
 
 out <- estimate_target(d_match=d_match,
                        form_cox="Surv(event_time, status) ~ interact + sex",
@@ -664,7 +665,10 @@ modified_dag <- empty_dag() +
                                        "influenza_time"),
           base_p=0.001, rr_mac=1.5, rr_meds=4)
 
-true_target <- sim_true_estimand(modified_dag, n_sim=50000, n_repeats=500,
+#true_target <- sim_true_estimand(modified_dag, n_sim=50000, n_repeats=500,
+#                                 max_t=365, n_cores=8, seed=443, t=100)
+
+true_target <- sim_true_estimand(modified_dag, n_sim=10000000, n_repeats=1,
                                  max_t=365, n_cores=8, seed=443, t=100)
 
 true_rr_mac <- mean(true_target$rr_mac)
@@ -695,7 +699,10 @@ d_match <- match_td.fit(id=".id",
                         d_covars=d_input$d_covars,
                         d_event=d_input$d_event,
                         match_vars="mac",
-                        verbose=FALSE)
+                        censor_at_treat=TRUE,
+                        censor_pairs=TRUE,
+                        verbose=FALSE,
+                        keep_all_columns=TRUE)
 d_match[, event_time := event_time + 1]
 
 out <- estimate_target(d_match=d_match,
@@ -727,11 +734,11 @@ head(out)
 ```{r}
 sim1 <- sim_matching(
   dag=dag,
-  n_sim=10000,
+  n_sim=20000,
   n_repeats=500,
   max_t=365,
   n_cores=8,
-  seed=2345235,
+  seed=2345535,
   td_variables="meds",
   durations=Inf,
   form_cox="Surv(event_time, status) ~ interact + meds",
@@ -750,11 +757,11 @@ plot_bias_target(sim1,
 ```{r}
 sim1 <- sim_matching(
   dag=dag,
-  n_sim=10000,
+  n_sim=20000,
   n_repeats=500,
   max_t=365,
   n_cores=8,
-  seed=2345235,
+  seed=23785235,
   td_variables="meds",
   durations=Inf,
   form_cox="Surv(event_time, status) ~ interact + meds",
@@ -845,7 +852,7 @@ modified_dag <- empty_dag() +
                                        "influenza_event"),
           base_p=0.001, rr_mac=1.5, rr_meds=4)
 
-true_target <- sim_true_estimand(modified_dag, n_sim=10000, n_repeats=500,
+true_target <- sim_true_estimand(modified_dag, n_sim=1000000, n_repeats=1,
                                  max_t=365, n_cores=8, seed=443, t=100)
 
 true_rr_mac <- mean(true_target$rr_mac)
@@ -858,8 +865,8 @@ cat("True Interaction: ", true_interact, "\n")
 ```
 
 ```{r}
-set.seed(24574546)
-sim <- sim_discrete_time(dag, n_sim=100000, max_t=365)
+set.seed(2457464)
+sim <- sim_discrete_time(dag, n_sim=1000000, max_t=365)
 ```
 
 ## Beispiel ohne Matching auf zeitabhängige Variable
@@ -876,6 +883,8 @@ d_match <- match_td.fit(id=".id",
                         d_covars=d_input$d_covars,
                         d_event=d_input$d_event,
                         keep_all_columns=TRUE,
+                        censor_at_treat=TRUE,
+                        censor_pairs=TRUE,
                         match_vars="mac",
                         verbose=FALSE)
 d_match[, event_time := event_time + 1]
@@ -896,7 +905,7 @@ out <- estimate_target(d_match=d_match,
 head(out)
 ```
 
-Die Ergebnisse sind hier deutlich näher an den korrekten Werten.
+Die Ergebnisse sind hier deutlich näher an den korrekten Werten, aber immernoch nicht ganz korrekt.
 
 ## Beispiel mit Matching auf zeitabhängige Variable
 
@@ -909,6 +918,8 @@ d_match <- match_td.fit(id=".id",
                         d_covars=d_input$d_covars,
                         d_event=d_input$d_event,
                         keep_all_columns=TRUE,
+                        censor_at_treat=TRUE,
+                        censor_pairs=TRUE,
                         match_vars=c("mac", "meds"),
                         verbose=FALSE)
 d_match[, event_time := event_time + 1]

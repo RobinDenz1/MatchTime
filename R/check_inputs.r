@@ -27,7 +27,7 @@ stopifnotm <- function(assert, message) {
 check_inputs_match_td <- function(formula, data, id, inclusion, event,
                                   replace_over_t, replace_at_t,
                                   replace_cases, estimand, ratio,
-                                  if_lt_n_at_t, censor_pairs,
+                                  if_lt_n_at_t, censor_at_treat, censor_pairs,
                                   match_method, verbose, keep_all_columns) {
 
   # correct data
@@ -104,6 +104,8 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
              "'replace_cases' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(censor_pairs),
              "'censor_pairs' must be either TRUE or FALSE.")
+  stopifnotm(is_single_logical(censor_at_treat),
+             "'censor_at_treat' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(verbose),
              "'verbose' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(keep_all_columns),

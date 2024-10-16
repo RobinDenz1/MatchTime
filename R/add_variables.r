@@ -2,8 +2,8 @@
 ## add time-to-event outcome to matched data
 #' @importFrom data.table :=
 #' @importFrom data.table fifelse
-add_tte_outcome <- function(id, time, data, d_event, d_covars,
-                            censor_pairs) {
+add_tte_outcome <- function(id, time, data, d_event, d_longest,
+                            censor_at_treat, censor_pairs) {
 
   .next_treat_time <- .treat_time <- .next_event_time <- status <-
     event_time <- pair_id_event_time <- .artificial_cens_time <- pair_id <- NULL
@@ -21,19 +21,22 @@ add_tte_outcome <- function(id, time, data, d_event, d_covars,
   data[is.na(.next_treat_time) & !is.na(.next_event_time), status := TRUE]
   data[.next_treat_time > .next_event_time, status := TRUE]
 
-  # get maximum follow-up time per person
-  d_longest <- d_covars[, (.max_t = max(stop)), by=eval(id)]
-  colnames(d_longest) <- c(".id", ".max_t")
+  # add maximum follow-up time per person
   data <- merge(data, d_longest, by=id, all.x=TRUE)
 
   # calculate corresponding event time
-  data[, event_time := pmin(.next_treat_time, .next_event_time,
-                            .max_t - .treat_time, na.rm=TRUE)]
+  if (censor_at_treat) {
+    data[, event_time := pmin(.next_treat_time, .next_event_time,
+                              .max_t - .treat_time, na.rm=TRUE)]
+  } else {
+    data[, event_time := pmin(.next_event_time, .max_t - .treat_time,
+                              na.rm=TRUE)]
+  }
   data[, .max_t := NULL]
 
   # if specified and a control is censored because it became a case later,
   # also censor the corresponding pair to which it is a control at the same time
-  if (censor_pairs) {
+  if (censor_pairs && censor_at_treat) {
 
     # new variable that is Inf if no artificial censoring is needed or the
     # minimum of the artificial censoring times inside matched pair groups
@@ -114,6 +117,74 @@ add_previous_event_time <- function(data, d_prev, id, time, duration,
   # remove duplicate rows
   data <- unique(data)
   colnames(data)[colnames(data)==".in_risk"] <- name
+
+  return(data)
+}
+
+## removes all times after first treatment onset
+#' @importFrom data.table :=
+remove_after_treat <- function(data, time, overlap=FALSE,
+                               remove_time_var=TRUE) {
+
+  # if overlapping ones are supplied, simply re-transform to non-overlapping
+  # start-stop format, perform the transformation and re-add the + 1
+  if (overlap) {
+    data[, stop := stop - 1]
+  }
+
+  # set NA to maximum possible time
+  suppressWarnings(
+    data[, (time) := fifelse(is.na(eval(parse(text=time))),
+                             Inf, eval(parse(text=time)))]
+  )
+
+  # remove row if start is after treatment
+  data <- data[!(start > eval(parse(text=time)))]
+
+  # change stop accordingly if it is after treatment onset
+  data[stop > eval(parse(text=time)), stop := eval(parse(text=time))]
+
+  if (overlap) {
+    data[, stop := stop + 1]
+  }
+
+  if (remove_time_var) {
+    data[, (time) := NULL]
+  }
+
+  return(data)
+}
+
+## removes all times before first treatment onset
+#' @importFrom data.table :=
+remove_before_treat <- function(data, time, overlap=FALSE,
+                                remove_time_var=TRUE) {
+
+  # if overlapping ones are supplied, simply re-transform to non-overlapping
+  # start-stop format, perform the transformation and re-add the + 1
+  if (overlap) {
+    data[, stop := stop - 1]
+  }
+
+  # set NA to maximum possible time
+  suppressWarnings(
+    data[, (time) := fifelse(is.na(eval(parse(text=time))),
+                             Inf, eval(parse(text=time)))]
+  )
+
+  # remove row if start is before treatment
+  data <- data[!(stop < eval(parse(text=time)))]
+
+  # change start accordingly if it is after treatment onset
+  data[start < eval(parse(text=time)), start := eval(parse(text=time))]
+
+  if (overlap) {
+    data[, stop := stop + 1]
+  }
+
+  if (remove_time_var) {
+    data[, (time) := NULL]
+  }
 
   return(data)
 }
