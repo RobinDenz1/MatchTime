@@ -9,7 +9,7 @@ This function utilizies the approach described in XX and XX to match untreated c
 }
 \usage{
 match_td(formula, data, id, inclusion=NA, event=NA,
-         replace_over_t=FALSE, replace_at_t=replace_over_t,
+         replace_over_t=FALSE, replace_at_t=FALSE,
          replace_cases=TRUE, estimand="ATT",
          ratio=1, if_lt_n_at_t="stop", censor_at_treat=TRUE,
          censor_pairs=TRUE, match_method="fast_exact",

@@ -77,14 +77,14 @@ sim_true_estimand <- function(modified_dag, n_sim, n_repeats, max_t, n_cores,
                           .export=glob_funs, .options.snow=opts) %dorng% {
     
     # simulate data from modified DAG
-    sim <- sim_discrete_time(dag=modified_dag, n_sim=n_sim, max_t=max_t)
+    sim_true <- sim_discrete_time(dag=modified_dag, n_sim=n_sim, max_t=max_t)
 
     # put together counterfactual data
-    d_influ <- get_event_times(sim, "influenza")
-    d_influ_2 <- get_event_times(sim, "influenza_2")
+    d_influ <- get_event_times(sim_true, "influenza")
+    d_influ_2 <- get_event_times(sim_true, "influenza_2")
 
-    d1 <- get_data_01(sim, d_influ)
-    d0 <- get_data_01(sim, d_influ_2)
+    d1 <- get_data_01(sim_true, d_influ)
+    d0 <- get_data_01(sim_true, d_influ_2)
 
     d0$.treat <- FALSE
     d1$.treat <- TRUE
@@ -152,7 +152,7 @@ get_data_01 <- function(sim, d_influ) {
 sim_matching <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
                          td_variables=NULL, form_cox, t, baseline_vars=c("mac"),
                          adjust_method="g_cox", full_matching=FALSE,
-                         durations=NULL, match_vars, ...) {
+                         durations=NULL, match_vars, reference=NULL, ...) {
 
   # parallel processing
   cl <- makeCluster(n_cores, outfile="")
@@ -205,7 +205,8 @@ sim_matching <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
     out_i <- estimate_target(d_match=d_match,
                              form_cox=form_cox,
                              t=t,
-                             method=adjust_method)
+                             method=adjust_method,
+                             reference=reference)
 
     out_i
   }
@@ -232,7 +233,8 @@ get_event_times <- function(sim, name) {
 }
 
 ## using matched data, get target estimand
-estimate_target <- function(d_match, form_cox, t, method="g_cox") {
+estimate_target <- function(d_match, form_cox, t, method="g_cox",
+                            reference=NULL) {
   
   # create interaction
   d_match[, interact := factor(interaction(.treat, mac))]
@@ -274,13 +276,21 @@ estimate_target <- function(d_match, form_cox, t, method="g_cox") {
                          treatment_model=interact ~ meds,
                          estimand="ATE")
   } else if (method=="strat_amato") {
+    
+    if (is.null(reference)) {
+      reference <- d_match
+    }
+    
     surv <- adjustedsurv(data=d_match,
                          variable="interact",
                          ev_time="event_time",
                          event="status",
                          method="strat_amato",
                          times=t,
-                         adjust_vars=c("meds"))
+                         adjust_vars=c("meds"),
+                         reference=reference
+                         #reference=subset(d_match, .treat==TRUE)
+                         )
   } else if (method=="km") {
     surv <- adjustedsurv(data=d_match,
                          variable="interact",
@@ -464,7 +474,8 @@ d_match <- match_td.fit(id=".id",
                         d_treat=d_input$d_treat,
                         d_covars=d_input$d_covars,
                         d_event=d_input$d_event,
-                        verbose=FALSE)
+                        verbose=FALSE,
+                        match_vars="mac")
 d_match[, event_time := event_time + 1]
 
 out <- estimate_target(d_match=d_match, t=100,
@@ -578,7 +589,8 @@ d_match <- match_td.fit(id=".id",
                         d_treat=d_input$d_treat,
                         d_covars=d_input$d_covars,
                         d_event=d_input$d_event,
-                        verbose=FALSE)
+                        verbose=FALSE,
+                        match_vars=c("mac", "sex"))
 d_match[, event_time := event_time + 1]
 
 out <- estimate_target(d_match=d_match,
@@ -865,7 +877,7 @@ cat("True Interaction: ", true_interact, "\n")
 ```
 
 ```{r}
-set.seed(2457464)
+set.seed(24574644)
 sim <- sim_discrete_time(dag, n_sim=1000000, max_t=365)
 ```
 
@@ -895,7 +907,7 @@ out <- estimate_target(d_match=d_match,
 head(out)
 ```
 
-Hier sieht man bereits das es nicht sonderlich gut funktioniert. Das liegt aber nicht daran, dass nicht für die zeitabhängige Variable gematcht wurde, sondern daran das die Annahmen für das Cox Modell hier tatsächlich nicht mehr gelten! Hier eine Auswertung bei der stattdessen IPTW verwendet wird:
+Hier sieht man bereits das es nicht sonderlich gut funktioniert. Das liegt wahrscheinlich zumindest teilweise daran das die Annahmen für das Cox Modell hier tatsächlich nicht mehr gelten. Hier eine Auswertung bei der stattdessen IPTW verwendet wird:
 
 ```{r}
 out <- estimate_target(d_match=d_match,
@@ -905,14 +917,23 @@ out <- estimate_target(d_match=d_match,
 head(out)
 ```
 
-Die Ergebnisse sind hier deutlich näher an den korrekten Werten, aber immernoch nicht ganz korrekt.
+Die Ergebnisse sind hier deutlich näher an den korrekten Werten, aber immernoch nicht ganz korrekt. Wieso das hier nicht ganz perfekt funktioniert ist mir noch unklar. Noch ein bisschen besser wird es wenn man als Referenz zur Standardisierung bei IPTW einen Datensatz mit 50/50 Verteilung von "meds" angibt:
+
+```{r}
+out <- estimate_target(d_match=d_match,
+                       form_cox="Surv(event_time, status) ~ interact + meds",
+                       t=100,
+                       method="strat_amato",
+                       reference=data.frame(meds=c(TRUE, FALSE)))
+head(out)
+```
 
 ## Beispiel mit Matching auf zeitabhängige Variable
 
 Im Anschluss die Auswertung der gleichen Daten, aber mit perfektem Matching auch auf "meds".
 
 ```{r}
-d_match <- match_td.fit(id=".id",
+d_match2 <- match_td.fit(id=".id",
                         time=".time",
                         d_treat=d_input$d_treat,
                         d_covars=d_input$d_covars,
@@ -922,18 +943,18 @@ d_match <- match_td.fit(id=".id",
                         censor_pairs=TRUE,
                         match_vars=c("mac", "meds"),
                         verbose=FALSE)
-d_match[, event_time := event_time + 1]
+d_match2[, event_time := event_time + 1]
 
-out <- estimate_target(d_match=d_match,
+out <- estimate_target(d_match=d_match2,
                        form_cox="Surv(event_time, status) ~ interact + meds",
                        t=100)
 head(out)
 ```
 
-Hier zeigt sich fast genau der gleiche Bias, da eben auch hier die Proportional Hazards Annahme verletzt ist. Aber da hier durch das vollständige Matching kein Confounding mehr vorliegt könnten wir hier auch einfache Kaplan-Meier Schätzer verwenden:
+Hier zeigt sich fast genau der gleiche Bias wenn man ein Cox modell verwendet, da eben auch hier die Proportional Hazards Annahme verletzt ist. Aber da hier durch das vollständige Matching kein Confounding mehr vorliegt könnten wir hier auch einfache Kaplan-Meier Schätzer verwenden:
 
 ```{r}
-out <- estimate_target(d_match=d_match,
+out <- estimate_target(d_match=d_match2,
                        method="km",
                        form_cox="Surv(event_time, status) ~ interact + meds",
                        t=100)
@@ -943,7 +964,7 @@ head(out)
 Der Bias scheint dadurch nahezu vollständig zu verschwinden. Hier die vollständigen Kaplan-Meier Kurven:
 
 ```{r}
-surv_km <- adjustedsurv(data=d_match,
+surv_km <- adjustedsurv(data=d_match2,
                         variable="interact",
                         ev_time="event_time",
                         event="status",
@@ -953,7 +974,7 @@ plot(surv_km)
 
 Hierbei steht das erste TRUE/FALSE dafür ob jemand geimpft wurde oder nicht und das zweite TRUE/FALSE dafür ob jemand ein MAC Patient ist oder nicht. Wie klar zu sehen ist kreuzen sich die beiden Kurven bei den MAC Patienten. Die Proportional Hazards Annahme ist damit nicht mehr gegeben. Der Grund dafür könnte sein, dass in der Gruppe der geimpften die Personen öfter "meds" bekommen, welche dann unendlich lange auf TRUE bleiben und die Wahrscheinlichkeit für Influenza erhöhen. Es liegt also sicher an den speziellen Einstellungen dieses unrealistischen Beispiels, könnte aber durchaus auch in der Realität passieren.
 
-Das Problem lässt sich entweder durch vollständiges Matching lösen, oder durch die Verwendung einer anderen Adjustierungsmethode, welche nicht auf der Proportional-Hazards Annahme beruhen.
+Das Problem lässt sich entweder durch vollständiges Matching lösen, oder (zumindest größtenteils) durch die Verwendung einer anderen Adjustierungsmethode, welche nicht auf der Proportional-Hazards Annahme beruhen.
 
 ## Monte-Carlo Simulation ohne Matching auf zeitabhängige Variable
 
@@ -963,7 +984,7 @@ Hier eine Monte-Carlo Simulation bei welcher nicht direkt auf "meds" gematcht wi
 sim1 <- sim_matching(
   dag=dag,
   n_sim=50000,
-  n_repeats=200,
+  n_repeats=1000,
   max_t=365,
   n_cores=8,
   seed=23434334,
@@ -972,7 +993,8 @@ sim1 <- sim_matching(
   form_cox="Surv(event_time, status) ~ interact + meds",
   adjust_method="strat_amato",
   t=100,
-  match_vars="mac"
+  match_vars="mac",
+  reference=data.frame(meds=c(TRUE, FALSE))
 )
 
 plot_bias_target(sim1,

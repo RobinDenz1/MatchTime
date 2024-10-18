@@ -6,7 +6,7 @@
 #' @importFrom data.table :=
 #' @export
 match_td <- function(formula, data, id, inclusion=NA, event=NA,
-                     replace_over_t=FALSE, replace_at_t=replace_over_t,
+                     replace_over_t=FALSE, replace_at_t=FALSE,
                      replace_cases=TRUE, estimand="ATT", ratio=1,
                      if_lt_n_at_t="stop", censor_at_treat=TRUE,
                      censor_pairs=TRUE, match_method="fast_exact",
@@ -85,7 +85,7 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 #' @export
 match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                          match_vars=NULL, replace_over_t=FALSE,
-                         replace_at_t=replace_over_t, replace_cases=TRUE,
+                         replace_at_t=FALSE, replace_cases=TRUE,
                          censor_at_treat=TRUE, censor_pairs=TRUE,
                          estimand="ATT", ratio=1,
                          if_lt_n_at_t="stop", match_method="fast_exact",

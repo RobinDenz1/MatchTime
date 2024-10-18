@@ -169,7 +169,7 @@ remove_before_treat <- function(data, time, overlap=FALSE,
   # set NA to maximum possible time
   suppressWarnings(
     data[, (time) := fifelse(is.na(eval(parse(text=time))),
-                             Inf, eval(parse(text=time)))]
+                             -Inf, eval(parse(text=time)))]
   )
 
   # remove row if start is before treatment

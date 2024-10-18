@@ -10,10 +10,10 @@ This function actually performs the matching. It is an internal function used by
 \usage{
 match_td.fit(id, time, d_treat, d_event, d_covars,
              match_vars=NULL, replace_over_t=FALSE,
-             replace_at_t=replace_over_t,
-             replace_cases=TRUE, censor_at_treat=TRUE,
-             censor_pairs=TRUE, estimand="ATT", ratio=1,
-             if_lt_n_at_t="stop", match_method="fast_exact",
+             replace_at_t=FALSE, replace_cases=TRUE,
+             censor_at_treat=TRUE, censor_pairs=TRUE,
+             estimand="ATT", ratio=1, if_lt_n_at_t="stop",
+             match_method="fast_exact",
              keep_all_columns=FALSE, verbose=FALSE, ...)
 }
 \arguments{
