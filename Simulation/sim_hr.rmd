@@ -454,6 +454,7 @@ summary(mod)
 ```{r}
 d_input <- get_data_for_match_td(sim,
                                  td_vars="meds",
+                                 baseline_vars=c("mac", "sex"),
                                  durations=Inf,
                                  all_in_one=FALSE)
 
