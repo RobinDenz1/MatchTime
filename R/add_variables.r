@@ -89,6 +89,7 @@ add_next_event_time <- function(data, d_event, id, time, include_same_t=TRUE) {
 ## given a data.table containing event times per person and a duration of
 ## that event, adds an indicator to the matched data which is TRUE if the
 ## event was currently going on when the person got matched and FALSE otherwise
+# TODO: .id_new should maybe be an argument
 #' @importFrom data.table :=
 add_previous_event_time <- function(data, d_prev, id, time, duration,
                                     name, include_same_t=FALSE) {
@@ -187,4 +188,27 @@ remove_before_treat <- function(data, time, overlap=FALSE,
   }
 
   return(data)
+}
+
+## counts all events that happened "duration" days before time
+add_previous_event_count <- function(data, d_prev, id, id_new, time, duration,
+                                     name, include_same_t=FALSE) {
+
+  colnames(d_prev)[colnames(d_prev)==time] <- ".prev_time"
+  data <- merge(data, d_prev, by=id, all.x=TRUE)
+
+  data[, diff := as.vector(.prev_time - eval(parse(text=time)))]
+
+  if (include_same_t) {
+    out <- data[, .(count = sum(diff <= 0 & diff >= -duration)),
+                by=eval(id_new)]
+  } else {
+    out <- data[, .(count = sum(diff < 0 & diff >= -duration)),
+                by=eval(id_new)]
+  }
+  out[is.na(count), count := 0]
+
+  colnames(out)[colnames(out)=="count"] <- name
+
+  return(out)
 }
