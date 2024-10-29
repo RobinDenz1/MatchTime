@@ -64,6 +64,16 @@ d_KH_visits <- get_random_id_date(n=10000, start_date="2013/01/01",
 d_chickenpox <- get_random_id_date(n=100, n_ids=10000, start_date="2013/01/01",
                                    end_date="2021/12/31")
 
+# versicherungszeiten
+dag <- empty_dag() +
+  node_td("insured", type="time_to_event", prob_fun=0.01,
+          event_duration=120)
+
+d_vers <- sim2data(sim_discrete_time(dag, n_sim=10000, max_t=2000),
+                   to="start_stop")
+
+
+
 ## Arbeitsschritte:
 # 1.) Erstelle start-stop Datensatz pro Target Trial mit:
 #     - Matching-variablen: Infos zu sex, GebJahr, Place, Disease
