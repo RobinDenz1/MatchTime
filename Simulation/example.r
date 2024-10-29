@@ -78,6 +78,7 @@ d_vers <- sim2data(sim_discrete_time(dag, n_sim=10000, max_t=2000),
 # 1.) Erstelle start-stop Datensatz pro Target Trial mit:
 #     - Matching-variablen: Infos zu sex, GebJahr, Place, Disease
 #     - Inclusion criteria: death, versicherungszeiten, ICD ausschlüsse
+# - starting data: alle
 
 # 2.) Perform Matching with match_td.fit()
 #     - hier können d_vacc und d_outcome direkt als input einfließen
@@ -93,4 +94,44 @@ d_vers <- sim2data(sim_discrete_time(dag, n_sim=10000, max_t=2000),
 
 # 4.) Modell berechnen
 # 5.) G-Computation mit Modell
+
+n<-1000000
+d1 <- data.table(ID=1:n,
+                   start=sample(seq(as.Date("2013/01/01"),
+                                   as.Date("2021/12/31"), by="day"),
+                               size=n, replace=TRUE))
+d1[,stop:=start+round(runif(n,min=1,max=110))]
+d1[,value:=round(runif(n,min=1,max=15))]
+d1 <- unique(d1)
+
+d2 <- data.table(ID=1:n,
+                 start=sample(seq(as.Date("2013/01/01"),
+                                  as.Date("2021/12/31"), by="day"),
+                              size=n, replace=TRUE))
+d2[,stop:=start+round(runif(n,min=1,max=110))]
+d2[,value:=round(runif(n,min=1,max=15))]
+d2<- unique(d2)
+
+dlist<-list(A=d1,B=d2)
+start_date=as.Date("2013/01/01")
+end_date=as.Date("2021/12/31")
+id="ID"
+begin="start"
+end="stop"
+value="value"
+
+test<-as_start_stop(dlist,start_date=as.Date("2013/01/01"),
+                    end_date=as.Date("2021/12/31"),id="ID")
+
+
+
+data <- data.table(.id=c(1, 1, 1, 1, 1),
+                   start=c(0, 100, 280, 500, 1200),
+                   stop=c(10, 200, 495, 1100, 2100))
+data[, length_interval := stop - start]
+data[, prop_vers := cumsum(length_interval) / stop]
+
+
+
+
 
