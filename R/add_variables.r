@@ -6,7 +6,8 @@ add_tte_outcome <- function(id, time, data, d_event, d_longest,
                             censor_at_treat, censor_pairs) {
 
   .next_treat_time <- .treat_time <- .next_event_time <- status <-
-    event_time <- pair_id_event_time <- .artificial_cens_time <- pair_id <- NULL
+    event_time <- pair_id_event_time <- .artificial_cens_time <- pair_id <-
+    .max_t <- NULL
 
   # add event information
   data <- add_next_event_time(data=data, d_event=d_event, id=id, time=time,
@@ -127,6 +128,8 @@ add_previous_event_time <- function(data, d_prev, id, time, duration,
 remove_after_treat <- function(data, time, overlap=FALSE,
                                remove_time_var=TRUE) {
 
+  start <- NULL
+
   # if overlapping ones are supplied, simply re-transform to non-overlapping
   # start-stop format, perform the transformation and re-add the + 1
   if (overlap) {
@@ -161,6 +164,8 @@ remove_after_treat <- function(data, time, overlap=FALSE,
 remove_before_treat <- function(data, time, overlap=FALSE,
                                 remove_time_var=TRUE) {
 
+  start <- NULL
+
   # if overlapping ones are supplied, simply re-transform to non-overlapping
   # start-stop format, perform the transformation and re-add the + 1
   if (overlap) {
@@ -193,6 +198,8 @@ remove_before_treat <- function(data, time, overlap=FALSE,
 ## counts all events that happened "duration" days before time
 add_previous_event_count <- function(data, d_prev, id, id_new, time, duration,
                                      name, include_same_t=FALSE) {
+
+  . <- .prev_time <- count <- NULL
 
   colnames(d_prev)[colnames(d_prev)==time] <- ".prev_time"
   data <- merge(data, d_prev, by=id, all.x=TRUE)

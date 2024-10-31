@@ -101,7 +101,7 @@ d1 <- data.table(ID=1:n,
                                    as.Date("2021/12/31"), by="day"),
                                size=n, replace=TRUE))
 d1[,stop:=start+round(runif(n,min=1,max=110))]
-d1[,value:=round(runif(n,min=1,max=15))]
+d1[,value:=runif(n,min=1,max=15)]
 d1 <- unique(d1)
 
 d2 <- data.table(ID=1:n,
@@ -109,19 +109,24 @@ d2 <- data.table(ID=1:n,
                                   as.Date("2021/12/31"), by="day"),
                               size=n, replace=TRUE))
 d2[,stop:=start+round(runif(n,min=1,max=110))]
-d2[,value:=round(runif(n,min=1,max=15))]
+#d2[,value:=round(runif(n,min=1,max=15))]
+d2[, value := sample(c("a", "b", "c", "d"), size=n, replace=TRUE)]
 d2<- unique(d2)
 
 dlist<-list(A=d1,B=d2)
-start_date=as.Date("2013/01/01")
-end_date=as.Date("2021/12/31")
+first_time=as.Date("2013/01/01")
+last_time=as.Date("2021/12/31")
+remove_before_first <- TRUE
+remove_after_last <- TRUE
 id="ID"
-begin="start"
-end="stop"
+start="start"
+stop="stop"
 value="value"
+defaults <- list(A=99, B="abaaa")
 
-test<-as_start_stop(dlist,start_date=as.Date("2013/01/01"),
-                    end_date=as.Date("2021/12/31"),id="ID")
+test <- merge_td(dlist, first_time=as.Date("2013/01/01"),
+                 last_time=as.Date("2021/12/31"), id="ID",
+                 defaults=defaults)
 
 
 
