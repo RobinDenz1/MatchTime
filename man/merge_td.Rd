@@ -27,13 +27,13 @@ An optional scalar value specifying the time at which the observation time start
 Same as \code{first_time}, but for the end of the observation period.
   }
   \item{remove_before_first}{
-Either \code{TRUE} or \code{FALSE}. If \code{TRUE} and \code{first_time} is specified, all time intervals before \code{first_time} are removed for each individual. This is done by default if \code{first_time} is specified, but can be turned off by setting this argument to \code{FALSE}.
+Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE} and \code{first_time} is specified, all time intervals before \code{first_time} are removed for each individual. This is done by default if \code{first_time} is specified, but can be turned off by setting this argument to \code{FALSE}.
   }
   \item{remove_after_last}{
-Either \code{TRUE} or \code{FALSE}. If \code{TRUE} and \code{last_time} is specified, all time intervals after \code{last_time} are removed for each individual. This is done by default if \code{last_time} is specified, but can be turned off by setting this argument to \code{FALSE}.
+Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE} and \code{last_time} is specified, all time intervals after \code{last_time} are removed for each individual. This is done by default if \code{last_time} is specified, but can be turned off by setting this argument to \code{FALSE}.
   }
   \item{center_on_first}{
-Either \code{TRUE} or \code{FALSE}, specifying whether the \code{start} and \code{stop} columns should be centered on the \code{first_time} value. If \code{first_time} is specified and \code{center_on_first=TRUE}, the first time period of each \code{id} will start at 0.
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the \code{start} and \code{stop} columns should be centered on the \code{first_time} value. If \code{first_time} is specified and \code{center_on_first=TRUE}, the first time period of each \code{id} will start at 0.
   }
   \item{defaults}{
 An optional named list containing default values for some or all variable or \code{NULL} (default). If \code{NULL}, missing information is kept as \code{NA}. This argument may be useful if the objects in \code{dlist} do not contain information for all of the time under observation for all individuals. The value in \code{defaults} will then be imputed for all such missing intervals. See details and examples.
@@ -42,7 +42,7 @@ An optional named list containing default values for some or all variable or \co
 An optional \code{data.table} containing times at which an event occured for each \code{id} or \code{NULL} (default). If \code{NULL}, no events are added. If specified, the times included in this \code{data.table} are added to the resulting start-stop data in the form of a \code{status} variable. The data will then reflect what is usually needed to fit time-to-event or recurrent event models. See details and examples. The supplied \code{data.table} should include exactly two columns: \code{id} (see argument of the same name) and \code{time} (the time at which the event(s) occured). Multiple events per \code{id} are supported. Note that if \code{event_times} contains times before the first included time-period for an \code{id}, those are not be included in the output. Users should define the \code{first_time} argument accordingly, or provide full information on the required time-periods through \code{dlist}.
   }
   \item{time_to_first_event}{
-Either \code{TRUE} or \code{FALSE} (default), specifying whether the observation time after the first event per \code{id} should be removed or not. If \code{TRUE}, only time until the first event per person is kept. Event times should be defined using the \code{event_times} argument. This argument is ignored if \code{event_times=NULL}. Note that if \code{first_time} is not specified and the first event of an \code{id} happens before the first included time period, the \code{id} will be removed entirely from the output.
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the observation time after the first event per \code{id} should be removed or not. If \code{TRUE}, only time until the first event per person is kept. Event times should be defined using the \code{event_times} argument. This argument is ignored if \code{event_times} is \code{NULL}. Note that if \code{first_time} is not specified and the first event of an \code{id} happens before the first included time period, the \code{id} will be removed entirely from the output.
   }
   \item{constant_vars}{
 An optional \code{data.table} containing values of variables that are constant over time for some or all \code{id}s in \code{dlist} or \code{NULL} (default). If specified, the constant variables are simply merged to the final start-stop data. The input to \code{constant_vars} should therefore contain a column named as the \code{id} argument.

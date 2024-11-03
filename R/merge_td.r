@@ -67,7 +67,7 @@ merge_td <- function(dlist, first_time=NULL, last_time=NULL,
     data <- rbind(data, end_rows)
   }
 
-  # sort by .id and start & remove duplicates
+  # sort by .id and start
   setkey(data, .id, start)
 
   # create stop
