@@ -15,15 +15,11 @@ col_type_dlist <- function(dlist, col) {
 check_inputs_merge_td <- function(dlist, first_time, last_time,
                                   remove_before_first, remove_after_last,
                                   center_on_first, defaults,
-                                  id, start, stop, value, constant_vars,
+                                  id, start, stop, constant_vars,
                                   event_times, status) {
 
   # dlist
   stopifnotm(length(dlist) > 1, "'dlist' must contain at least two objects.")
-  stopifnotm(all(vapply(dlist, FUN=is.data.table, FUN.VALUE=logical(1))),
-             "'dlist' may only contain data.table objects.")
-  stopifnotm(!is.null(names(dlist)),
-            "'dlist' must be a named list. Please add names to each list item.")
 
   # id
   stopifnotm(is_single_character(id),
@@ -63,17 +59,14 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
                     " must have the same type."))
 
   # value
-  stopifnotm(is_single_character(value),
-             "'value' needs to be a single character string.")
-  stopifnotm(col_in_all(dlist, col=value),
-             "'value' must specify a column defined in all objects in 'dlist'.")
-
-  value_types <- col_type_dlist(dlist, col=value)
-  supported_types <- c("integer", "logical", "numeric", "character")
-  stopifnotm(all(value_types %in% supported_types),
-             paste0("The columns specified by 'value' must be of one of the",
-                    " supported types:\n integer, logical, numeric, ",
-                    "character."))
+  # TODO: there needs to be some variant of this to check all col-types in
+  #       the supplied datasets
+  #value_types <- col_type_dlist(dlist, col=value)
+  #supported_types <- c("integer", "logical", "numeric", "character")
+  #stopifnotm(all(value_types %in% supported_types),
+  #           paste0("The columns specified by 'value' must be of one of the",
+  #                  " supported types:\n integer, logical, numeric, ",
+  #                  "character."))
 
   # first_time
   stopifnotm(is.null(first_time) || length(first_time)==1,
@@ -136,4 +129,6 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
            " in 'dlist'. Found in data.table named ", names(dlist)[[i]])
     }
   }
+
+  # TODO: check defaults
 }

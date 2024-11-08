@@ -1,7 +1,8 @@
 
 # TODO:
-# - add support for factor type in "value" column
-# - add support for non data.table input in dlist
+# - add support for factors as variables
+# - add support for all.x, all.y, all arguments
+#   (currently it simply always uses "all")
 
 ## function to transform a list of data.tables into a single start-stop
 ## data.table which may then be used in match_td()
@@ -9,21 +10,26 @@
 #' @importFrom data.table data.table
 #' @importFrom data.table setkey
 #' @importFrom data.table merge.data.table
+#' @importFrom data.table melt.data.table
 #' @importFrom data.table setnames
 #' @importFrom data.table dcast
 #' @importFrom data.table :=
 #' @importFrom data.table rbindlist
 #' @importFrom data.table shift
 #' @export
-merge_td <- function(dlist, first_time=NULL, last_time=NULL,
+merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
                      remove_before_first=TRUE, remove_after_last=TRUE,
                      center_on_first=FALSE, defaults=NULL,
                      event_times=NULL, time_to_first_event=FALSE,
                      constant_vars=NULL, id="id", start="start",
-                     stop="stop", value="value", status="status",
-                     check_inputs=TRUE) {
+                     stop="stop", status="status", check_inputs=TRUE,
+                     copy_data=TRUE) {
 
   . <- .id <- .first_time <- .event_time <- NULL
+
+  if (missing(dlist)) {
+    dlist <- list(x, y, ...)
+  }
 
   if (check_inputs) {
     check_inputs_merge_td(dlist=dlist, first_time=first_time,
@@ -31,16 +37,46 @@ merge_td <- function(dlist, first_time=NULL, last_time=NULL,
                           remove_before_first=remove_before_first,
                           remove_after_last=remove_after_last,
                           center_on_first=center_on_first, defaults=defaults,
-                          id=id, start=start, stop=stop, value=value,
+                          id=id, start=start, stop=stop,
                           constant_vars=constant_vars, event_times=event_times,
                           status=status)
   }
 
-  # safe value column types for later
-  col_types <- lapply(dlist, FUN=function(x){class(x[[value]])})
+  if (copy_data) {
+    dlist <- copy(dlist)
+  }
+
+  ## prepare dlist for further processing
+  col_types <- list()
+  for (i in seq_len(length(dlist))) {
+
+    # must be a data.table
+    if (!is.data.table(dlist[[i]])) {
+      dlist[[i]] <- as.data.table(dlist[[i]])
+    }
+
+    # columns containing the values
+    cnames <- colnames(dlist[[i]])[!colnames(dlist[[i]]) %in%
+                                     c(id, start, stop)]
+
+    # extract column types
+    col_types <- append(col_types, extract_col_types(dlist[[i]], cnames))
+
+    # get supplied data.tables into long format (if needed)
+    if (ncol(dlist[[i]])==4) {
+      dlist[[i]][, dataset := cnames]
+      setnames(dlist[[i]], old=cnames, new="value")
+    } else {
+      dlist[[i]] <- suppressWarnings(
+        melt.data.table(dlist[[i]], id.vars=c(id, start, stop),
+                        variable.name="dataset",
+                        variable.factor=FALSE)
+      )
+    }
+  }
 
   # put together all datasets in one
-  value_dat <- rbindlist(dlist, idcol="dataset", use.names=TRUE)
+  value_dat <- rbindlist(dlist, use.names=TRUE)
   unique_ids <- unique(value_dat[[id]])
 
   # initial data.table
@@ -78,11 +114,11 @@ merge_td <- function(dlist, first_time=NULL, last_time=NULL,
   # create column names for later
   var_names <- unique(value_dat$dataset)
   var_names_stop <- paste0(stop, "_", var_names)
-  var_names_value <- paste0(value, "_", var_names)
+  var_names_value <- paste0("value_", var_names)
 
   # create one end date for each start + corresponding value
   formula <- stats::as.formula(paste0(id, " + ", start, " ~ dataset"))
-  value_dat <- dcast(value_dat, formula=formula, value.var=c(stop, value),
+  value_dat <- dcast(value_dat, formula=formula, value.var=c(stop, "value"),
                      drop=TRUE)
   setnames(value_dat, old=c(id, start), new=c(".id", "start"))
 
@@ -212,7 +248,11 @@ set_col_classes <- function(data, col_types) {
     type_i <- col_types[[i]]
 
     if (type_i=="logical") {
-      data[, (name_i) := as.logical(get(name_i))]
+      if (all(unique(data[[name_i]]) %in% c("0", "1", NA))) {
+        data[, (name_i) := as.logical(as.numeric(get(name_i)))]
+      } else {
+        data[, (name_i) := as.logical(get(name_i))]
+      }
     } else if (type_i=="numeric") {
       data[, (name_i) := as.numeric(get(name_i))]
     } else if (type_i=="character") {
@@ -221,4 +261,16 @@ set_col_classes <- function(data, col_types) {
       data[, (name_i) := as.integer(get(name_i))]
     }
   }
+}
+
+## given a data.table and a list of column names, get a named list
+## of the corresponding column types
+extract_col_types <- function(data, cnames) {
+
+  out <- vector(mode="list", length=length(cnames))
+  for (i in seq_len(length(cnames))) {
+    out[[i]] <- class(data[[cnames[i]]])
+  }
+  names(out) <- cnames
+  return(out)
 }
