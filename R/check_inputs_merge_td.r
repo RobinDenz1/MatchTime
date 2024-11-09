@@ -15,17 +15,17 @@ col_type_dlist <- function(dlist, col) {
 check_inputs_merge_td <- function(dlist, first_time, last_time,
                                   remove_before_first, remove_after_last,
                                   center_on_first, defaults,
-                                  id, start, stop, constant_vars,
+                                  by, start, stop, constant_vars,
                                   event_times, status) {
 
   # dlist
   stopifnotm(length(dlist) > 1, "'dlist' must contain at least two objects.")
 
   # id
-  stopifnotm(is_single_character(id),
-             "'id' needs to be a single character string.")
-  stopifnotm(col_in_all(dlist, col=id),
-             "'id' must specify a column defined in all objects in 'dlist'.")
+  stopifnotm(is_single_character(by),
+             "'by' needs to be a single character string.")
+  stopifnotm(col_in_all(dlist, col=by),
+             "'by' must specify a column defined in all objects in 'dlist'.")
 
   # start
   stopifnotm(is_single_character(start),
@@ -58,15 +58,18 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
              paste0("The columns specified by 'start' and 'stop'",
                     " must have the same type."))
 
-  # value
-  # TODO: there needs to be some variant of this to check all col-types in
-  #       the supplied datasets
-  #value_types <- col_type_dlist(dlist, col=value)
-  #supported_types <- c("integer", "logical", "numeric", "character")
-  #stopifnotm(all(value_types %in% supported_types),
-  #           paste0("The columns specified by 'value' must be of one of the",
-  #                  " supported types:\n integer, logical, numeric, ",
-  #                  "character."))
+  # value names
+  all_cnames <- unlist(lapply(dlist, colnames))
+  all_cnames <- all_cnames[!all_cnames %in% c(by, start, stop)]
+  tab <- table(all_cnames)
+  cname_non_unique <- names(tab)[tab > 1]
+
+  stopifnotm(length(cname_non_unique)==0,
+             paste0("Columns other than by, start and stop in 'x', 'y', ",
+                    "... or 'dlist' must be unique. Found the following",
+                    " columns in different datasets:\n",
+                    paste(cname_non_unique, collapse=", "), "\n.",
+                    " Rename those and run this function again."))
 
   # first_time
   stopifnotm(is.null(first_time) || length(first_time)==1,
@@ -98,9 +101,9 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
   stopifnotm(is.null(constant_vars) || is.data.table(constant_vars),
              "'constant_vars' must be either NULL or a data.table.")
   stopifnotm(is.null(constant_vars) || (!is.null(constant_vars) &&
-                                          id %in% colnames(constant_vars)),
+                                          by %in% colnames(constant_vars)),
              paste0("'constant_vars' must contain a column named as the ",
-                    "string specified by the 'id' argument."))
+                    "string specified by the 'by' argument."))
 
   # status
   stopifnotm(is_single_character(status),
@@ -110,9 +113,9 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
   stopifnotm(is.null(event_times) || is.data.table(event_times),
              "'event_times' must be either NULL or a data.table.")
   if (!is.null(event_times)) {
-    stopifnotm(id %in% colnames(event_times),
+    stopifnotm(by %in% colnames(event_times),
                paste0("'event_times' must contain a column named as the string",
-                      " specified by the 'id' argument."))
+                      " specified by the 'by' argument."))
     stopifnotm("time" %in% colnames(event_times),
                paste0("'event_times' must contain a column named 'time', ",
                       "containing the event times, if specified."))

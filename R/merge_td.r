@@ -1,8 +1,6 @@
 
 # TODO:
 # - add support for factors as variables
-# - add support for all.x, all.y, all arguments
-#   (currently it simply always uses "all")
 
 ## function to transform a list of data.tables into a single start-stop
 ## data.table which may then be used in match_td()
@@ -17,13 +15,14 @@
 #' @importFrom data.table rbindlist
 #' @importFrom data.table shift
 #' @export
-merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
+merge_td <- function(x, y, ..., dlist, by="id", start="start",
+                     stop="stop", all=FALSE, all.x=all, all.y=all,
+                     first_time=NULL, last_time=NULL,
                      remove_before_first=TRUE, remove_after_last=TRUE,
                      center_on_first=FALSE, defaults=NULL,
                      event_times=NULL, time_to_first_event=FALSE,
-                     constant_vars=NULL, id="id", start="start",
-                     stop="stop", status="status", check_inputs=TRUE,
-                     copy_data=TRUE) {
+                     status="status", constant_vars=NULL,
+                     check_inputs=TRUE, copy_data=TRUE) {
 
   . <- .id <- .first_time <- .event_time <- NULL
 
@@ -37,7 +36,7 @@ merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
                           remove_before_first=remove_before_first,
                           remove_after_last=remove_after_last,
                           center_on_first=center_on_first, defaults=defaults,
-                          id=id, start=start, stop=stop,
+                          by=by, start=start, stop=stop,
                           constant_vars=constant_vars, event_times=event_times,
                           status=status)
   }
@@ -57,18 +56,26 @@ merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
 
     # columns containing the values
     cnames <- colnames(dlist[[i]])[!colnames(dlist[[i]]) %in%
-                                     c(id, start, stop)]
+                                     c(by, start, stop)]
 
     # extract column types
-    col_types <- append(col_types, extract_col_types(dlist[[i]], cnames))
+    type_value_i <- extract_col_types(dlist[[i]], cnames)
+    col_types <- append(col_types, type_value_i)
 
-    # get supplied data.tables into long format (if needed)
+    if (!all(unlist(type_value_i) %in% c("logical", "numeric", "character"))) {
+      stop("All columns containing variables (columns except 'by', 'start' ",
+           "and 'stop') must be of type:\n 'logical', 'numeric' or ",
+           "'character'.")
+    }
+
+    # get supplied data.tables into long format if it contains more than one
+    # variable with actual values
     if (ncol(dlist[[i]])==4) {
       dlist[[i]][, dataset := cnames]
       setnames(dlist[[i]], old=cnames, new="value")
     } else {
       dlist[[i]] <- suppressWarnings(
-        melt.data.table(dlist[[i]], id.vars=c(id, start, stop),
+        melt.data.table(dlist[[i]], id.vars=c(by, start, stop),
                         variable.name="dataset",
                         variable.factor=FALSE)
       )
@@ -77,15 +84,26 @@ merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
 
   # put together all datasets in one
   value_dat <- rbindlist(dlist, use.names=TRUE)
-  unique_ids <- unique(value_dat[[id]])
 
   # initial data.table
-  data <- data.table(.id=rep(value_dat[[id]], 2),
+  data <- data.table(.id=rep(value_dat[[by]], 2),
                      start=c(value_dat[[start]], value_dat[[stop]]))
+
+  # apply all.x and all.y restrictions
+  ids_x_y <- get_unique_x_y_ids(dlist=dlist, id=by)
+
+  if (!all.x & length(ids_x_y$only_in_x) > 0) {
+    data <- data[!.id %in% ids_x_y$only_in_x]
+  }
+
+  if (!all.y & length(ids_x_y$only_in_y) > 0) {
+    data <- data[!.id %in% ids_x_y$only_in_y]
+  }
+  unique_ids <- unique(data$.id)
 
   # add event times, if specified
   if (!is.null(event_times)) {
-    setnames(event_times, old=id, new=".id")
+    setnames(event_times, old=by, new=".id")
     setnames(event_times, old="time", new="start")
     data <- rbind(data, event_times)
     setnames(event_times, old="start", new=".event_time")
@@ -117,10 +135,10 @@ merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
   var_names_value <- paste0("value_", var_names)
 
   # create one end date for each start + corresponding value
-  formula <- stats::as.formula(paste0(id, " + ", start, " ~ dataset"))
+  formula <- stats::as.formula(paste0(by, " + ", start, " ~ dataset"))
   value_dat <- dcast(value_dat, formula=formula, value.var=c(stop, "value"),
                      drop=TRUE)
-  setnames(value_dat, old=c(id, start), new=c(".id", "start"))
+  setnames(value_dat, old=c(by, start), new=c(".id", "start"))
 
   # add this info to start-stop intervals
   data <- merge.data.table(data, value_dat, by=c(".id", "start"),
@@ -179,7 +197,7 @@ merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
 
   # add constant variables, if specified
   if (!is.null(constant_vars)) {
-    setnames(constant_vars, id, ".id")
+    setnames(constant_vars, by, ".id")
     data <- merge.data.table(data, constant_vars, by=".id", all.x=TRUE,
                              all.y=FALSE)
   }
@@ -204,6 +222,9 @@ merge_td <- function(x, y, ..., dlist, first_time=NULL, last_time=NULL,
       data <- unique(data)
     }
   }
+
+  # set names back to user-supplied names
+  setnames(data, old=c(".id", "start", "stop"), new=c(by, start, stop))
 
   return(data)
 }
@@ -272,5 +293,21 @@ extract_col_types <- function(data, cnames) {
     out[[i]] <- class(data[[cnames[i]]])
   }
   names(out) <- cnames
+  return(out)
+}
+
+## extract ids that are only present in x, y respectively
+get_unique_x_y_ids <- function(dlist, id) {
+
+  all_x_ids <- unique(dlist[[1]][[id]])
+
+  all_y_ids <- vector(mode="list", length=length(dlist)-1)
+  for (i in seq(2, length(dlist))) {
+    all_y_ids[[i-1]] <- dlist[[i]][[id]]
+  }
+  all_y_ids <- unique(unlist(all_y_ids))
+
+  out <- list(only_in_x=setdiff(all_x_ids, all_y_ids),
+              only_in_y=setdiff(all_y_ids, all_x_ids))
   return(out)
 }
