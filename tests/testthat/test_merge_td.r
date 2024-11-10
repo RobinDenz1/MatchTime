@@ -367,7 +367,6 @@ test_that("Date start / stop", {
   expect_true(all(output[, .(start = min(start)), by=id]$start==0))
 })
 
-# TODO: currently fails
 test_that("POSIXct start / stop", {
 
   d1 <- data.table(id=c(1, 1, 2),

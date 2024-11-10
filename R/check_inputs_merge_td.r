@@ -7,8 +7,7 @@ col_in_all <- function(dlist, col) {
 
 ## return the type of a column in each object in dlist
 col_type_dlist <- function(dlist, col) {
-  vapply(dlist, FUN=function(x, col){class(x[[col]])}, FUN.VALUE=character(1),
-         col=col)
+  lapply(dlist, FUN=function(x, col){class(x[[col]])}, col=col)
 }
 
 ## check inputs for merge_td() function
@@ -16,7 +15,7 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
                                   remove_before_first, remove_after_last,
                                   center_on_first, defaults,
                                   by, start, stop, constant_vars,
-                                  event_times, status) {
+                                  event_times, status, copy_data) {
 
   # dlist
   stopifnotm(length(dlist) > 1, "'dlist' must contain at least two objects.")
@@ -32,11 +31,13 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
              "'start' needs to be a single character string.")
   stopifnotm(col_in_all(dlist, col=start),
              "'start' must specify a column defined in all objects in 'dlist'.")
-  start_types <- col_type_dlist(dlist, col=start)
-  stopifnotm(all(start_types %in% c("integer", "numeric", "Date")),
+  start_types <- unlist(col_type_dlist(dlist, col=start))
+  stopifnotm(all(start_types %in% c("integer", "numeric", "Date",
+                                    "POSIXct", "POSIXt")),
              paste0("'start' must specify a column of type 'integer',",
                     " 'numeric' or 'Date' in all objects in 'dlist'."))
-  stopifnotm(length(unique(start_types))==1,
+  stopifnotm(length(unique(start_types))==1 | all(start_types %in%
+                        c("POSIXct", "POSIXt")),
              paste0("The type of the column specified by 'start' must be ",
                     "the same across all objects in 'dlist'."))
 
@@ -45,11 +46,13 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
              "'stop' needs to be a single character string.")
   stopifnotm(col_in_all(dlist, col=stop),
              "'stop' must specify a column defined in all objects in 'dlist'.")
-  stop_types <- col_type_dlist(dlist, col=stop)
-  stopifnotm(all(stop_types %in% c("integer", "numeric", "Date")),
+  stop_types <- unlist(col_type_dlist(dlist, col=stop))
+  stopifnotm(all(stop_types %in% c("integer", "numeric", "Date",
+                                   "POSIXct", "POSIXt")),
              paste0("'stop' must specify a column of type 'integer',",
                     " 'numeric' or 'Date' in all objects in 'dlist'."))
-  stopifnotm(length(unique(stop_types))==1,
+  stopifnotm(length(unique(stop_types))==1 | all(stop_types %in%
+                                                   c("POSIXct", "POSIXt")),
              paste0("The type of the column specified by 'stop' must be ",
                     "the same across all objects in 'dlist'."))
 
@@ -97,6 +100,10 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
   stopifnotm(is_single_logical(center_on_first),
              "'center_on_first' must be either TRUE or FALSE.")
 
+  # copy_data
+  stopifnotm(is_single_logical(copy_data),
+             "'copy_data' must be either TRUE or FALSE.")
+
   # constant vars
   stopifnotm(is.null(constant_vars) || is.data.table(constant_vars),
              "'constant_vars' must be either NULL or a data.table.")
@@ -133,5 +140,11 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
     }
   }
 
-  # TODO: check defaults
+  # check defaults
+  all_cnames <- unlist(lapply(dlist, colnames))
+  stopifnotm(is.null(defaults) || all(names(defaults) %in% all_cnames),
+             paste0("The following column(s) are listed in 'defaults' but",
+                    " never appear in any supplied datasets:\n",
+                    paste0(names(defaults)[!names(defaults) %in% all_cnames],
+                           collapse=", ")))
 }

@@ -5,7 +5,7 @@
 Merge two or more datasets in the start-stop format
 }
 \description{
-Given multiple \code{data.table}s (or similar objects) containing partial or complete information about time periods or intervals (start-stop data), this function creates a single complete \code{data.table} in the start-stop format containing all of this information. Single or recurrent events may be added. It is essentially a faster and more RAM efficient version of the classic \code{tmerge} function of the \pkg{survival} package with some additional functionality. It is not a generic function or \code{S3} method, because the input are \code{data.tables}.
+Given multiple \code{data.table}s (or similar objects) containing partial or complete information about time periods or intervals (start-stop data), this function creates a single complete \code{data.table} in the start-stop format containing all of this information. Single or recurrent events may be added. It is essentially a faster and more RAM efficient version of the classic \code{tmerge} function of the \pkg{survival} package with some additional functionality. It is not a generic function or \code{S3} method, because the input are \code{data.table}s.
 }
 \usage{
 merge_td(x, y, ..., dlist, by, start="start",
@@ -37,7 +37,7 @@ A single character string specifying the name of the \code{stop} column in the s
 Either \code{TRUE} or \code{FALSE} (default). \code{all=TRUE} is shorthand to save setting both \code{all.x=TRUE} and \code{all.y=TRUE}.
   }
   \item{all.x}{
-Either \code{TRUE} or \code{FALSE}. If \code{TRUE}, cases from \code{x} (identified using the \code{by} column) which have no matching cases in \code{y} or any other dataset supplied afterwards through \code{...} are included in the output. These cases will have \code{NA}s in the columns that are usually filled with values from the other datasets. The default is \code{FALSE} so that only cases with data from both \code{x} and \code{y} (and potentially the other datasets) are included in the ouptut. This is analogous to the standard \code{merge} functions, with the only difference being that all datasets except \code{x} are counted as "y" datasets. These arguments only apply to cases identified using the \code{by} column, not to the time-intervals defined by \code{start} and \code{stop}.
+Either \code{TRUE} or \code{FALSE}. If \code{TRUE}, cases from \code{x} (identified using the \code{by} column) which have no matching cases in \code{y} or any other dataset supplied afterwards through \code{...} are included in the output (if only \code{dlist} is specified, the first entry in \code{dlist} will be considered "x" and all other entries as "y"). These cases will have \code{NA}s in the columns that are usually filled with values from the other datasets. The default is \code{FALSE} so that only cases with data from both \code{x} and \code{y} (and potentially the other datasets) are included in the ouptut. This is analogous to the standard \code{merge} functions, with the only difference being that all datasets except \code{x} are counted as "y" datasets. These arguments only apply to cases identified using the \code{by} column, not to the time-intervals defined by \code{start} and \code{stop}.
   }
   \item{all.y}{
 Either \code{TRUE} or \code{FALSE}, analogous to \code{all.x} above.

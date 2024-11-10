@@ -38,7 +38,7 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
                           center_on_first=center_on_first, defaults=defaults,
                           by=by, start=start, stop=stop,
                           constant_vars=constant_vars, event_times=event_times,
-                          status=status)
+                          status=status, copy_data=copy_data)
   }
 
   if (copy_data) {
@@ -185,6 +185,7 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
   }
 
   # center output on first time, if specified
+  # TODO: needs a "unit" for Date / datetime objects
   if (center_on_first & !is.null(first_time)) {
     data[, start := as.vector(start - first_time)]
     data[, stop := as.vector(stop - first_time)]
