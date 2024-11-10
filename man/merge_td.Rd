@@ -8,7 +8,7 @@ Merge two or more datasets in the start-stop format
 Given multiple \code{data.table}s (or similar objects) containing partial or complete information about time periods or intervals (start-stop data), this function creates a single complete \code{data.table} in the start-stop format containing all of this information. Single or recurrent events may be added. It is essentially a faster and more RAM efficient version of the classic \code{tmerge} function of the \pkg{survival} package with some additional functionality. It is not a generic function or \code{S3} method, because the input are \code{data.tables}.
 }
 \usage{
-merge_td(x, y, ..., dlist, by="id", start="start",
+merge_td(x, y, ..., dlist, by, start="start",
          stop="stop", all=FALSE, all.x=all, all.y=all,
          first_time=NULL, last_time=NULL,
          remove_before_first=TRUE, remove_after_last=TRUE,
@@ -22,10 +22,10 @@ merge_td(x, y, ..., dlist, by="id", start="start",
 \code{data.table} like objects (\code{tibble}, \code{data.frame}, ...) containing information about time periods. Those should contain information for one or more variables to be created. Each \code{data.table} should contain four or more columns: \code{by} (the individual identifier across all \code{data.table}s), \code{start} (the beginning of an interval), \code{stop} (the end of an interval) and at least one variable containing some values observed during this interval for the respective individual identified using \code{by}. More information is given under "Details". Users should define either \code{x} and \code{y} (and potentially parse more objects through \code{...}) or define the \code{dlist} argument instead.
   }
   \item{dlist}{
-A list of \code{data.table} like objects. This argument may be used instead of parsing the \code{data.table}s directly through \code{x}, \code{y} and the three-dot syntax.
+A list of \code{data.table} like objects. This argument may be used instead of parsing the \code{data.table}s directly through \code{x}, \code{y} and the three-dot syntax. If \code{dlist} is specified, \code{x}, \code{y} and all datasets parsed through \code{...} are ignored.
   }
   \item{by}{
-A single character string specifying the name of the column which uniquely identifies individuals in the supplied datasets. Defaults to \code{"id"}. The column identified by this string may contain any variable type. Contrary to the \code{by} argument of standard \code{merge} functions, this argument does not support multiple values. Since the goal is to merge on time-intervals, it is also necessary to additionaly define which columns identify them using the \code{start} and \code{stop} arguments.
+A single character string specifying the name of the column which uniquely identifies individuals in the supplied datasets. The column identified by this string may contain any variable type. Contrary to the \code{by} argument of standard \code{merge} functions, this argument does not support multiple values. Since the goal is to merge on time-intervals, it is also necessary to additionaly define which columns identify them using the \code{start} and \code{stop} arguments.
   }
   \item{start}{
 A single character string specifying the name of the \code{start} column in the supplied datasets. Defaults to \code{"start"}. The column identified by this string may contain and variable type that allows comparisons and that can be merged on (such as int, datetime, and floats).
@@ -109,7 +109,7 @@ In other words, the BMI has a value of 32.1 in the interval \code{[0, 10)} and a
 Here, only the actual days with a treatment are recorded, but it is known that no treatment was given at all other times. We could include this information directly into \code{d2} by adding the intervals inbetween, but there is no need to do that, as we will see soon. The two datasets could be merged into one start-stop dataset using:
 
 \preformatted{
-  data <- merge_td(dl, d2, defaults=list("Treatment"=FALSE))
+  data <- merge_td(dl, d2, by="id", defaults=list("Treatment"=FALSE))
 }
 
 This example is also given below if you want to run it yourself. By specifying the \code{defaults} argument for "Treatment" to be \code{FALSE}, we get the desired start-stop dataset. By using \code{...} or the \code{dlist} argument, any number of \code{data.table}s with full information (such as \code{d1}) or partial information (such as \code{d2}) may be merged. More examples are given below.
@@ -158,32 +158,32 @@ d2 <- data.table(id=c(1, 1, 1),
                  Treatment=c(TRUE, TRUE, TRUE))
 
 # setting default for Treatment
-data <- merge_td(d1, d2, defaults=list("Treatment"=FALSE))
+data <- merge_td(d1, d2, by="id", defaults=list("Treatment"=FALSE))
 print(data)
 
 # setting no such defaults
-data <- merge_td(d1, d2)
+data <- merge_td(d1, d2, by="id")
 print(data)
 
 # with a first_time and last_time argument
-data <- merge_td(d1, d2, first_time=-5, last_time=100)
+data <- merge_td(d1, d2, by="id", first_time=-5, last_time=100)
 print(data)
 
 # last_time < actually observed last time
-data <- merge_td(d1, d2, last_time=17)
+data <- merge_td(d1, d2, by="id", last_time=17)
 print(data)
 
 # first_time > actually observed first time
-data <- merge_td(d1, d2, first_time=8)
+data <- merge_td(d1, d2, by="id", first_time=8)
 print(data)
 
 # adding a time-constant variable sex
 d3 <- data.table(id=1, sex="female")
-data <- merge_td(d1, d2, constant_vars=d3)
+data <- merge_td(d1, d2, by="id", constant_vars=d3)
 print(data)
 
 # adding event times
 d4 <- data.table(id=c(1, 1), time=c(4, 31))
-data <- merge_td(dl, d2, event_times=d4)
+data <- merge_td(dl, d2, by="id", event_times=d4)
 print(data)
 }

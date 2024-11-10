@@ -51,7 +51,7 @@ test_that("interval starts on the same day", {
                          B=c(NA, TRUE, NA, TRUE, NA),
                          d1=c(32.1, 32.1, 32.1, 35.0, 35.0))
   setkey(expected, id, start)
-  output <- merge_td(dlist=dlist)
+  output <- merge_td(dlist=dlist, by="id")
 
   expect_equal(output, expected)
 })
@@ -75,7 +75,7 @@ test_that("interval ends on the same day", {
                          value1=c(32.1, 32.1, 35.0, 35.0, 35.0),
                          value2=c(NA, TRUE, NA, TRUE, NA))
   setkey(expected, id, start)
-  output <- merge_td(dlist=dlist)
+  output <- merge_td(dlist=dlist, by="id")
 
   expect_equal(output, expected)
 })
@@ -105,10 +105,10 @@ test_that("id not in every data.table (all.x, all.y)", {
   expected_neither <- expected_all[!id %in% c(2, 3)]
 
   # call merge_td() with different all.x, all.y
-  output_all <- merge_td(dlist=dlist, all=TRUE)
-  output_all_x <- merge_td(dlist=dlist, all.x=TRUE, all.y=FALSE)
-  output_all_y <- merge_td(dlist=dlist, all.x=FALSE, all.y=TRUE)
-  output_neither <- merge_td(dlist=dlist)
+  output_all <- merge_td(dlist=dlist, by="id", all=TRUE)
+  output_all_x <- merge_td(dlist=dlist, by="id", all.x=TRUE, all.y=FALSE)
+  output_all_y <- merge_td(dlist=dlist, by="id", all.x=FALSE, all.y=TRUE)
+  output_neither <- merge_td(dlist=dlist, by="id")
 
   # test equality
   expect_equal(output_all, expected_all)
@@ -138,7 +138,7 @@ test_that("using first_time", {
                          B=c(NA, NA, TRUE, NA, TRUE, NA, NA, NA))
   setkey(expected, id, start)
 
-  output <- merge_td(dlist=dlist, first_time=-10, all=TRUE)
+  output <- merge_td(dlist=dlist, by="id", first_time=-10, all=TRUE)
   expect_equal(output, expected)
 
   # with first_time sometimes > actual entry & remove_before_first=TRUE
@@ -150,7 +150,7 @@ test_that("using first_time", {
   setkey(expected, id, start)
 
   output <- merge_td(dlist=dlist, first_time=9, remove_before_first=TRUE,
-                     all=TRUE)
+                     all=TRUE, by="id")
   expect_equal(output, expected)
 
   # with first_time sometimes > actual entry & remove_before_first=FALSE
@@ -162,7 +162,7 @@ test_that("using first_time", {
   setkey(expected, id, start)
 
   output <- merge_td(dlist=dlist, first_time=9, remove_before_first=FALSE,
-                     all=TRUE)
+                     all=TRUE, by="id")
   expect_equal(output, expected)
 })
 
@@ -187,7 +187,7 @@ test_that("using last_time", {
                          value3=c(NA, TRUE, NA, TRUE, NA, NA, NA, NA))
   setkey(expected, id, start)
 
-  output <- merge_td(dlist=dlist, last_time=900, all=TRUE)
+  output <- merge_td(dlist=dlist, last_time=900, all=TRUE, by="id")
   expect_equal(output, expected)
 
   # with last_time sometimes < actual entry & remove_after_last=TRUE
@@ -199,7 +199,7 @@ test_that("using last_time", {
   setkey(expected, id, start)
 
   output <- merge_td(dlist=dlist, last_time=101, remove_after_last=TRUE,
-                     all=TRUE)
+                     all=TRUE, by="id")
   expect_equal(output, expected)
 
   # with last_time sometimes < actual entry & remove_after_last=FALSE
@@ -211,7 +211,7 @@ test_that("using last_time", {
   setkey(expected, id, start)
 
   output <- merge_td(dlist=dlist, last_time=101, remove_after_last=FALSE,
-                     all=TRUE)
+                     all=TRUE, by="id")
   expect_equal(output, expected)
 })
 
@@ -261,12 +261,12 @@ test_that("using defaults", {
 
   # defaults for all
   output <- merge_td(d1, d2, first_time=-2, last_time=110,
-                     defaults=list("value2"=30, "value"=FALSE))
+                     defaults=list("value2"=30, "value"=FALSE), by="id")
   expect_equal(output, expected)
 
   # defaults for one variable only
   output <- merge_td(dlist=dlist, first_time=-2, last_time=110,
-                     defaults=list("value"=FALSE))
+                     defaults=list("value"=FALSE), by="id")
   expected[, value2 := c(NA, 32.1, 32.1, 32.1, 35.0, 35.0, NA)]
   expect_equal(output, expected)
 })
@@ -299,7 +299,7 @@ test_that("adding event status", {
                                   TRUE, FALSE, TRUE, FALSE))
   setkey(expected, id)
 
-  output <- merge_td(dlist=dlist, event_times=d3, all=TRUE)
+  output <- merge_td(dlist=dlist, event_times=d3, all=TRUE, by="id")
   expect_equal(output, expected)
 })
 
@@ -316,7 +316,7 @@ test_that("continuous start / stop", {
                    value4=c(TRUE, TRUE, TRUE, TRUE))
   dlist <- list("d1"=d1, "d2"=d2)
 
-  output <- merge_td(dlist=dlist, all=TRUE)
+  output <- merge_td(dlist=dlist, all=TRUE, by="id")
   expect_true(nrow(output)==9)
   expect_true(ncol(output)==5)
   expect_equal(max(output$stop), 5635.65346)
@@ -359,11 +359,11 @@ test_that("Date start / stop", {
                               TRUE, TRUE))
   setkey(expected, id, start)
 
-  output <- merge_td(dlist=dlist, all=TRUE)
+  output <- merge_td(dlist=dlist, all=TRUE, by="id")
   expect_equal(output, expected)
 
   # with center_on_first=TRUE
-  output <- merge_td(dlist=dlist, center_on_first=TRUE)
+  output <- merge_td(dlist=dlist, center_on_first=TRUE, by="id")
   expect_true(all(output[, .(start = min(start)), by=id]$start==0))
 })
 
@@ -404,11 +404,11 @@ test_that("POSIXct start / stop", {
                               TRUE, TRUE))
   setkey(expected, id, start)
 
-  output <- merge_td(dlist=dlist, all=TRUE)
+  output <- merge_td(dlist=dlist, all=TRUE, by="id")
   expect_equal(output, expected)
 
   # with center_on_first=TRUE
-  output <- merge_td(dlist=dlist, center_on_first=TRUE, all=TRUE)
+  output <- merge_td(dlist=dlist, center_on_first=TRUE, all=TRUE, by="id")
   expect_true(all(output[, .(start = min(start)), by=id]$start==0))
 })
 
@@ -429,8 +429,8 @@ test_that("include time-invariant variables", {
                        sex=c("m", "f", "m", "m"),
                        age=c(10, 23, 93, 12))
 
-  output1 <- merge_td(dlist=dlist, all=TRUE)
-  output2 <- merge_td(dlist=dlist, constant_vars=dfixed, all=TRUE)
+  output1 <- merge_td(dlist=dlist, all=TRUE, by="id")
+  output2 <- merge_td(dlist=dlist, constant_vars=dfixed, all=TRUE, by="id")
 
   expect_true(unique(output2[id==1]$sex)=="m")
   expect_true(unique(output2[id==2]$sex)=="f")
@@ -463,8 +463,8 @@ test_that("3 variables", {
 
   dlist <- list(d1, d2, d3)
 
-  output <- merge_td(dlist=dlist, all=TRUE)
-  output2 <- merge_td(d1, d2, d3, all=TRUE)
+  output <- merge_td(dlist=dlist, all=TRUE, by="id")
+  output2 <- merge_td(d1, d2, d3, all=TRUE, by="id")
 
   expect_equal(output, output2)
 
@@ -504,7 +504,7 @@ test_that("multiple variables in the same start-stop table", {
 
   dlist <- list(d1, d2, d3)
 
-  output <- merge_td(dlist=dlist, all=TRUE)
+  output <- merge_td(dlist=dlist, all=TRUE, by="id")
 
   expected <- data.table(id=c(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3),
                          start=c(0, 3, 4, 10, 13, 18, 22, 7, 14, 15, 28, 94,10),

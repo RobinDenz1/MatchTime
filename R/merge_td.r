@@ -15,7 +15,7 @@
 #' @importFrom data.table rbindlist
 #' @importFrom data.table shift
 #' @export
-merge_td <- function(x, y, ..., dlist, by="id", start="start",
+merge_td <- function(x, y, ..., dlist, by, start="start",
                      stop="stop", all=FALSE, all.x=all, all.y=all,
                      first_time=NULL, last_time=NULL,
                      remove_before_first=TRUE, remove_after_last=TRUE,
