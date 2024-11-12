@@ -92,11 +92,11 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
   # apply all.x and all.y restrictions
   ids_x_y <- get_unique_x_y_ids(dlist=dlist, id=by)
 
-  if (!all.x & length(ids_x_y$only_in_x) > 0) {
+  if (!all.x && length(ids_x_y$only_in_x) > 0) {
     data <- data[!.id %in% ids_x_y$only_in_x]
   }
 
-  if (!all.y & length(ids_x_y$only_in_y) > 0) {
+  if (!all.y && length(ids_x_y$only_in_y) > 0) {
     data <- data[!.id %in% ids_x_y$only_in_y]
   }
   unique_ids <- unique(data$.id)
