@@ -10,9 +10,9 @@ test_that("general test case", {
                              FALSE, TRUE))
 
   out <- times_from_start_stop(data=data, name="event", id="id")
-  expected <- data.table(.id=c(1, 1, 2, 3, 5, 5),
+  expected <- data.table(id=c(1, 1, 2, 3, 5, 5),
                          .time=c(15, 40, 35, 1, 15, 88))
-  setkeyv(expected, c(".id", ".time"))
+  setkeyv(expected, c("id", ".time"))
   expect_equal(out, expected)
 })
 

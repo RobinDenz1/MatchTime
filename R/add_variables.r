@@ -138,15 +138,14 @@ remove_after_treat <- function(data, time, overlap=FALSE,
 
   # set NA to maximum possible time
   suppressWarnings(
-    data[, (time) := fifelse(is.na(eval(parse(text=time))),
-                             Inf, eval(parse(text=time)))]
+    data[, (time) := fifelse(is.na(get(time)), Inf, get(time))]
   )
 
   # remove row if start is after treatment
-  data <- data[!(start > eval(parse(text=time)))]
+  data <- data[!(start > get(time))]
 
   # change stop accordingly if it is after treatment onset
-  data[stop > eval(parse(text=time)), stop := eval(parse(text=time))]
+  data[stop > get(time), stop := get(time)]
 
   if (overlap) {
     data[, stop := stop + 1]
@@ -174,15 +173,14 @@ remove_before_treat <- function(data, time, overlap=FALSE,
 
   # set NA to maximum possible time
   suppressWarnings(
-    data[, (time) := fifelse(is.na(eval(parse(text=time))),
-                             -Inf, eval(parse(text=time)))]
+    data[, (time) := fifelse(is.na(get(time)), -Inf, get(time))]
   )
 
   # remove row if start is before treatment
-  data <- data[!(stop < eval(parse(text=time)))]
+  data <- data[!(stop < get(time))]
 
   # change start accordingly if it is after treatment onset
-  data[start < eval(parse(text=time)), start := eval(parse(text=time))]
+  data[start < get(time), start := get(time)]
 
   if (overlap) {
     data[, stop := stop + 1]
@@ -204,7 +202,7 @@ add_previous_event_count <- function(data, d_prev, id, id_new, time, duration,
   colnames(d_prev)[colnames(d_prev)==time] <- ".prev_time"
   data <- merge(data, d_prev, by=id, all.x=TRUE)
 
-  data[, diff := as.vector(.prev_time - eval(parse(text=time)))]
+  data[, diff := as.vector(.prev_time - get(time))]
 
   if (include_same_t) {
     out <- data[, .(count = sum(diff <= 0 & diff >= -duration)),

@@ -111,9 +111,8 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   # keep only cases that meet inclusion criteria at treatment time
   # NOTE: maybe change >= <= stuff to overlapping start-stop
   d_covars <- merge(d_covars, d_treat, by=id, all.x=TRUE)
-  include <- d_covars[eval(parse(text=time)) >= start
-                           & eval(parse(text=time)) <= stop][[eval(id)]]
-  d_treat <- d_treat[eval(parse(text=id)) %fin% include]
+  include <- d_covars[get(time) >= start & get(time) <= stop][[eval(id)]]
+  d_treat <- d_treat[get(id) %fin% include]
 
   # remove time durations after treatment onset
   d_covars <- remove_after_treat(data=d_covars, time=time)
@@ -129,7 +128,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   for (i in seq_len(length(case_times))) {
 
     # identify new cases at t
-    ids_cases_i <- d_treat[eval(parse(text=time))==case_times[i]][[eval(id)]]
+    ids_cases_i <- d_treat[get(time)==case_times[i]][[eval(id)]]
 
     # potentially remove cases that were previously used as controls
     if (!replace_cases) {
@@ -160,12 +159,12 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
     all_ids <- c(ids_pot_controls_i, ids_cases_i)
 
     # get dataset including them all at t
-    d_all_i <- d_covars[eval(parse(text=id)) %fin% all_ids &
+    d_all_i <- d_covars[get(id) %fin% all_ids &
                         case_times[i] >= start & case_times[i] <= stop
                         ][, select_vars, with=FALSE]
 
     # identify cases
-    d_all_i[, .treat := eval(parse(text=id)) %fin% ids_cases_i]
+    d_all_i[, .treat := get(id) %fin% ids_cases_i]
 
     ## perform matching at t, if specified
     if (match_method=="none") {
@@ -180,7 +179,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                                      replace=replace_at_t,
                                      if_lt_n=if_lt_n_at_t)
 
-      d_match_i[, pair_id := rep(seq_len(n_treat), ratio+1)]
+      d_match_i[, pair_id := rep(seq_len(n_treat), ratio + 1)]
       d_match_i[, pair_id := paste0(i, "_", pair_id)]
       d_match_i[, .treat_time := case_times[i]]
 
@@ -293,17 +292,21 @@ times_from_start_stop <- function(data, id, name) {
   .temp_shift <- NULL
 
   # identify times of new events
-  data[, .temp_shift := shift(eval(parse(text=name)), n=1, type="lag",
-                              fill=FALSE), by=eval(id)]
+  # NOTE: much faster than using one shift() per id for very large data
+  #       and inconsequential for small data
+  data[, .temp_shift := shift(get(name), n=1, type="lag")]
+  data[, .is_first := seq_len(.N)==1, by=eval(id)]
+  data[.is_first==TRUE, .temp_shift := FALSE]
+  data[, .is_first := NULL]
 
   # keep only those rows with new events
-  out <- data[.temp_shift==FALSE & eval(parse(text=name))==TRUE
+  out <- data[.temp_shift==FALSE & get(name)==TRUE
               ][, c(id, "start"), with=FALSE]
   data[, .temp_shift := NULL]
 
   # rename & sort
-  colnames(out) <- c(".id", ".time")
-  setkeyv(out, c(".id", ".time"))
+  colnames(out) <- c(id, ".time")
+  setkeyv(out, c(id, ".time"))
 
   return(out)
 }

@@ -24,7 +24,7 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
                      status="status", constant_vars=NULL,
                      check_inputs=TRUE, copy_data=TRUE) {
 
-  . <- .id <- .first_time <- .event_time <- NULL
+  . <- .id <- .first_time <- .event_time <- .last_per_id <- NULL
 
   if (missing(dlist)) {
     dlist <- list(x, y, ...)
@@ -62,7 +62,8 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
     type_value_i <- extract_col_types(dlist[[i]], cnames)
     col_types <- append(col_types, type_value_i)
 
-    if (!all(unlist(type_value_i) %in% c("logical", "numeric", "character"))) {
+    if (!all(unlist(type_value_i) %in% c("logical", "numeric", "character",
+                                         "integer"))) {
       stop("All columns containing variables (columns except 'by', 'start' ",
            "and 'stop') must be of type:\n 'logical', 'numeric' or ",
            "'character'.")
@@ -90,7 +91,11 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
                      start=c(value_dat[[start]], value_dat[[stop]]))
 
   # apply all.x and all.y restrictions
-  ids_x_y <- get_unique_x_y_ids(dlist=dlist, id=by)
+  if (!all.x | !all.y) {
+    ids_x_y <- get_unique_x_y_ids(dlist=dlist, id=by)
+  } else {
+    ids_x_y <- NULL
+  }
 
   if (!all.x && length(ids_x_y$only_in_x) > 0) {
     data <- data[!.id %in% ids_x_y$only_in_x]
@@ -125,7 +130,13 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
   setkey(data, .id, start)
 
   # create stop
-  data[, stop := shift(start, type="lead"), by=.id]
+  # NOTE: one shift call + applying corrections afterwards is much faster on
+  #       very large data than calling shift() per .id
+  data[, stop := shift(start, type="lead")]
+  data[, .last_per_id := seq_len(.N)==.N, by=.id]
+  data[.last_per_id==TRUE, stop := NA]
+  data[, .last_per_id := NULL]
+
   data <- unique(data)
   data <- data[!is.na(stop) & start!=stop]
 
@@ -135,6 +146,7 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
   var_names_value <- paste0("value_", var_names)
 
   # create one end date for each start + corresponding value
+  # TODO: this seems to fail sometimes with integer64 as "by"
   formula <- stats::as.formula(paste0(by, " + ", start, " ~ dataset"))
   value_dat <- dcast(value_dat, formula=formula, value.var=c(stop, "value"),
                      drop=TRUE)
@@ -154,10 +166,20 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
     set_na_locf_by_id(data=data, name=name_stop)
     set_na_locf_by_id(data=data, name=name_value)
 
+    # for data.table version < 1.14.9, need explicit coercion of
+    # general NA to specific type of NA
+    if (class(data[[name_value]])=="character") {
+      def_NA <- NA_character_
+    } else  if (class(data[[name_value]])=="integer") {
+      def_NA <- NA_integer_
+    } else {
+      def_NA <- NA
+    }
+
     # update value accordingly
     data[, (name_value) := fifelse(!is.na(get(name_stop)) &
                                      start < get(name_stop),
-                                   get(name_value), NA, na=NA)]
+                                   get(name_value), def_NA, na=def_NA)]
     data[, (name_stop) := NULL]
   }
   setnames(data, old=var_names_value, new=var_names)
@@ -180,7 +202,7 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
     for (i in seq_len(length(defaults))) {
       name_i <- names(defaults)[i]
       val_i <- defaults[i]
-      data[is.na(eval(parse(text=name_i))), (name_i) := eval(val_i)]
+      data[is.na(get(name_i)), (name_i) := eval(val_i)]
     }
   }
 

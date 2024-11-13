@@ -283,6 +283,15 @@ test_that("output of match_td() and match_td.fit() is equal", {
                        match_vars=c("mac", "meds"))
 
   expect_equal(out1, out2)
+
+  ## when using id that is named "id"
+  # TODO: fails when "id" is actually "id" due to get()
+  setnames(d_single, old=".id", new="id")
+  out3 <- match_td(formula=vacc ~ mac + meds,
+                   data=d_single,
+                   id="id",
+                   inclusion="inclusion",
+                   event="influenza")
 })
 
 test_that("using matchit", {
