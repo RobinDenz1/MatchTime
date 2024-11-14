@@ -1,0 +1,18 @@
+
+match_td()
+	- Date / datetime input currently does not work
+	- add more tests for continuous / date input
+	- rename if_lt_n_at_t argument to if_no_match
+	- add tests to check if it works with internally used variable names
+	- add propensity score matching type methods
+	- finish documentation
+	- merge documentation of match_td() and match_td.fit()
+	
+merge_td()
+	- tests / input checks for empty data.table input
+
+New features:
+	- subset_td(): allowing easy filtering of start-stop data
+	- add_td(): general function to add variables to time-to-event data
+	- estimate_ipcw(): function to estimate inverse probability of censoring weights
+	

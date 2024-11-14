@@ -217,24 +217,24 @@ test_that("using last_time", {
 
 test_that("using different names in id, start, stop", {
 
-  d1 <- data.table(ID_A=c(1, 1),
+  d1 <- data.table(by=c(1, 1),
                    anfang=c(0, 10),
                    ende=c(10, 22),
                    Wert1=c(32.1, 35))
 
-  d2 <- data.table(ID_A=c(1, 1),
+  d2 <- data.table(by=c(1, 1),
                    anfang=c(3, 10),
                    ende=c(4, 13),
                    Wert2=c(TRUE, TRUE))
   dlist <- list("d1"=d1, "d2"=d2)
 
-  expected <- data.table(ID_A=rep(1, 5),
+  expected <- data.table(by=rep(1, 5),
                          anfang=c(0, 3, 4, 10, 13),
                          ende=c(3, 4, 10, 13, 22),
                          Wert1=c(32.1, 32.1, 32.1, 35.0, 35.0),
                          Wert2=c(NA, TRUE, NA, TRUE, NA))
-  setkey(expected, ID_A, anfang)
-  output <- merge_td(dlist=dlist, by="ID_A", start="anfang", stop="ende")
+  setkey(expected, by, anfang)
+  output <- merge_td(dlist=dlist, by="by", start="anfang", stop="ende")
 
   expect_equal(output, expected)
 })

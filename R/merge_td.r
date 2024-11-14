@@ -130,12 +130,8 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
   setkey(data, .id, start)
 
   # create stop
-  # NOTE: one shift call + applying corrections afterwards is much faster on
-  #       very large data than calling shift() per .id
-  data[, stop := shift(start, type="lead")]
-  data[, .last_per_id := seq_len(.N)==.N, by=.id]
-  data[.last_per_id==TRUE, stop := NA]
-  data[, .last_per_id := NULL]
+  set_shift_by(data, col_in="start", col_out="stop", type="lead",
+               by=".id", fill=NA)
 
   data <- unique(data)
   data <- data[!is.na(stop) & start!=stop]
@@ -146,7 +142,6 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
   var_names_value <- paste0("value_", var_names)
 
   # create one end date for each start + corresponding value
-  # TODO: this seems to fail sometimes with integer64 as "by"
   formula <- stats::as.formula(paste0(by, " + ", start, " ~ dataset"))
   value_dat <- dcast(value_dat, formula=formula, value.var=c(stop, "value"),
                      drop=TRUE)
@@ -305,6 +300,25 @@ set_col_classes <- function(data, col_types) {
       data[, (name_i) := as.integer(get(name_i))]
     }
   }
+}
+
+## same as a shift() call per id, but much faster for large data
+## especially if that data has many different values in "by"
+#' @importFrom data.table :=
+#' @importFrom data.table .N
+#' @importFrom data.table shift
+set_shift_by <- function(data, col_in, col_out, type, by, fill=NA) {
+
+  data[, (col_out) := shift(get(col_in), n=1, type=type)]
+
+  if (type=="lag") {
+    data[, .incorrect := seq_len(.N)==1L, by=eval(by)]
+  } else if (type=="lead") {
+    data[, .incorrect := seq_len(.N)==.N, by=eval(by)]
+  }
+
+  data[.incorrect==TRUE, (col_out) := fill]
+  data[, .incorrect := NULL]
 }
 
 ## given a data.table and a list of column names, get a named list

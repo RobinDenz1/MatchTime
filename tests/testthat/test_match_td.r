@@ -256,12 +256,14 @@ test_that("output of match_td() and match_td.fit() is equal", {
                    inclusion="inclusion",
                    event="influenza")
 
+  d_multi2 <- copy(d_multi)
+
   set.seed(134)
   out2 <- match_td.fit(id=".id",
                        time=".time",
-                       d_treat=d_multi$d_treat,
-                       d_event=d_multi$d_event,
-                       d_covars=d_multi$d_covars,
+                       d_treat=d_multi2$d_treat,
+                       d_event=d_multi2$d_event,
+                       d_covars=d_multi2$d_covars,
                        match_vars="mac")
 
   expect_equal(out1, out2)
@@ -274,24 +276,30 @@ test_that("output of match_td() and match_td.fit() is equal", {
                    inclusion="inclusion",
                    event="influenza")
 
+  d_multi2 <- copy(d_multi)
+
   set.seed(134)
   out2 <- match_td.fit(id=".id",
                        time=".time",
-                       d_treat=d_multi$d_treat,
-                       d_event=d_multi$d_event,
-                       d_covars=d_multi$d_covars,
+                       d_treat=d_multi2$d_treat,
+                       d_event=d_multi2$d_event,
+                       d_covars=d_multi2$d_covars,
                        match_vars=c("mac", "meds"))
 
   expect_equal(out1, out2)
 
   ## when using id that is named "id"
-  # TODO: fails when "id" is actually "id" due to get()
+  set.seed(134)
   setnames(d_single, old=".id", new="id")
   out3 <- match_td(formula=vacc ~ mac + meds,
                    data=d_single,
                    id="id",
                    inclusion="inclusion",
                    event="influenza")
+  setnames(out3, old="id", new=".id")
+  setnames(d_single, old="id", new=".id")
+
+  expect_equal(out3, out2)
 })
 
 test_that("using matchit", {
@@ -330,4 +338,49 @@ test_that("using matchit", {
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+})
+
+# TODO: currently fails
+test_that("using Date input", {
+
+  d_dates <- copy(d_single)
+  d_dates[, start := as.Date(start, origin=as.Date("01.01.2000",
+                                                   format="%d.%m.%Y"))]
+  d_dates[, stop := as.Date(stop, origin=as.Date("01.01.2000",
+                                                 format="%d.%m.%Y"))]
+
+  set.seed(13534)
+  out <- match_td(formula=vacc ~ meds,
+                  data=d_dates,
+                  id=".id",
+                  inclusion="inclusion",
+                  event="influenza")
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(229, 229))
+
+  # mac not equally distributed in each level of .treat
+  tab <- table(out$.treat, out$mac)
+  expect_true(tab[1,1] != tab[2,1])
+
+  # meds equally distributed in each level of .treat
+  tab <- table(out$.treat, out$meds)
+  expect_equal(tab[1, ], tab[2, ])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$pair_id)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id only occurs once or twice, if twice then once as control and once
+  # as a new case
+  expect_true(max(table(out$.id))==2)
+  out[, n_id := .N, by=.id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(49, 49))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+
 })

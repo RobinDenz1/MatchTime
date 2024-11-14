@@ -28,9 +28,9 @@ add_tte_outcome <- function(id, time, data, d_event, d_longest,
   # calculate corresponding event time
   if (censor_at_treat) {
     data[, event_time := pmin(.next_treat_time, .next_event_time,
-                              .max_t - .treat_time, na.rm=TRUE)]
+                              as.vector(.max_t - .treat_time), na.rm=TRUE)]
   } else {
-    data[, event_time := pmin(.next_event_time, .max_t - .treat_time,
+    data[, event_time := pmin(.next_event_time, as.vector(.max_t - .treat_time),
                               na.rm=TRUE)]
   }
   data[, .max_t := NULL]
@@ -39,10 +39,17 @@ add_tte_outcome <- function(id, time, data, d_event, d_longest,
   # also censor the corresponding pair to which it is a control at the same time
   if (censor_pairs && censor_at_treat) {
 
+    # needs to be the same type for older versions of data.table
+    if (all(class(data[[time]]) %in% c("Date", "POSIXct", "POSIXlt"))) {
+      max_time <- as.Date(Inf)
+    } else {
+      max_time <- Inf
+    }
+
     # new variable that is Inf if no artificial censoring is needed or the
     # minimum of the artificial censoring times inside matched pair groups
     data[, .artificial_cens_time := fifelse(.next_treat_time == event_time,
-                                            event_time, Inf, na=Inf)]
+                                            event_time, max_time, na=max_time)]
     data[, .artificial_cens_time := min(.artificial_cens_time), by=pair_id]
 
     # update the data according to this
@@ -136,9 +143,16 @@ remove_after_treat <- function(data, time, overlap=FALSE,
     data[, stop := stop - 1]
   }
 
+  # needs to be the same type for older versions of data.table
+  if (all(class(data[[time]]) %in% c("Date", "POSIXct", "POSIXlt"))) {
+    max_time <- as.Date(Inf)
+  } else {
+    max_time <- Inf
+  }
+
   # set NA to maximum possible time
   suppressWarnings(
-    data[, (time) := fifelse(is.na(get(time)), Inf, get(time))]
+    data[, (time) := fifelse(is.na(get(time)), max_time, get(time))]
   )
 
   # remove row if start is after treatment
@@ -171,9 +185,16 @@ remove_before_treat <- function(data, time, overlap=FALSE,
     data[, stop := stop - 1]
   }
 
+  # needs to be the same type for older versions of data.table
+  if (all(class(data[[time]]) %in% c("Date", "POSIXct", "POSIXlt"))) {
+    min_time <- as.Date(-Inf)
+  } else {
+    min_time <- -Inf
+  }
+
   # set NA to maximum possible time
   suppressWarnings(
-    data[, (time) := fifelse(is.na(get(time)), -Inf, get(time))]
+    data[, (time) := fifelse(is.na(get(time)), min_time, get(time))]
   )
 
   # remove row if start is before treatment

@@ -44,12 +44,12 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 
   # extract relevant treatment times
   d_treat <- times_from_start_stop(data=data, name=treat, id=id)
-  data[, eval(treat) := NULL]
+  data[, (treat) := NULL]
 
   # extract relevant event times
   if (!is.na(event)) {
     d_event <- times_from_start_stop(data=data, name=event, id=id)
-    data[, eval(event) := NULL]
+    data[, (event) := NULL]
   } else {
     d_event <- NULL
   }
@@ -57,7 +57,7 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
   # remove all rows when inclusion criteria are not met
   if (!is.na(inclusion)) {
     data <- data[eval(inclusion)==TRUE]
-    data[, eval(inclusion) := NULL]
+    data[, (inclusion) := NULL]
   }
 
   # call function that does all the work
@@ -94,6 +94,15 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   start <- .treat <- pair_id <- subclass <- .treat_time <- .strata <-
     .id_new <- .next_treat_time <- .next_event_time <- NULL
 
+  # rename id / time to prevent possible errors with get()
+  setnames(d_treat, old=c(id, time), new=c("..id..", "..time.."))
+  setnames(d_covars, old=id, new="..id..")
+
+  orig_id <- id
+  orig_time <- time
+  id <- "..id.."
+  time <- "..time.."
+
   # get variables that should be matched on
   if (is.null(match_vars)) {
     cnames <- colnames(d_covars)
@@ -104,8 +113,9 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
 
   # get maximum follow-up time per person, if needed later
   if (!is.null(d_event)) {
+    setnames(d_event, old=c(orig_id, orig_time), new=c("..id..", "..time.."))
     d_longest <- d_covars[, (.max_t = max(stop)), by=eval(id)]
-    colnames(d_longest) <- c(".id", ".max_t")
+    colnames(d_longest) <- c(id, ".max_t")
   }
 
   # keep only cases that meet inclusion criteria at treatment time
@@ -269,6 +279,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   # change order of columns
   last_cols <- colnames(data)[!colnames(data) %fin% first_cols]
   setcolorder(data, c(first_cols, last_cols))
+  setnames(data, old=id, new=orig_id)
 
   # remove some columns if specified
   if (!keep_all_columns) {
@@ -292,12 +303,8 @@ times_from_start_stop <- function(data, id, name) {
   .temp_shift <- NULL
 
   # identify times of new events
-  # NOTE: much faster than using one shift() per id for very large data
-  #       and inconsequential for small data
-  data[, .temp_shift := shift(get(name), n=1, type="lag")]
-  data[, .is_first := seq_len(.N)==1, by=eval(id)]
-  data[.is_first==TRUE, .temp_shift := FALSE]
-  data[, .is_first := NULL]
+  set_shift_by(data, col_in=name, col_out=".temp_shift", type="lag",
+               by=id, fill=FALSE)
 
   # keep only those rows with new events
   out <- data[.temp_shift==FALSE & get(name)==TRUE
