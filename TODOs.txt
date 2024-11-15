@@ -7,6 +7,9 @@ match_td()
 	- add propensity score matching type methods
 	- finish documentation
 	- merge documentation of match_td() and match_td.fit()
+	- maybe change output?
+	- allow support for "cobalt" package
+	- change required input to be (start, stop] intervals (also needs update of tests + data then)
 	
 merge_td()
 	- tests / input checks for empty data.table input
@@ -15,4 +18,11 @@ New features:
 	- subset_td(): allowing easy filtering of start-stop data
 	- add_td(): general function to add variables to time-to-event data
 	- estimate_ipcw(): function to estimate inverse probability of censoring weights
-	
+
+General TODOs:
+	- add vignette on start-stop data generation
+	- add vignette showcasing time-dependent matching with match_td()
+	- add usual package stuff
+		- pkgdown website
+		- codemetar
+		- ...

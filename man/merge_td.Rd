@@ -12,7 +12,7 @@ merge_td(x, y, ..., dlist, by, start="start",
          stop="stop", all=FALSE, all.x=all, all.y=all,
          first_time=NULL, last_time=NULL,
          remove_before_first=TRUE, remove_after_last=TRUE,
-         center_on_first=FALSE, defaults=NULL,
+         center_on_first=FALSE, units="days", defaults=NULL,
          event_times=NULL, time_to_first_event=FALSE,
          status="status", constant_vars=NULL,
          check_inputs=TRUE, copy_data=TRUE)
@@ -55,7 +55,10 @@ Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE} and \code{first_tim
 Either \code{TRUE} (default) or \code{FALSE}. If \code{TRUE} and \code{last_time} is specified, all time intervals after \code{last_time} are removed for each individual. This is done by default if \code{last_time} is specified, but can be turned off by setting this argument to \code{FALSE}.
   }
   \item{center_on_first}{
-Either \code{TRUE} or \code{FALSE} (default), specifying whether the \code{start} and \code{stop} columns should be centered on the \code{first_time} value. If \code{first_time} is specified and \code{center_on_first=TRUE}, the first time period of each case will start at 0.
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the \code{start} and \code{stop} columns should be centered on the \code{first_time} value. If \code{first_time} is specified and \code{center_on_first=TRUE}, the first time period of each case will start at 0 and all periods afterwards will correspond to time elapsed since then.
+  }
+  \item{units}{
+Corresponds to the \code{units} argument of the \code{\link{difftime}} function. Only used when \code{start} and \code{stop} are of class \code{Date} (or something similar) and \code{center_on_first} is set to \code{TRUE}. Ignored otherwise.
   }
   \item{defaults}{
 An optional named list containing default values for some or all variable or \code{NULL} (default). If \code{NULL}, missing information is kept as \code{NA}. This argument may be useful if the supplied datasets do not contain information for all of the time under observation for all individuals. The value in \code{defaults} will then be imputed for all such missing intervals. See details and examples.
@@ -184,6 +187,6 @@ print(data)
 
 # adding event times
 d4 <- data.table(id=c(1, 1), time=c(4, 31))
-data <- merge_td(dl, d2, by="id", event_times=d4)
+data <- merge_td(d1, d2, by="id", event_times=d4)
 print(data)
 }

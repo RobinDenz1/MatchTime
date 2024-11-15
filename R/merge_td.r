@@ -1,7 +1,4 @@
 
-# TODO:
-# - add support for factors as variables
-
 ## function to transform a list of data.tables into a single start-stop
 ## data.table which may then be used in match_td()
 #' @importFrom data.table fifelse
@@ -19,12 +16,12 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
                      stop="stop", all=FALSE, all.x=all, all.y=all,
                      first_time=NULL, last_time=NULL,
                      remove_before_first=TRUE, remove_after_last=TRUE,
-                     center_on_first=FALSE, defaults=NULL,
+                     center_on_first=FALSE, units="days", defaults=NULL,
                      event_times=NULL, time_to_first_event=FALSE,
                      status="status", constant_vars=NULL,
                      check_inputs=TRUE, copy_data=TRUE) {
 
-  . <- .id <- .first_time <- .event_time <- .last_per_id <- NULL
+  . <- .id <- .first_time <- .event_time <- .last_per_id <- dataset <- NULL
 
   if (missing(dlist)) {
     dlist <- list(x, y, ...)
@@ -163,9 +160,9 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
 
     # for data.table version < 1.14.9, need explicit coercion of
     # general NA to specific type of NA
-    if (class(data[[name_value]])=="character") {
+    if (inherits(data[[name_value]], "character")) {
       def_NA <- NA_character_
-    } else  if (class(data[[name_value]])=="integer") {
+    } else  if (inherits(data[[name_value]], "integer")) {
       def_NA <- NA_integer_
     } else {
       def_NA <- NA
@@ -202,15 +199,23 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
   }
 
   # center output on first time, if specified
-  # TODO: needs a "unit" for Date / datetime objects
-  if (center_on_first & !is.null(first_time)) {
-    data[, start := as.vector(start - first_time)]
-    data[, stop := as.vector(stop - first_time)]
-  } else if (center_on_first) {
-    data[, .first_time := min(start), by=.id]
-    data[, start := as.vector(start - .first_time)]
-    data[, stop := as.vector(stop - .first_time)]
-    data[, .first_time := NULL]
+  if (center_on_first) {
+
+    if (is.null(first_time)) {
+      data[, first_time := min(start), by=.id]
+    }
+
+    if (inherits(data$start, c("Date", "POSIXt", "POSIXct", "POSIXlt"))) {
+      data[, start := as.numeric(difftime(start, first_time, units=units))]
+      data[, stop := as.numeric(difftime(stop, first_time, units=units))]
+    } else {
+      data[, start := start - first_time]
+      data[, stop := stop - first_time]
+    }
+
+    if (is.null(first_time)) {
+      data[, first_time := NULL]
+    }
   }
 
   # add constant variables, if specified
@@ -308,6 +313,8 @@ set_col_classes <- function(data, col_types) {
 #' @importFrom data.table .N
 #' @importFrom data.table shift
 set_shift_by <- function(data, col_in, col_out, type, by, fill=NA) {
+
+  .incorrect <- NULL
 
   data[, (col_out) := shift(get(col_in), n=1, type=type)]
 
