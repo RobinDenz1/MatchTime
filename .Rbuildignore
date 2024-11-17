@@ -3,3 +3,4 @@
 ^LICENSE\.md$
 ^Simulation
 ^TODOs.txt
+^codemeta\.json$

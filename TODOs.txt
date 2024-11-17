@@ -15,14 +15,18 @@ merge_td()
 	- tests / input checks for empty data.table input
 
 New features:
-	- subset_td(): allowing easy filtering of start-stop data
+	- long2start_stop(): migrate this function from simDAG to here
+	- wide2start_stop(): transform a wide-format dataset into the start-stop format
+	- start_stop2long(): transform a start-stop format dataset into the long format
+	- start_stop2wide(): transform a start-stop format dataset into the wide format
 	- add_td(): general function to add variables to time-to-event data
 	- estimate_ipcw(): function to estimate inverse probability of censoring weights
 
 General TODOs:
 	- add vignette on start-stop data generation
 	- add vignette showcasing time-dependent matching with match_td()
+	- add README
 	- add usual package stuff
 		- pkgdown website
-		- codemetar
+		- sticker
 		- ...
