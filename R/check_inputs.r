@@ -11,7 +11,7 @@ is_single_character <- function(x) {
 
 ## check whether a column is a Date or POSIXt object
 is.Date <- function(x) {
-  inherits(x, c("Date", "POSIXt"))
+  inherits(x, c("Date", "POSIXt", "POSIXct", "POSIXlt"))
 }
 
 ## works similar to stopifnot() but allows a custom message in
@@ -27,7 +27,7 @@ stopifnotm <- function(assert, message) {
 check_inputs_match_td <- function(formula, data, id, inclusion, event,
                                   replace_over_t, replace_at_t,
                                   replace_cases, estimand, ratio,
-                                  if_lt_n_at_t, censor_at_treat, censor_pairs,
+                                  if_no_match, censor_at_treat, censor_pairs,
                                   match_method, verbose, keep_all_columns) {
 
   # correct data
@@ -82,10 +82,10 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
                round(ratio)==ratio,
              "'ratio' must be a single integer >= 1.")
 
-  # correct if_lt_n_at_t
-  stopifnotm(is_single_character(if_lt_n_at_t) &&
-              if_lt_n_at_t %fin% c("stop", "warn", "nothing"),
-             "'if_lt_n_at_t' must be either 'stop', 'warn' or 'nothing'.")
+  # correct if_no_match
+  stopifnotm(is_single_character(if_no_match) &&
+              if_no_match %fin% c("stop", "warn", "nothing"),
+             "'if_no_match' must be either 'stop', 'warn' or 'nothing'.")
 
   # correct match_method
   stopifnotm(is_single_character(match_method) &&

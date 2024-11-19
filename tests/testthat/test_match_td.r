@@ -2,11 +2,13 @@
 d_single <- readRDS(system.file("testdata",
                                 "single_n1000.Rds",
                                 package="MatchTD"))
+d_single[, stop := stop + 1]
 
 d_multi <- readRDS(system.file("testdata",
                                 "multi_n1000.Rds",
                                 package="MatchTD"))
 d_multi$d_covars[, inclusion := NULL]
+d_multi$d_covars[, stop := stop + 1]
 
 # TODO:
 # - test if add_previous_event returns the same results as match_td()
@@ -189,7 +191,7 @@ test_that("using 10 controls per case, replace_at_t=TRUE", {
                   replace_over_t=FALSE,
                   ratio=10,
                   keep_all_columns=TRUE,
-                  if_lt_n_at_t="nothing")
+                  if_no_match="nothing")
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -213,7 +215,7 @@ test_that("using 10 controls per case, replace_over_t=TRUE", {
                   replace_over_t=TRUE,
                   ratio=10,
                   keep_all_columns=TRUE,
-                  if_lt_n_at_t="nothing")
+                  if_no_match="nothing")
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -240,7 +242,7 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
                   replace_cases=FALSE,
                   ratio=10,
                   keep_all_columns=TRUE,
-                  if_lt_n_at_t="nothing")
+                  if_no_match="nothing")
 
   # a lot less cases than usual
   expect_true(length(unique(out$pair_id))==88)
@@ -340,7 +342,6 @@ test_that("using matchit", {
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
 })
 
-# TODO: currently fails
 test_that("using Date input", {
 
   d_dates <- copy(d_single)

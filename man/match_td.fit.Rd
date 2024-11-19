@@ -12,9 +12,10 @@ match_td.fit(id, time, d_treat, d_event, d_covars,
              match_vars=NULL, replace_over_t=FALSE,
              replace_at_t=FALSE, replace_cases=TRUE,
              censor_at_treat=TRUE, censor_pairs=TRUE,
-             estimand="ATT", ratio=1, if_lt_n_at_t="stop",
+             estimand="ATT", ratio=1, if_no_match="stop",
              match_method="fast_exact",
-             keep_all_columns=FALSE, verbose=FALSE, ...)
+             keep_all_columns=FALSE, units="auto",
+             verbose=FALSE, ...)
 }
 \arguments{
   \item{id}{
@@ -56,7 +57,7 @@ Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset 
   \item{ratio}{
 How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching. If \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}, this argument will be passed to the argument of the same name in the \code{\link[MatchIt]{matchit}} function.
   }
-  \item{if_lt_n_at_t}{
+  \item{if_no_match}{
 Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{match_method="fast_exact"}.
   }
   \item{match_method}{
@@ -64,6 +65,9 @@ A single character string specifying which method should be used to perform matc
   }
   \item{keep_all_columns}{
 Whether to keep all columns created internally or to only keep the most relevant columns.
+  }
+  \item{units}{
+Corresponds to the \code{units} argument of the \code{\link{difftime}} function. Only used when the time variables (such as \code{start} and \code{stop} in \code{d_covars}) are of class \code{Date} (or similar class) and \code{d_event} is not \code{NULL}. Controls which unit the created \code{event_time} column should have.
   }
   \item{verbose}{
 Whether to print a summary of how many matches were made for each point in time or not (default).

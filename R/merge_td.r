@@ -16,7 +16,7 @@ merge_td <- function(x, y, ..., dlist, by, start="start",
                      stop="stop", all=FALSE, all.x=all, all.y=all,
                      first_time=NULL, last_time=NULL,
                      remove_before_first=TRUE, remove_after_last=TRUE,
-                     center_on_first=FALSE, units="days", defaults=NULL,
+                     center_on_first=FALSE, units="auto", defaults=NULL,
                      event_times=NULL, time_to_first_event=FALSE,
                      status="status", constant_vars=NULL,
                      check_inputs=TRUE, copy_data=TRUE) {

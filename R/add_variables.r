@@ -3,19 +3,28 @@
 #' @importFrom data.table :=
 #' @importFrom data.table fifelse
 add_tte_outcome <- function(id, time, data, d_event, d_longest,
-                            censor_at_treat, censor_pairs) {
+                            censor_at_treat, censor_pairs, units) {
 
   .next_treat_time <- .treat_time <- .next_event_time <- status <-
     event_time <- pair_id_event_time <- .artificial_cens_time <- pair_id <-
-    .max_t <- NULL
+    .max_t <- .time_to_max_t <- NULL
 
   # add event information
   data <- add_next_event_time(data=data, d_event=d_event, id=id, time=time,
                               include_same_t=TRUE)
 
   # shift times according to start
-  data[, .next_treat_time := .next_treat_time - .treat_time]
-  data[, .next_event_time := .next_event_time - .treat_time]
+  if (all(class(data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
+    data[, .next_treat_time := as.numeric(difftime(.next_treat_time,
+                                                   .treat_time,
+                                                   units=units))]
+    data[, .next_event_time := as.numeric(difftime(.next_event_time,
+                                                   .treat_time,
+                                                   units=units))]
+  } else {
+    data[, .next_treat_time := .next_treat_time - .treat_time]
+    data[, .next_event_time := .next_event_time - .treat_time]
+  }
 
   # get event status indicator
   data[, status := FALSE]
@@ -25,13 +34,21 @@ add_tte_outcome <- function(id, time, data, d_event, d_longest,
   # add maximum follow-up time per person
   data <- merge(data, d_longest, by=id, all.x=TRUE)
 
+  # time to max_t
+  if (all(class(data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
+    data[, .time_to_max_t := as.numeric(difftime(.max_t,
+                                                 .treat_time,
+                                                 units=units))]
+  } else {
+    data[, .time_to_max_t := .max_t - .treat_time]
+  }
+
   # calculate corresponding event time
   if (censor_at_treat) {
     data[, event_time := pmin(.next_treat_time, .next_event_time,
-                              as.vector(.max_t - .treat_time), na.rm=TRUE)]
+                              .time_to_max_t, na.rm=TRUE)]
   } else {
-    data[, event_time := pmin(.next_event_time, as.vector(.max_t - .treat_time),
-                              na.rm=TRUE)]
+    data[, event_time := pmin(.next_event_time, .time_to_max_t, na.rm=TRUE)]
   }
   data[, .max_t := NULL]
 
@@ -58,6 +75,8 @@ add_tte_outcome <- function(id, time, data, d_event, d_longest,
          event_time := .artificial_cens_time]
     data[, .artificial_cens_time := NULL]
   }
+
+  data[, .time_to_max_t := NULL]
 
   return(data)
 }

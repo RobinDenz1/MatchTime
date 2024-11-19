@@ -8,9 +8,10 @@
 match_td <- function(formula, data, id, inclusion=NA, event=NA,
                      replace_over_t=FALSE, replace_at_t=FALSE,
                      replace_cases=TRUE, estimand="ATT", ratio=1,
-                     if_lt_n_at_t="stop", censor_at_treat=TRUE,
+                     if_no_match="stop", censor_at_treat=TRUE,
                      censor_pairs=TRUE, match_method="fast_exact",
-                     keep_all_columns=FALSE, verbose=FALSE, ...) {
+                     keep_all_columns=FALSE, units="auto", verbose=FALSE,
+                     ...) {
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -26,7 +27,7 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                         replace_at_t=replace_at_t,
                         replace_cases=replace_cases,
                         estimand=estimand, ratio=ratio,
-                        if_lt_n_at_t=if_lt_n_at_t,
+                        if_no_match=if_no_match,
                         censor_at_treat=censor_at_treat,
                         censor_pairs=censor_pairs,
                         match_method=match_method,
@@ -66,8 +67,8 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                       match_vars=match_vars, replace_over_t=replace_over_t,
                       replace_at_t=replace_at_t, replace_cases=replace_cases,
                       censor_pairs=censor_pairs, estimand=estimand,
-                      ratio=ratio, if_lt_n_at_t=if_lt_n_at_t,
-                      match_method=match_method,
+                      ratio=ratio, if_no_match=if_no_match,
+                      match_method=match_method, units=units,
                       keep_all_columns=keep_all_columns, verbose=verbose)
 
   return(out)
@@ -88,8 +89,9 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                          replace_at_t=FALSE, replace_cases=TRUE,
                          censor_at_treat=TRUE, censor_pairs=TRUE,
                          estimand="ATT", ratio=1,
-                         if_lt_n_at_t="stop", match_method="fast_exact",
-                         keep_all_columns=FALSE, verbose=FALSE, ...) {
+                         if_no_match="stop", match_method="fast_exact",
+                         keep_all_columns=FALSE, units="auto",
+                         verbose=FALSE, ...) {
 
   start <- .treat <- pair_id <- subclass <- .treat_time <- .strata <-
     .id_new <- .next_treat_time <- .next_event_time <- NULL
@@ -121,11 +123,11 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   # keep only cases that meet inclusion criteria at treatment time
   # NOTE: maybe change >= <= stuff to overlapping start-stop
   d_covars <- merge(d_covars, d_treat, by=id, all.x=TRUE)
-  include <- d_covars[get(time) >= start & get(time) <= stop][[eval(id)]]
+  include <- d_covars[get(time) >= start & get(time) < stop][[eval(id)]]
   d_treat <- d_treat[get(id) %fin% include]
 
   # remove time durations after treatment onset
-  d_covars <- remove_after_treat(data=d_covars, time=time)
+  d_covars <- remove_after_treat(data=d_covars, time=time, overlap=TRUE)
 
   # identify all points in time at which at least one case happened
   case_times <- sort(unique(d_treat[[eval(time)]]))
@@ -170,7 +172,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
 
     # get dataset including them all at t
     d_all_i <- d_covars[get(id) %fin% all_ids &
-                        case_times[i] >= start & case_times[i] <= stop
+                        case_times[i] >= start & case_times[i] < stop
                         ][, select_vars, with=FALSE]
 
     # identify cases
@@ -187,7 +189,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                                      n=size,
                                      strata=".treat",
                                      replace=replace_at_t,
-                                     if_lt_n=if_lt_n_at_t)
+                                     if_lt_n=if_no_match)
 
       d_match_i[, pair_id := rep(seq_len(n_treat), ratio + 1)]
       d_match_i[, pair_id := paste0(i, "_", pair_id)]
@@ -203,7 +205,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                                        treat=".treat",
                                        strata=".strata",
                                        replace=replace_at_t,
-                                       if_lt_n=if_lt_n_at_t,
+                                       if_lt_n=if_no_match,
                                        ratio=ratio,
                                        check_inputs=FALSE,
                                        copy_data=FALSE)
@@ -267,7 +269,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   if (!is.null(d_event)) {
     data <- add_tte_outcome(id=id, time=time, data=data, d_event=d_event,
                             censor_pairs=censor_pairs, d_longest=d_longest,
-                            censor_at_treat=censor_at_treat)
+                            censor_at_treat=censor_at_treat, units=units)
     first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
                     ".next_treat_time", ".next_event_time", "event_time",
                     "status")

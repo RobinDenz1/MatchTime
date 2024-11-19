@@ -26,13 +26,13 @@ A single character string specifying a column in \code{data} specifying the begi
 A single character string specifying a column in \code{data} specifying the ending of a time-interval. Defaults to \code{"stop"}.
   }
   \item{first_time}{
-Corresponds to the argument of the same name in the \code{merge_td} function.
+Corresponds to the argument of the same name in the \code{\link{merge_td}} function.
   }
   \item{last_time}{
 Corresponds to the argument of the same name in the \code{\link{merge_td}} function.
   }
   \item{missing_indicator}{
-Either \code{TRUE} (default) or \code{FALSE}, specifying whether a logical column should be added to the data which includes an indicator whether the corresponding interval was missing in the original data or not. If \code{TRUE}, this column will be added using the name \code{".in_data"}.
+Either \code{TRUE} (default) or \code{FALSE}, specifying whether a logical column should be added to the data which includes an indicator whether the corresponding interval was present in the original data or not. If \code{TRUE}, this column will be added using the name \code{".in_data"}. This column is \code{TRUE} if the interval was present and \code{FALSE} if it was not.
   }
   \item{copy_data}{
 Either \code{TRUE} (default) or \code{FALSE}, specifying whether to take a shallow copy of the supplied \code{data.table} before running the code. Doing so ensures that all data in the parent environment stays unchanged. If set to \code{FALSE}, they may be modified in place which is more RAM efficient.

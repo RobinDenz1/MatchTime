@@ -1,18 +1,20 @@
 
 match_td()
-	- Date / datetime input currently does not work
 	- add more tests for continuous / date input
-	- rename if_lt_n_at_t argument to if_no_match
 	- add tests to check if it works with internally used variable names
 	- add propensity score matching type methods
 	- finish documentation
 	- merge documentation of match_td() and match_td.fit()
 	- maybe change output?
 	- allow support for "cobalt" package
-	- change required input to be (start, stop] intervals (also needs update of tests + data then)
+	- add "start" and "stop" argument for consistency
 	
 merge_td()
 	- tests / input checks for empty data.table input
+
+subset_start_stop()
+	- allow vector input to "first_time" and "last_time" + support for NA
+	- then delete remove_after_treat() and remove_before_treat() functions, replace them by this one
 
 New features:
 	- long2start_stop(): migrate this function from simDAG to here
@@ -30,3 +32,6 @@ General TODOs:
 		- pkgdown website
 		- sticker
 		- ...
+		
+Simulation:
+	- will currently fail because match_td() now uses overlapping intervals
