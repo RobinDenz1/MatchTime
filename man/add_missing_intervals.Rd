@@ -10,7 +10,7 @@ Some start-stop datasets may be missing some intervals for some cases. This func
 \usage{
 add_missing_intervals(data, id, start="start", stop="stop",
                       first_time=NULL, last_time=NULL,
-                      copy_data=TRUE, ...)
+                      missing_indicator=TRUE, copy_data=TRUE, ...)
 }
 \arguments{
   \item{data}{
@@ -30,6 +30,9 @@ Corresponds to the argument of the same name in the \code{merge_td} function.
   }
   \item{last_time}{
 Corresponds to the argument of the same name in the \code{\link{merge_td}} function.
+  }
+  \item{missing_indicator}{
+Either \code{TRUE} (default) or \code{FALSE}, specifying whether a logical column should be added to the data which includes an indicator whether the corresponding interval was missing in the original data or not. If \code{TRUE}, this column will be added using the name \code{".in_data"}.
   }
   \item{copy_data}{
 Either \code{TRUE} (default) or \code{FALSE}, specifying whether to take a shallow copy of the supplied \code{data.table} before running the code. Doing so ensures that all data in the parent environment stays unchanged. If set to \code{FALSE}, they may be modified in place which is more RAM efficient.
@@ -59,10 +62,10 @@ library(data.table)
 ## define some example data
 # this dataset is missing two intervals: (24, 28] for id = 1 and
 # (245, 343] for id = 2
-data <- data.table(id=c(1, 1, 1, 2, 2, 3, 4),
+data <- data.table(id=c(1, 1, 1, 2, 2, 3),
                    start=c(0, 28, 66, 25, 343, 10),
-                   stop=c(24, 66, 143, 245, 1233),
-                   A=c(10, 122, 3434, 223, 233))
+                   stop=c(24, 66, 143, 245, 1233, 3214),
+                   A=c(10, 122, 3434, 223, 233, 0.46))
 
 # add those intervals back
 out <- add_missing_intervals(data, id="id")
