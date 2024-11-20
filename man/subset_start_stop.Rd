@@ -10,17 +10,17 @@ Returns subsets of a \code{data.table} like object in the start-stop format. Con
 \usage{
 subset_start_stop(data, first_time, last_time,
                   truncate=TRUE, start="start",
-                  stop="stop")
+                  stop="stop", na.rm=FALSE)
 }
 \arguments{
   \item{data}{
 A \code{data.table} like object including at least two columns: \code{start} (the beginning of the time-interval) and \code{stop} (the end of the time-interval). May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}. Intervals should be coded as \code{(start, stop]}.
   }
   \item{first_time}{
-A single value of class \code{numeric}, \code{Date} or something similar, specifying the first time that should be kept in the output. All intervals ending before this value will be removed. Additionally, if \code{truncate=TRUE}, all intervals starting before \code{first_time} and ending after \code{first_time} will be truncated to start at \code{first_time}.
+A single value or a vector of size \code{nrow(data)} of class \code{numeric}, \code{Date} or something similar, specifying the first time that should be kept in the output. All intervals ending before this value will be removed. Additionally, if \code{truncate=TRUE}, all intervals starting before \code{first_time} and ending after \code{first_time} will be truncated to start at \code{first_time}.
   }
   \item{last_time}{
-A single value of class \code{numeric}, \code{Date} or something similar, specifying the last time that should be kept in the output. All intervals beginning before this value will be removed. Additionally, if \code{truncate=TRUE}, all intervals starting before \code{last_time} and ending after \code{last_time} will be truncated to end at \code{last_time}.
+A single value or a vector of size \code{nrow(data)} of class \code{numeric}, \code{Date} or something similar, specifying the last time that should be kept in the output. All intervals beginning before this value will be removed. Additionally, if \code{truncate=TRUE}, all intervals starting before \code{last_time} and ending after \code{last_time} will be truncated to end at \code{last_time}.
   }
   \item{truncate}{
 Either \code{TRUE} or \code{FALSE}, controls whether existing intervals should be truncated at \code{first_time} and or \code{last_time}. See the respective arguments for more info.
@@ -30,6 +30,9 @@ A single character string specifying a column in \code{data} specifying the begi
   }
   \item{stop}{
 A single character string specifying a column in \code{data} specifying the ending of a time-interval. Defaults to \code{"stop"}.
+  }
+  \item{na.rm}{
+Either \code{TRUE} or \code{FALSE} (default), controls whether to remove rows where either \code{first_time} or \code{last_time} is \code{NA}.
   }
 }
 \value{
@@ -66,5 +69,11 @@ print(out)
 
 # only cut-off intervals after t = 28
 out <- subset_start_stop(data, last_time=28)
+print(out)
+
+# using different cut-off values for each person
+# note that we have to repeat the respective cut-off values as many times
+# as each id appears to make this work
+out <- subset_start_stop(data, last_time=c(rep(723, 5), rep(815, 3)))
 print(out)
 }

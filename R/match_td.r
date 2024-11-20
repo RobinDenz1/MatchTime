@@ -94,7 +94,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                          verbose=FALSE, ...) {
 
   start <- .treat <- pair_id <- subclass <- .treat_time <- .strata <-
-    .id_new <- .next_treat_time <- .next_event_time <- NULL
+    .id_new <- .next_treat_time <- .next_event_time <- ..time.. <- NULL
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c("..id..", "..time.."))
@@ -121,13 +121,11 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   }
 
   # keep only cases that meet inclusion criteria at treatment time
-  # NOTE: maybe change >= <= stuff to overlapping start-stop
   d_covars <- merge(d_covars, d_treat, by=id, all.x=TRUE)
   include <- d_covars[get(time) >= start & get(time) < stop][[eval(id)]]
   d_treat <- d_treat[get(id) %fin% include]
 
   # remove time durations after treatment onset
-  #d_covars2 <- remove_after_treat(data=d_covars, time=time, overlap=TRUE)
   d_covars <- subset_start_stop(data=d_covars, last_time=d_covars[[time]] + 1)
   d_covars[, ..time.. := NULL]
 

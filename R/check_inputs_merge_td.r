@@ -21,6 +21,9 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
   stopifnotm(length(dlist) > 1,
              paste0("At least two datasets must be supplied through 'x', 'y'",
                     ", ... or 'dlist'."))
+  stopifnotm(all(vapply(dlist, FUN=nrow, FUN.VALUE=numeric(1)) > 0),
+             paste0("All datasets supplied through 'x', 'y', ... or ",
+                    "'dlist' must have at least one row."))
 
   # by (id)
   stopifnotm(is_single_character(by),

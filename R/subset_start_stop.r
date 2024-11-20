@@ -10,6 +10,8 @@ subset_start_stop <- function(data, first_time, last_time,
                               truncate=TRUE, start="start",
                               stop="stop", na.rm=FALSE) {
 
+  .first_time <- .last_time <- NULL
+
   if (!is.data.table(data)) {
     data <- as.data.table(data)
   } else {

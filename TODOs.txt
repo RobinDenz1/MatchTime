@@ -8,13 +8,11 @@ match_td()
 	- maybe change output?
 	- allow support for "cobalt" package
 	- add "start" and "stop" argument for consistency
-	
-merge_td()
-	- tests / input checks for empty data.table input
 
-subset_start_stop()
-	- allow vector input to "first_time" and "last_time" + support for NA
-	- then delete remove_after_treat() and remove_before_treat() functions, replace them by this one
+fast_exact_matching()
+	- rename to fast_exact_matching.fit()
+	- write new function called fast_exact_matching() that just calls the .fit() version
+	  but has a formula interface
 
 New features:
 	- long2start_stop(): migrate this function from simDAG to here
@@ -34,4 +32,4 @@ General TODOs:
 		- ...
 		
 Simulation:
-	- will currently fail because match_td() now uses overlapping intervals
+	- will currently fail because match_td() now uses overlapping intervals (among other changes)
