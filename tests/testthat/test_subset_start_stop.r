@@ -73,3 +73,41 @@ test_that("start / stop having different names", {
 
   expect_equal(out, expected)
 })
+
+test_that("vector input to last_time", {
+
+  input <- data.table(.id=c(1, 1, 1, 3, 3, 4),
+                      start=c(1, 20, 351, 1, 23, 1),
+                      stop=c(20, 351, 356, 23, 321, 365))
+  expected <- data.table(.id=c(1, 1, 3, 3, 4),
+                         start=c(1, 20, 1, 23, 1),
+                         stop=c(20, 110, 23, 24, 365))
+
+  # with na.rm=FALSE
+  out <- subset_start_stop(data=input, last_time=c(110, 110, 110, 24, 24, NA))
+  expect_equal(out, expected)
+
+  # with na.rm=TRUE
+  out <- subset_start_stop(data=input, last_time=c(110, 110, 110, 24, 24, NA),
+                           na.rm=TRUE)
+  expect_equal(out, subset(expected, .id != 4))
+})
+
+test_that("vector input to first_time", {
+
+  input <- data.table(.id=c(1, 1, 1, 3, 3, 4),
+                      start=c(1, 20, 351, 1, 23, 1),
+                      stop=c(20, 351, 356, 23, 321, 365))
+  expected <- data.table(.id=c(1, 1, 3, 4),
+                         start=c(110, 351, 24, 1),
+                         stop=c(351, 356, 321, 365))
+
+  # with na.rm=FALSE
+  out <- subset_start_stop(data=input, first_time=c(110, 110, 110, 24, 24, NA))
+  expect_equal(out, expected)
+
+  # with na.rm=TRUE
+  out <- subset_start_stop(data=input, first_time=c(110, 110, 110, 24, 24, NA),
+                           na.rm=TRUE)
+  expect_equal(out, subset(expected, .id != 4))
+})

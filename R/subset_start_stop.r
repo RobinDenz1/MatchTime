@@ -8,7 +8,7 @@
 #' @export
 subset_start_stop <- function(data, first_time, last_time,
                               truncate=TRUE, start="start",
-                              stop="stop") {
+                              stop="stop", na.rm=FALSE) {
 
   if (!is.data.table(data)) {
     data <- as.data.table(data)
@@ -27,10 +27,12 @@ subset_start_stop <- function(data, first_time, last_time,
   stopifnotm(is_single_character(stop) & stop %in% colnames(data),
              paste0("'stop' needs to be a single character string ",
                     "specifying a column in 'data'."))
-  stopifnotm(missing(first_time) || length(first_time)==1,
-             "'first_time' must be a single value.")
-  stopifnotm(missing(last_time) || length(last_time)==1,
-             "'last_time' must be a single value.")
+  stopifnotm(missing(first_time) || length(first_time)==1 ||
+             length(first_time)==nrow(data),
+  "'first_time' must be a single value or have the same length as nrow(data).")
+  stopifnotm(missing(last_time) || length(last_time)==1 ||
+               length(last_time)==nrow(data),
+  "'last_time' must be a single value or have the same length as nrow(data).")
   stopifnotm(is_single_logical(truncate),
              "'truncate' must be either TRUE or FALSE.")
 
@@ -43,24 +45,34 @@ subset_start_stop <- function(data, first_time, last_time,
 
   # remove rows before first_time and after last time
   if (!missing(first_time)) {
-    data <- data[get(stop) > first_time]
+    data[, .first_time := first_time]
+    data <- data[get(stop) > .first_time | (is.na(.first_time) & !na.rm)]
   }
 
   if (!missing(last_time)) {
-    data <- data[get(start) < last_time]
+    data[, .last_time := last_time]
+    data <- data[get(start) < .last_time | (is.na(.last_time) & !na.rm)]
   }
 
   # adjust first start and last stop if needed
   if (truncate & !missing(first_time)) {
-    data[get(start) < first_time, (start) := first_time]
+    data[get(start) < .first_time, (start) := .first_time]
   }
 
   if (truncate & !missing(last_time)) {
-    data[get(stop) > last_time, (stop) := last_time]
+    data[get(stop) > .last_time, (stop) := .last_time]
   }
 
   # set names back
   setnames(data, old=c("..start..", "..stop.."), new=c(orig_start, orig_stop))
+
+  if (!missing(first_time)) {
+    data[, .first_time := NULL]
+  }
+
+  if (!missing(last_time)) {
+    data[, .last_time := NULL]
+  }
 
   return(data)
 }

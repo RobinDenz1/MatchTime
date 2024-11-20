@@ -127,7 +127,9 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   d_treat <- d_treat[get(id) %fin% include]
 
   # remove time durations after treatment onset
-  d_covars <- remove_after_treat(data=d_covars, time=time, overlap=TRUE)
+  #d_covars2 <- remove_after_treat(data=d_covars, time=time, overlap=TRUE)
+  d_covars <- subset_start_stop(data=d_covars, last_time=d_covars[[time]] + 1)
+  d_covars[, ..time.. := NULL]
 
   # identify all points in time at which at least one case happened
   case_times <- sort(unique(d_treat[[eval(time)]]))
