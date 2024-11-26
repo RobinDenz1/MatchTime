@@ -44,12 +44,14 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
   }
 
   # extract relevant treatment times
-  d_treat <- times_from_start_stop(data=data, name=treat, id=id)
+  d_treat <- times_from_start_stop(data=data, name=treat, id=id,
+                                   type="var", time_name=".time")
   data[, (treat) := NULL]
 
   # extract relevant event times
   if (!is.na(event)) {
-    d_event <- times_from_start_stop(data=data, name=event, id=id)
+    d_event <- times_from_start_stop(data=data, name=event, id=id,
+                                     type="event", time_name=".time")
     data[, (event) := NULL]
   } else {
     d_event <- NULL
@@ -294,28 +296,4 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   }
 
   return(data)
-}
-
-## extract new event times from data in start-stop format
-#' @importFrom data.table :=
-#' @importFrom data.table shift
-#' @importFrom data.table setkeyv
-times_from_start_stop <- function(data, id, name) {
-
-  .temp_shift <- NULL
-
-  # identify times of new events
-  set_shift_by(data, col_in=name, col_out=".temp_shift", type="lag",
-               by=id, fill=FALSE)
-
-  # keep only those rows with new events
-  out <- data[.temp_shift==FALSE & get(name)==TRUE
-              ][, c(id, "start"), with=FALSE]
-  data[, .temp_shift := NULL]
-
-  # rename & sort
-  colnames(out) <- c(id, ".time")
-  setkeyv(out, c(id, ".time"))
-
-  return(out)
 }

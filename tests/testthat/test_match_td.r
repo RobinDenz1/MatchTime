@@ -9,6 +9,7 @@ d_multi <- readRDS(system.file("testdata",
                                 package="MatchTD"))
 d_multi$d_covars[, inclusion := NULL]
 d_multi$d_covars[, stop := stop + 1]
+d_multi$d_event[, .time := .time + 1]
 
 # TODO:
 # - test if add_previous_event returns the same results as match_td()
@@ -383,5 +384,4 @@ test_that("using Date input", {
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
-
 })

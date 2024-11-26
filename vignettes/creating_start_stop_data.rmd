@@ -50,7 +50,7 @@ The following functions of `MatchTD` may be used to deal with start-stop data:
 * `add_missing_intervals()`: Adds missing time-intervals to "incomplete" start-stop datasets
 * `start_stop2long()`: Creates a long-format dataset from a start-stop dataset
 * `long2start_stop()`: Creates a start-stop dataset from a long-format dataset
-* `times_from_start_stop()`: Extracts event times from a start-stop dataset
+* `times_from_start_stop()`: Extracts specific "event" times from a start-stop dataset
 
 If a complete long-format dataset already exists, the easiest way to obtain a start-stop dataset is to use the `long2start_stop()` function. This, however, only works for discrete-time data and is only a feasibly alternative if the full long-format data is small enough to fit into the available RAM, which is not always the case.
 

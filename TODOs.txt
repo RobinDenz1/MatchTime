@@ -26,9 +26,6 @@ start_stop2long()
 simplify_start_stop()
 	- check if this works properly when start-stop includes events
 
-times_from_start_stop()
-	- fix this so that it works differently for events
-
 New features:
 	- add_td(): general function to add variables to time-to-event data
 	- estimate_ipcw(): function to estimate inverse probability of censoring weights
