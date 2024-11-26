@@ -15,7 +15,7 @@ start_stop2long(data, id, start="start", stop="stop",
 }
 \arguments{
   \item{data}{
-A \code{data.table} like object including at least three columns: \code{id} (the unique case identifier), \code{start} (the beginning of the time-interval) and \code{stop} (the end of the time-interval). May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}. Intervals should be overlapping. May contain any number of additional columns.
+A \code{data.table} like object including at least three columns: \code{id} (the unique case identifier), \code{start} (the beginning of the time-interval) and \code{stop} (the end of the time-interval). May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}. Intervals should be \emph{right-open} (coded as \code{[start, stop)}) and thus overlapping . May contain any number of additional columns.
   }
   \item{id}{
 A single character string specifying a column in \code{data} specifying the unique case identifier.

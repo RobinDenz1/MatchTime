@@ -14,7 +14,7 @@ subset_start_stop(data, first_time, last_time,
 }
 \arguments{
   \item{data}{
-A \code{data.table} like object including at least two columns: \code{start} (the beginning of the time-interval) and \code{stop} (the end of the time-interval). May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}. Intervals should be coded as \code{(start, stop]}.
+A \code{data.table} like object including at least two columns: \code{start} (the beginning of the time-interval) and \code{stop} (the end of the time-interval). May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}. Intervals should be coded as \code{[start, stop)}, like in all other functions of this package.
   }
   \item{first_time}{
 A single value or a vector of size \code{nrow(data)} of class \code{numeric}, \code{Date} or something similar, specifying the first time that should be kept in the output. All intervals ending before this value will be removed. Additionally, if \code{truncate=TRUE}, all intervals starting before \code{first_time} and ending after \code{first_time} will be truncated to start at \code{first_time}.

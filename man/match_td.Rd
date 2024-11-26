@@ -2,7 +2,7 @@
 \alias{match_td}
 
 \title{
-Perform Time-Dependent Matching on Time-Fixed and Time-Dependent Covariates in Discrete and Continuous Time
+Perform Time-Dependent Matching in Discrete and Continuous Time
 }
 \description{
 This function utilizies the approach described in XX and XX to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as sequential target trial emulation. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \code{MatchIt} package to perform the actual matching at each point in time for more flexibility.
@@ -21,7 +21,7 @@ match_td(formula, data, id, inclusion=NA, event=NA,
 A \code{formula} object with a binary treatment variable on the left hand side and the covariates to be balanced on the right hand side. Interactions and functions of covariates are currently not allowed.
   }
   \item{data}{
-A \code{data.table} like object in the start-stop format, containing information about both variables that are time-invariant or time-dependent. Each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. Continuous (float) and discrete (integer, datetime) values are supported for both time columns. The dataset should also include an \code{id} variable (see argument \code{id}). See details and examples for more information.
+A \code{data.table} like object in the start-stop format, containing information about both variables that are time-invariant or time-dependent. Each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. Intervals should be coded to be \emph{right-open} (corresponds to \code{[start, stop)}). Continuous (float) and discrete (integer, datetime) values are supported for both time columns. The dataset should also include an \code{id} variable (see argument \code{id}). See details and examples for more information.
   }
   \item{id}{
 A single character string specifying the unique person identifier in \code{data}.
@@ -30,7 +30,7 @@ A single character string specifying the unique person identifier in \code{data}
 A single character string specifying an optional logical variable in \code{data} which should be \code{TRUE} if the period specified by the \code{start} and \code{stop} columns in \code{data} corresponds to a period in which the individual fufills the inclusion criteria and \code{FALSE} if the individual does not. All periods where the variable is \code{FALSE} will be excluded from the matching process dynamically. Set to \code{NA} to not use this functionality (default).
   }
   \item{event}{
-A single character string specifying an optional logical variable in \code{data} which specifies whether an event happened in the period specified by the \code{start} and \code{stop} columns in \code{data}. If specified, two columns will be added to the final matched dataset: \code{event_time} and \code{status}, corresponding to the time from entry into the study until the event or censoring happened and the respective status indicator, as used in standard survival analysis.
+A single character string specifying an optional logical variable in \code{data} which specifies whether an event happened in the period specified by the \code{start} and \code{stop} columns in \code{data}. If specified, two columns will be added to the final matched dataset: \code{event_time} and \code{status}, corresponding to the time from entry into the study until the event or censoring happened and the respective status indicator, as used in standard survival analysis. Note that for this to work properly, the \code{event} column must be coded differently than a regular time-varying variable, as described in the details.
   }
   \item{replace_over_t}{
 Whether to allow usage of the same individuals as controls at multiple points in time. If \code{TRUE}, the same person may be used as control at every point in time until it switches from being a control to being a case.
@@ -73,6 +73,12 @@ Further arguments passed to \code{\link[MatchIt]{matchit}} when \code{match_meth
   }
 }
 \details{
+
+\strong{\emph{Interval Coding}}:
+
+The intervals supplied to the \code{data} argument are required to be \emph{right-open} intervals \code{[start, stop)}, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message.
+
+Note that this only applies to time-varying variables themselves. Events should instead be exactly at the end of an existing interval, possible breaking one interval into two. The creation of this type of start-stop dataset is explained in detail in the associated vignette and the documentation of this package.
 
 }
 \value{

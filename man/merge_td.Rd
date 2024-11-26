@@ -85,9 +85,11 @@ Either \code{TRUE} (default) or \code{FALSE}, specifying whether to take a shall
 \details{
 The start-stop format, also known as counting process or period format corresponds to a \code{data.table} containing one or multiple rows per \code{by}, where each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. This type of dataset is required for the \code{\link{match_td}} function and most of the existing time-to-event models with time-varying variables, such as \code{coxph}. Bringing existing data on period information into this format can become tricky and computationally expensive fast. The purpose of this function is to make this transformation as fast and easy as possible.
 
-\strong{\emph{Interval Coding}}:
+\strong{\emph{Interval Coding for Time-Varying Variables}}:
 
-The intervals supplied to this function via \code{x, y, ...} or \code{dlist} and the output created is based entirely on overlapping intervals. More specifically, \emph{right-closed} intervals \code{(start, stop]} are expected and used throughout it, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message.
+The intervals supplied to this function via \code{x, y, ...} or \code{dlist} and the output created is based entirely on overlapping intervals. More specifically, \emph{right-open} intervals \code{[start, stop)} are expected and used throughout it, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message.
+
+Note that this only applies to the time-varying variables themselves. Events added using \code{event_times} are coded differently, as described further below.
 
 \strong{\emph{Specifying the input}}:
 

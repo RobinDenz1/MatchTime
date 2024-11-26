@@ -36,7 +36,7 @@ print(data)
 
 The dataset shown above consists of two individuals (two distinct `id` values) with multiple recorded time-intervals each (defined by the `start` and `stop` columns). Additionally, it includes information on the `sex` and the `bmi` (Body-Mass-Index) of the individual. In this concrete example, individual 1 is considered male (`sex="m"`) and individual 2 is considered female (`sex="f"`) for the entire observed duration. In other words, `sex` is a **time-fixed** of **time-constant** variable. On the other hand, each of the two individuals have multiple different values in the `bmi` column, making it a **time-varying** or **time-dependent** variable.
 
-More specifically, we would say that the value of `bmi` for individual 1 was 32 from 0 up to and including t = 10. An infinitesimally amount of time later it changed to 34 and stayed on that value until t = 50. This type of coding is known as **right-closed** or **left-open** intervals (because the `stop` value is considered to be in the interval, while the `start` value is not). This is usually denoted as `(start, stop]` and is the usual way these intervals are coded for time-to-event purposes. Throughout this package we will rely exclusively on this type of intervals.
+More specifically, we would say that the value of `bmi` for individual 1 was 32 from 0 up to and including t = 10. An infinitesimally amount of time later it changed to 34 and stayed on that value until t = 50. This type of coding is known as **right-open** or **left-closed** intervals (because the `start` value is considered to be in the interval, while the `stop` value is not). This is usually denoted as `[start, stop)` and is the usual way these intervals are coded for time-to-event purposes. Throughout this package we will rely exclusively on this type of intervals.
 
 Note that in reality the values of time-dependent variables does not necessarily change instantaneously. To allow a data representation it is however necessary to define some intervals in which the value stays constant. The width of these intervals is usually dependent on the type of data one has access to.
 
@@ -52,7 +52,9 @@ The following functions of `MatchTD` may be used to deal with start-stop data:
 * `long2start_stop()`: Creates a start-stop dataset from a long-format dataset
 * `times_from_start_stop()`: Extracts event times from a start-stop dataset
 
-Most users will only need the `merge_td()` function to create a single start-stop dataset from different datasets containing time-dependent information. The other, more advanced, functions are most useful when dealing with messy real data.
+If a complete long-format dataset already exists, the easiest way to obtain a start-stop dataset is to use the `long2start_stop()` function. This, however, only works for discrete-time data and is only a feasibly alternative if the full long-format data is small enough to fit into the available RAM, which is not always the case.
+
+Most users will only need the `merge_td()` function to create a single start-stop dataset from different datasets containing time-dependent information. This function has the advantage that it does not blow up the dataset to the long-format, making it feasible to create start-stop data for very large datasets. The other, more advanced, functions are most useful when dealing with messy real-world data.
 
 # The `merge_td()` function
 
@@ -90,7 +92,7 @@ These points are explained in detail below.
 
 ### BMI
 
-The first question we need to ask is: How do we interpolate between `bmi` measurements? Since we only took measurements at specific times, we don't actually know the value of `bmi` between those measurements. In this case we will simply assume that the value stayed constant until the next measurement (which is what is usually done in practice). Given this decision, we have to create time-intervals that define where the respective `bmi` value applies. I conveniently already name the time variable `start` here to make this a little more obvious. This can be done in three steps.
+The first question we need to ask is: How do we interpolate between `bmi` measurements? Since we only took measurements at specific times, we don't actually know the value of `bmi` between those measurements. In this case we will simply assume that the value stayed constant until the next measurement (which is what is usually done in practice). Given this decision, we have to create time-intervals that define where the respective `bmi` value applies. I conveniently already named the time variable `start` here to make this a little more obvious. This can be done in three steps.
 
 *1.) Sort the dataset by `id` and `time`*
 

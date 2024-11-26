@@ -14,7 +14,7 @@ simplify_start_stop(data, id, start="start", stop="stop",
 }
 \arguments{
   \item{data}{
-A \code{data.table} like object including at least four columns: \code{id} (the case identifier), \code{start} (the beginning of the time-interval), \code{stop} (the end of the time-interval) and one or more arbitrary columns. May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}.
+A \code{data.table} like object including at least four columns: \code{id} (the case identifier), \code{start} (the beginning of the time-interval), \code{stop} (the end of the time-interval) and one or more arbitrary columns. May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}. Intervals should be \emph{right-open} (e.g. coded as \code{[start, stop)}).
   }
   \item{id}{
 A single character string specifying a column in \code{data} containing the case identifiers.
@@ -36,7 +36,7 @@ Whether to take a shallow copy of the input data before performing the computati
   }
 }
 \details{
-The intervals defined by the \code{start} and \code{stop} columns are expected to be coded as \code{(start, stop]}, meaning that the value of \code{start} must always be equal to the value of \code{stop} in the previous row. Intervals of length 0 are not supported and will produce an error message.
+The intervals defined by the \code{start} and \code{stop} columns are expected to be coded as \code{[start, stop)}, meaning that the value of \code{start} must always be equal to the value of \code{stop} in the previous row. Intervals of length 0 are not supported and will produce an error message.
 }
 \value{
 Returns a single \code{data.table} containing the simplified dataset.
