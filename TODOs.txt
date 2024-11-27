@@ -10,9 +10,7 @@ match_td()
 	- add "start" and "stop" argument for consistency
 
 fast_exact_matching()
-	- rename to fast_exact_matching.fit()
-	- write new function called fast_exact_matching() that just calls the .fit() version
-	  but has a formula interface
+	- allow interactions etc.
 
 merge_td()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)

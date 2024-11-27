@@ -123,7 +123,7 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
 ## check inputs for the fast_exact_matching() function
 #' @importFrom fastmatch %fin%
 check_inputs_fast_exact_matching <- function(data, treat, strata, replace,
-                                             ratio, estimand, if_lt_n) {
+                                             ratio, estimand, if_no_match) {
 
   # correct treat
   stopifnotm(is_single_character(treat) && treat %in% colnames(data) &&
@@ -141,10 +141,10 @@ check_inputs_fast_exact_matching <- function(data, treat, strata, replace,
                round(ratio)==ratio,
              "'ratio' must be a single integer >= 1.")
 
-  # correct if_lt_n
-  stopifnotm(is_single_character(if_lt_n) &&
-              if_lt_n %fin% c("stop", "warn", "nothing"),
-             "'if_lt_n' must be either 'stop', 'warn' or 'nothing'.")
+  # correct if_no_match
+  stopifnotm(is_single_character(if_no_match) &&
+              if_no_match %fin% c("stop", "warn", "nothing"),
+             "'if_no_match' must be either 'stop', 'warn' or 'nothing'.")
 
   # correct estimand
   stopifnotm(is_single_character(estimand) && estimand %fin% c("ATT", "ATC"),

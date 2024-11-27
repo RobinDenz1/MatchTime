@@ -203,14 +203,12 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
       d_all_i[, .strata := do.call(paste0, .SD), .SDcols=match_vars]
 
       # perform exact matching
-      d_match_i <- fast_exact_matching(d_all_i,
-                                       treat=".treat",
-                                       strata=".strata",
-                                       replace=replace_at_t,
-                                       if_lt_n=if_no_match,
-                                       ratio=ratio,
-                                       check_inputs=FALSE,
-                                       copy_data=FALSE)
+      d_match_i <- fast_exact_matching.fit(d_all_i,
+                                           treat=".treat",
+                                           strata=".strata",
+                                           replace=replace_at_t,
+                                           if_no_match=if_no_match,
+                                           ratio=ratio)
       d_match_i[, pair_id := paste0(i, "_", pair_id)]
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .strata := NULL]

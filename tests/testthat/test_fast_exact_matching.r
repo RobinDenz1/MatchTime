@@ -13,11 +13,12 @@ dat[, strat := paste0(A, B)]
 # TODO:
 #  - fails if strata is named "strata", probably has similar issues with
 #    other variable names. Check everywhere, write test for it
+# - also needs test for multiple variables
 
 test_that("1:1 matching without replacement", {
   set.seed(123431)
-  out <- fast_exact_matching(data=dat, treat="treatment", strata="strat",
-                             replace=FALSE, ratio=1)
+  out <- fast_exact_matching(treatment ~ strat, data=dat, replace=FALSE,
+                             ratio=1)
 
   # one match per treated
   expect_true(nrow(out)==nrow(dat[treatment==TRUE])*2)
@@ -37,8 +38,7 @@ test_that("1:1 matching without replacement", {
 
 test_that("1:1 matching with replacement", {
   set.seed(123431)
-  out <- fast_exact_matching(data=dat, treat="treatment", strata="strat",
-                             replace=TRUE, ratio=1)
+  out <- fast_exact_matching(treatment ~ strat, data=dat, replace=TRUE, ratio=1)
 
   # one match per treated
   expect_true(nrow(out)==nrow(dat[treatment==TRUE])*2)
@@ -58,8 +58,8 @@ test_that("1:1 matching with replacement", {
 
 test_that("2:1 matching without replacement", {
   set.seed(123431)
-  out <- fast_exact_matching(data=dat, treat="treatment", strata="strat",
-                             replace=FALSE, ratio=2)
+  out <- fast_exact_matching(treatment ~ strat, data=dat, replace=FALSE,
+                             ratio=2)
 
   # one match per treated
   expect_true(nrow(out)==nrow(dat[treatment==TRUE])*3)
@@ -79,8 +79,7 @@ test_that("2:1 matching without replacement", {
 
 test_that("2:1 matching with replacement", {
   set.seed(123431)
-  out <- fast_exact_matching(data=dat, treat="treatment", strata="strat",
-                             replace=TRUE, ratio=2)
+  out <- fast_exact_matching(treatment ~ strat, data=dat, replace=TRUE, ratio=2)
 
   # one match per treated
   expect_true(nrow(out)==nrow(dat[treatment==TRUE])*3)
@@ -100,8 +99,7 @@ test_that("2:1 matching with replacement", {
 
 test_that("4:1 matching with replacement", {
   set.seed(123431)
-  out <- fast_exact_matching(data=dat, treat="treatment", strata="strat",
-                             replace=TRUE, ratio=4)
+  out <- fast_exact_matching(treatment ~ strat, data=dat, replace=TRUE, ratio=4)
 
   # one match per treated
   expect_true(nrow(out)==nrow(dat[treatment==TRUE])*5)

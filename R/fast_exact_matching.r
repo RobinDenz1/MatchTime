@@ -1,16 +1,16 @@
 
-## given a data.table containing potential controls and cases,
-## return a data.table with all cases and one control with the same strata
-## value per case (ratio:1 exact matching on strata)
-#' @importFrom data.table copy
+## user-interface with formula for fast exact matching
 #' @importFrom data.table :=
-#' @importFrom data.table .N
+#' @importFrom data.table copy
+#' @importFrom data.table is.data.table
+#' @importFrom data.table as.data.table
+#' @importFrom data.table .SD
 #' @export
-fast_exact_matching <- function(data, treat, strata, replace=FALSE,
-                                ratio=1, estimand="ATT", if_lt_n="stop",
+fast_exact_matching <- function(formula, data, replace=FALSE,
+                                ratio=1, estimand="ATT", if_no_match="warn",
                                 check_inputs=TRUE, copy_data=TRUE) {
 
-  pair_id <- temp_id <- N <- NULL
+  .strata <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -19,12 +19,45 @@ fast_exact_matching <- function(data, treat, strata, replace=FALSE,
     data <- copy(data)
   }
 
+  # treatment variable
+  vars <- all.vars(formula)
+  treat <- vars[1]
+
+  # strata variables
+  if (length(vars) > 1) {
+    strata_vars <- vars[2:length(vars)]
+  } else {
+    strata_vars <- NULL
+  }
+
+  # create strata variable
+  data[, .strata := do.call(paste0, .SD), .SDcols=strata_vars]
+
   # check inputs if specified
   if (check_inputs) {
-    check_inputs_fast_exact_matching(data=data, treat=treat, strata=strata,
+    check_inputs_fast_exact_matching(data=data, treat=treat, strata=".strata",
                                      replace=replace, ratio=ratio,
-                                     estimand=estimand, if_lt_n=if_lt_n)
+                                     estimand=estimand, if_no_match=if_no_match)
   }
+
+  # call real matching function
+  out <- fast_exact_matching.fit(data=data, treat=treat, strata=".strata",
+                                 replace=replace, ratio=ratio,
+                                 estimand=estimand, if_no_match=if_no_match)
+  return(out)
+}
+
+## given a data.table containing potential controls and cases,
+## return a data.table with all cases and one control with the same strata
+## value per case (ratio:1 exact matching on strata)
+#' @importFrom data.table copy
+#' @importFrom data.table :=
+#' @importFrom data.table .N
+fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
+                                    ratio=1, estimand="ATT",
+                                    if_no_match="stop") {
+
+  pair_id <- temp_id <- N <- NULL
 
   if (estimand=="ATC") {
     data[, eval(treat) := !eval(parse(text=treat))]
@@ -46,11 +79,10 @@ fast_exact_matching <- function(data, treat, strata, replace=FALSE,
                               n=size * ratio,
                               strata=strata,
                               replace=replace,
-                              if_lt_n=if_lt_n)
+                              if_lt_n=if_no_match)
 
   # add pair id for cases
-  d_cases[, pair_id := paste0(eval(parse(text=strata)), "_", seq_len(.N)),
-          by=strata]
+  d_cases[, pair_id := paste0(get(strata), "_", seq_len(.N)), by=strata]
 
   # edge case where no controls could be found
   if (nrow(d_samp)==0) {
@@ -59,12 +91,11 @@ fast_exact_matching <- function(data, treat, strata, replace=FALSE,
 
   # add pair id for controls
   if (ratio==1) {
-    d_samp[, pair_id := paste0(eval(parse(text=strata)), "_", seq_len(.N)),
-           by=strata]
+    d_samp[, pair_id := paste0(get(strata), "_", seq_len(.N)), by=strata]
   } else {
     d_samp <- merge(d_samp, d_count, by=strata, all.x=TRUE)
     d_samp[, temp_id := ceiling(seq_len(.N) / N), by=strata]
-    d_samp[, pair_id := paste0(eval(parse(text=strata)), "_", seq_len(.N)),
+    d_samp[, pair_id := paste0(get(strata), "_", seq_len(.N)),
            by=c(strata, "temp_id")]
     d_samp[, temp_id := NULL]
     d_samp[, N := NULL]
