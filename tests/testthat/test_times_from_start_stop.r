@@ -43,21 +43,21 @@ test_that("no events", {
 test_that("from examples", {
 
   # define some example start-stop data
-  data <- data.table(id=c(1, 1, 1, 1, 1, 2, 2, 2),
+  data <- data.table(.id=c(1, 1, 1, 1, 1, 2, 2, 2),
                      start=c(0, 10, 25, 812, 1092, 90, 9023, 10000),
                      stop=c(10, 25, 812, 1092, 34334, 8021, 9823, 220022),
                      exposure=c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE,
                                 TRUE))
 
   # treating it as an exposure
-  expected1 <- data.table(id=c(1, 1, 2), time=c(0, 812, 10000))
-  setkey(expected1, id, time)
-  out1 <- times_from_start_stop(data, id="id", name="exposure", type="var")
+  expected1 <- data.table(.id=c(1, 1, 2), time=c(0, 812, 10000))
+  setkey(expected1, .id, time)
+  out1 <- times_from_start_stop(data, id=".id", name="exposure", type="var")
   expect_equal(out1, expected1)
 
   # treating it as an event
-  expected2 <- data.table(id=c(1, 1, 1, 2), time=c(10, 25, 1092, 220022))
-  setkey(expected2, id, time)
-  out2 <- times_from_start_stop(data, id="id", name="exposure", type="event")
+  expected2 <- data.table(.id=c(1, 1, 1, 2), time=c(10, 25, 1092, 220022))
+  setkey(expected2, .id, time)
+  out2 <- times_from_start_stop(data, id=".id", name="exposure", type="event")
   expect_equal(out2, expected2)
 })

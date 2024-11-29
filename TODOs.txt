@@ -1,24 +1,19 @@
 
 match_td()
 	- add more tests for continuous / date input
-	- add tests to check if it works with internally used variable names
 	- add propensity score matching type methods
 	- finish documentation
 	- merge documentation of match_td() and match_td.fit()
 	- maybe change output?
+		- maybe remove the functionality related to censoring / events
+		- put that into a different function called something like matchtd_data()
+		- output a "MatchTD" object (or similar stuff) with print(), summary() method
 	- allow support for "cobalt" package
-	- add "start" and "stop" argument for consistency
-
-fast_exact_matching()
-	- allow interactions etc.
 
 merge_td()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
 
 long2start_stop()
-	- allow event variables to be specified
-
-start_stop2long()
 	- allow event variables to be specified
 
 simplify_start_stop()

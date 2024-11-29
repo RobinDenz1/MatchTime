@@ -14,7 +14,7 @@ match_td(formula, data, id, inclusion=NA, event=NA,
          ratio=1, if_no_match="stop", censor_at_treat=TRUE,
          censor_pairs=TRUE, match_method="fast_exact",
          keep_all_columns=FALSE, units="auto", verbose=FALSE,
-         ...)
+         start="start", stop="stop", ...)
 }
 \arguments{
   \item{formula}{
@@ -67,6 +67,12 @@ Corresponds to the \code{units} argument of the \code{\link{difftime}} function.
   }
   \item{verbose}{
 Whether to print a summary of how many matches were made for each point in time or not (default).
+  }
+  \item{start}{
+A single character string specifying a column in \code{data} specifying the beginning of a time-interval. Defaults to \code{"start"}.
+  }
+  \item{stop}{
+A single character string specifying a column in \code{data} specifying the end of a time-interval. Defaults to \code{"stop"}.
   }
   \item{...}{
 Further arguments passed to \code{\link[MatchIt]{matchit}} when \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}.

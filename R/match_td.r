@@ -11,7 +11,9 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                      if_no_match="stop", censor_at_treat=TRUE,
                      censor_pairs=TRUE, match_method="fast_exact",
                      keep_all_columns=FALSE, units="auto", verbose=FALSE,
-                     ...) {
+                     start="start", stop="stop", ...) {
+
+  ..inclusion.. <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -32,7 +34,8 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                         censor_pairs=censor_pairs,
                         match_method=match_method,
                         verbose=verbose,
-                        keep_all_columns=keep_all_columns)
+                        keep_all_columns=keep_all_columns,
+                        start=start, stop=stop)
 
   # extract needed things from formula
   vars <- all.vars(formula)
@@ -45,13 +48,15 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 
   # extract relevant treatment times
   d_treat <- times_from_start_stop(data=data, name=treat, id=id,
-                                   type="var", time_name=".time")
+                                   type="var", time_name=".time",
+                                   start=start, stop=stop)
   data[, (treat) := NULL]
 
   # extract relevant event times
   if (!is.na(event)) {
     d_event <- times_from_start_stop(data=data, name=event, id=id,
-                                     type="event", time_name=".time")
+                                     type="event", time_name=".time",
+                                     start=start, stop=stop)
     data[, (event) := NULL]
   } else {
     d_event <- NULL
@@ -59,8 +64,9 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 
   # remove all rows when inclusion criteria are not met
   if (!is.na(inclusion)) {
-    data <- data[eval(inclusion)==TRUE]
-    data[, (inclusion) := NULL]
+    setnames(data, old=inclusion, new="..inclusion..")
+    data <- data[..inclusion..==TRUE]
+    data[, ..inclusion.. := NULL]
   }
 
   # call function that does all the work
@@ -71,7 +77,8 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                       censor_pairs=censor_pairs, estimand=estimand,
                       ratio=ratio, if_no_match=if_no_match,
                       match_method=match_method, units=units,
-                      keep_all_columns=keep_all_columns, verbose=verbose)
+                      keep_all_columns=keep_all_columns, verbose=verbose,
+                      start=start, stop=stop)
 
   return(out)
 }
@@ -93,14 +100,16 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                          estimand="ATT", ratio=1,
                          if_no_match="stop", match_method="fast_exact",
                          keep_all_columns=FALSE, units="auto",
-                         verbose=FALSE, ...) {
+                         verbose=FALSE, start="start", stop="stop", ...) {
 
-  start <- .treat <- pair_id <- subclass <- .treat_time <- .strata <-
-    .id_new <- .next_treat_time <- .next_event_time <- ..time.. <- NULL
+  .treat <- pair_id <- subclass <- .treat_time <- .strata <- ..start.. <-
+    .id_new <- .next_treat_time <- .next_event_time <- ..time.. <-
+    ..stop.. <- NULL
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c("..id..", "..time.."))
-  setnames(d_covars, old=id, new="..id..")
+  setnames(d_covars, old=c(id, start, stop),
+           new=c("..id..", "..start..", "..stop.."))
 
   orig_id <- id
   orig_time <- time
@@ -110,25 +119,27 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   # get variables that should be matched on
   if (is.null(match_vars)) {
     cnames <- colnames(d_covars)
-    match_vars <- cnames[!cnames %fin% c(id, time, ".treat", "start", "stop")]
+    match_vars <- cnames[!cnames %fin% c(id, time, ".treat", "..start..",
+                                         "..stop..")]
   }
   cnames <- colnames(d_covars)
-  select_vars <- cnames[!cnames %fin% c("start", "stop")]
+  select_vars <- cnames[!cnames %fin% c("..start..", "..stop..")]
 
   # get maximum follow-up time per person, if needed later
   if (!is.null(d_event)) {
     setnames(d_event, old=c(orig_id, orig_time), new=c("..id..", "..time.."))
-    d_longest <- d_covars[, (.max_t = max(stop)), by=eval(id)]
+    d_longest <- d_covars[, (.max_t = max(..stop..)), by=eval(id)]
     colnames(d_longest) <- c(id, ".max_t")
   }
 
   # keep only cases that meet inclusion criteria at treatment time
   d_covars <- merge(d_covars, d_treat, by=id, all.x=TRUE)
-  include <- d_covars[get(time) >= start & get(time) < stop][[eval(id)]]
+  include <- d_covars[get(time) >= ..start.. & get(time) < ..stop..][[eval(id)]]
   d_treat <- d_treat[get(id) %fin% include]
 
   # remove time durations after treatment onset
-  d_covars <- subset_start_stop(data=d_covars, last_time=d_covars[[time]] + 1)
+  d_covars <- subset_start_stop(data=d_covars, last_time=d_covars[[time]] + 1,
+                                start="..start..", stop="..stop..")
   d_covars[, ..time.. := NULL]
 
   # identify all points in time at which at least one case happened
@@ -174,7 +185,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
 
     # get dataset including them all at t
     d_all_i <- d_covars[get(id) %fin% all_ids &
-                        case_times[i] >= start & case_times[i] < stop
+                        case_times[i] >= ..start.. & case_times[i] < ..stop..
                         ][, select_vars, with=FALSE]
 
     # identify cases

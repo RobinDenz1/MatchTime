@@ -50,10 +50,32 @@ test_that("matching on nothing", {
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
   expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(28, 28))
+  out[, n_id := NULL]
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+
+  # same output with different names
+  setnames(d_single,
+           old=c(".id", "start", "stop", "inclusion", "influenza"),
+           new=c("id", "beginning", "end", "incl", "event"))
+
+  set.seed(1346)
+  out2 <- match_td(formula=vacc ~ 1,
+                   data=d_single,
+                   id="id",
+                   start="beginning",
+                   stop="end",
+                   inclusion="incl",
+                   event="event",
+                   match_method="none")
+  setnames(out2, old="id", new=".id")
+  expect_equal(out, out2)
+
+  setnames(d_single,
+           new=c(".id", "start", "stop", "inclusion", "influenza"),
+           old=c("id", "beginning", "end", "incl", "event"))
 })
 
 test_that("matching on time-fixed variable", {

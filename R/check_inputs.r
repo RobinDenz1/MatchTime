@@ -28,16 +28,17 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
                                   replace_over_t, replace_at_t,
                                   replace_cases, estimand, ratio,
                                   if_no_match, censor_at_treat, censor_pairs,
-                                  match_method, verbose, keep_all_columns) {
+                                  match_method, verbose, keep_all_columns,
+                                  start, stop) {
 
   # correct data
-  stopifnotm("start" %fin% colnames(data),
+  stopifnotm(is_single_character(start) && start %in% colnames(data),
              "'data' has to contain a column named 'start'.")
-  stopifnotm("stop" %fin% colnames(data),
+  stopifnotm(is_single_character(stop) && stop %in% colnames(data),
              "'data' has to contain a column named 'stop'.")
-  stopifnotm(is.numeric(data$start) || is.Date(data$start),
+  stopifnotm(is.numeric(data[[start]]) || is.Date(data[[start]]),
              "'start' must contain integers, continuous numbers or dates.")
-  stopifnotm(is.numeric(data$start) || is.Date(data$stop),
+  stopifnotm(is.numeric(data[[stop]]) || is.Date(data[[stop]]),
              "'stop' must contain integers, continuous numbers or dates.")
   stopifnotm(!anyNA(data), "'data' may not contain missing values.")
 
