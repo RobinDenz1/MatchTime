@@ -6,10 +6,9 @@
 #' @importFrom data.table as.data.table
 #' @importFrom data.table .SD
 #' @export
-fast_exact_matching <- function(formula, data, replace=FALSE,
-                                ratio=1, estimand="ATT", if_no_match="warn",
+fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
+                                estimand="ATT", if_no_match="warn",
                                 check_inputs=TRUE, copy_data=TRUE) {
-
   .strata <- NULL
 
   # coerce to data.table
@@ -27,7 +26,8 @@ fast_exact_matching <- function(formula, data, replace=FALSE,
   if (length(vars) > 1) {
     strata_vars <- vars[2:length(vars)]
   } else {
-    strata_vars <- NULL
+    stop("'formula' needs to contain at least one variable on the right-hand",
+         " side to match on.")
   }
 
   # create strata variable
@@ -53,6 +53,7 @@ fast_exact_matching <- function(formula, data, replace=FALSE,
 #' @importFrom data.table copy
 #' @importFrom data.table :=
 #' @importFrom data.table .N
+#' @importFrom data.table merge.data.table
 fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
                                     ratio=1, estimand="ATT",
                                     if_no_match="stop") {
@@ -93,7 +94,7 @@ fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
   if (ratio==1) {
     d_samp[, pair_id := paste0(get(strata), "_", seq_len(.N)), by=strata]
   } else {
-    d_samp <- merge(d_samp, d_count, by=strata, all.x=TRUE)
+    d_samp <- merge.data.table(d_samp, d_count, by=strata, all.x=TRUE)
     d_samp[, temp_id := ceiling(seq_len(.N) / N), by=strata]
     d_samp[, pair_id := paste0(get(strata), "_", seq_len(.N)),
            by=c(strata, "temp_id")]

@@ -39,3 +39,24 @@ test_that("using different names", {
                                 "time_variable"))
   expect_equal(out$time, c(seq_len(30)-1, seq_len(32)-1, seq_len(51)-1))
 })
+
+test_that("using events argument", {
+
+  data <- data.table(id=c(1, 1, 1, 2, 2, 3),
+                     start=c(0, 14, 26, 0, 18, 0),
+                     stop=c(14, 26, 30, 18, 32, 51),
+                     A=c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
+                     B=c(1L, 1L, 2L, 3L, 5L, 6L),
+                     C=c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),
+                     D=c("A", "B", "C", "D", "E", "F"))
+  data[, E := FALSE]
+  data[, var10 := TRUE]
+
+  out <- start_stop2long(data, id="id", events=c("C", "E", "var10"))
+
+  expect_true(nrow(out)==113)
+  expect_equal(colnames(out), c("id", "time", "A", "B", "D", "C", "E", "var10"))
+  expect_equal(out$time, c(seq_len(30)-1, seq_len(32)-1, seq_len(51)-1))
+  expect_equal(out$C, c(rep(FALSE, 14), TRUE, rep(FALSE, 11), TRUE,
+                        rep(FALSE, 86)))
+})
