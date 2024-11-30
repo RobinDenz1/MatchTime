@@ -16,15 +16,13 @@ merge_td()
 long2start_stop()
 	- allow event variables to be specified
 
-simplify_start_stop()
-	- check if this works properly when start-stop includes events
-
 New features:
 	- add_td(): general function to add variables to time-to-event data
 	- estimate_ipcw(): function to estimate inverse probability of censoring weights
+	- clean up and export add_tte_outcome() function (possible rename / re-factor)
 
 General TODOs:
-	- add vignette on start-stop data generation
+	- finish vignette on start-stop data generation
 	- add vignette showcasing time-dependent matching with match_td()
 	- add README
 	- add usual package stuff

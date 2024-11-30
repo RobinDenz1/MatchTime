@@ -10,11 +10,6 @@ dat <- data.table(
 )
 dat[, strat := paste0(A, B)]
 
-# TODO:
-#  - fails if strata is named "strata", probably has similar issues with
-#    other variable names. Check everywhere, write test for it
-# - also needs test for multiple variables
-
 test_that("1:1 matching without replacement", {
   set.seed(123431)
   out <- fast_exact_matching(treatment ~ strat, data=dat, replace=FALSE,
@@ -34,6 +29,21 @@ test_that("1:1 matching without replacement", {
 
   # pair_id correctly assigned
   expect_true(all(table(out$pair_id)==2))
+
+  # same output when using formula directly
+  set.seed(123431)
+  out2 <- fast_exact_matching(treatment ~ A + B, data=dat, replace=FALSE,
+                              ratio=1)
+  expect_equal(out, out2)
+
+  # works with internal variable names
+  set.seed(123431)
+  setnames(dat, old=c("treatment", "strat"), new=c("treat", "strata"))
+  out3 <- fast_exact_matching(treat ~ strata, data=dat, replace=FALSE,
+                              ratio=1)
+  setnames(out3, old=c("treat", "strata"), new=c("treatment", "strat"))
+  setnames(dat, old=c("treat", "strata"), new=c("treatment", "strat"))
+  expect_equal(out, out3)
 })
 
 test_that("1:1 matching with replacement", {

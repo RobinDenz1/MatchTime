@@ -220,6 +220,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                                            replace=replace_at_t,
                                            if_no_match=if_no_match,
                                            ratio=ratio)
+
       d_match_i[, pair_id := paste0(i, "_", pair_id)]
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .strata := NULL]

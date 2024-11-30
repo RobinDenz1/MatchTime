@@ -37,6 +37,8 @@ Whether to take a shallow copy of the input data before performing the computati
 }
 \details{
 The intervals defined by the \code{start} and \code{stop} columns are expected to be coded as \code{[start, stop)}, meaning that the value of \code{start} must always be equal to the value of \code{stop} in the previous row. Intervals of length 0 are not supported and will produce an error message.
+
+Note that if the input \code{data} contains events, users probably want to exclude these event columns from the \code{cols} argument. The reason is that the \code{data} may contain consecutive intervals that are indeed exactly the same, but refer to two separate events (because intervals always end when an event indicator is \code{TRUE}).
 }
 \value{
 Returns a single \code{data.table} containing the simplified dataset.
