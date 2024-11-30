@@ -60,7 +60,7 @@ fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
 fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
                                     ratio=1, estimand="ATT",
                                     if_no_match="stop") {
-  pair_id <- temp_id <- N <- NULL
+  pair_id <- temp_id <- N <- ..treat.. <- ..strata.. <- NULL
 
   # renaming columns to avoid get() issues
   setnames(data, old=c(treat, strata), new=c("..treat..", "..strata.."))

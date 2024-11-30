@@ -42,7 +42,7 @@ Returns a single \code{data.table} containing the subsetted start-stop data.
 Robin Denz
 }
 \seealso{
-\code{\link{merge_td}}, \code{\link{add_missing_intervals}}, \code{\link{simplify_start_stop}}
+\code{\link{merge_start_stop}}, \code{\link{add_missing_intervals}}, \code{\link{simplify_start_stop}}
 }
 \examples{
 library(MatchTD)

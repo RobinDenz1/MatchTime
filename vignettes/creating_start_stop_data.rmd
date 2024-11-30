@@ -44,7 +44,7 @@ Note that in reality the values of time-dependent variables does not necessarily
 
 The following functions of `MatchTD` may be used to deal with start-stop data:
 
-* `merge_td()`: Merges two or more start-stop datasets
+* `merge_start_stop()`: Merges two or more start-stop datasets
 * `subset_start_stop()`: Takes a subset of intervals from a start-stop dataset
 * `simplify_start_stop()`: Combines rows from a start-stop dataset when possible
 * `add_missing_intervals()`: Adds missing time-intervals to "incomplete" start-stop datasets
@@ -54,11 +54,11 @@ The following functions of `MatchTD` may be used to deal with start-stop data:
 
 If a complete long-format dataset already exists, the easiest way to obtain a start-stop dataset is to use the `long2start_stop()` function. This, however, only works for discrete-time data and is only a feasibly alternative if the full long-format data is small enough to fit into the available RAM, which is not always the case.
 
-Most users will only need the `merge_td()` function to create a single start-stop dataset from different datasets containing time-dependent information. This function has the advantage that it does not blow up the dataset to the long-format, making it feasible to create start-stop data for very large datasets. The other, more advanced, functions are most useful when dealing with messy real-world data.
+Most users will only need the `merge_start_stop()` function to create a single start-stop dataset from different datasets containing time-dependent information. This function has the advantage that it does not blow up the dataset to the long-format, making it feasible to create start-stop data for very large datasets. The other, more advanced, functions are most useful when dealing with messy real-world data.
 
-# The `merge_td()` function
+# The `merge_start_stop()` function
 
-The most important function to create start-stop data included in this package is the `merge_td()` function. Its' main purpose is to merge two or more datasets that contain information about time-intervals. 
+The most important function to create start-stop data included in this package is the `merge_start_stop()` function. Its' main purpose is to merge two or more datasets that contain information about time-intervals. 
 
 # Generating Start-Stop Datasets from Scratch
 
@@ -84,7 +84,7 @@ In this example all three datasets contain information about two fictional indiv
 The general course of action should be:
 
 * 1.) Define singular start-stop datasets for each time-varying variable
-* 2.) Merge them together using `merge_td()`
+* 2.) Merge them together using `merge_start_stop()`
 
 These points are explained in detail below.
 
@@ -124,7 +124,7 @@ The result looks like this:
 print(d_bmi)
 ```
 
-Essentially, this is now a start-stop dataset by itself, which is the exactly the goal of this exercise. Once we have start-stop datasets for each time-varying variable, we can simply merge them using the `merge_td()` function.
+Essentially, this is now a start-stop dataset by itself, which is the exactly the goal of this exercise. Once we have start-stop datasets for each time-varying variable, we can simply merge them using the `merge_start_stop()` function.
 
 Note that it may also be a valid choice to "flip" the intervals. In this case we could have coded the intervals to start at 0 (or some other t) and stay at the first observed value of `bmi` until t = 25 for id = 1. Which option to choose might have serious consequences, but depends entirely on what kind of data you are dealing with.
 
@@ -152,15 +152,15 @@ Note that there is no need to change the `d_demographics` dataset, because it do
 
 ## Merging the Time-Intervals for each Time-Varying Variable
 
-All that is left to do is call the `merge_td()` function to, well, merge the time-intervals of `bmi` and `chemo`. The following function call may be used:
+All that is left to do is call the `merge_start_stop()` function to, well, merge the time-intervals of `bmi` and `chemo`. The following function call may be used:
 
 ```{r}
-out <- merge_td(d_chemo, d_bmi, by="id", defaults=list(chemo=FALSE),
+out <- merge_start_stop(d_chemo, d_bmi, by="id", defaults=list(chemo=FALSE),
                 constant_vars=d_demographics)
 print(out)
 ```
 
-Again, we simply supply the variable-specific start-stop datasets first and set the `by` argument to the person identifier. Additionally, we set the `defaults` argument to `list(chemo=FALSE)`, which essentially tells the `merge_td()` function that the value of the `chemo` column should be `FALSE` for all time-intervals outside of the ones defined by the `d_chemo` dataset. Additionally, since the information in `d_demographics` is time-independent, it should be supplied to the `constant_vars` argument.
+Again, we simply supply the variable-specific start-stop datasets first and set the `by` argument to the person identifier. Additionally, we set the `defaults` argument to `list(chemo=FALSE)`, which essentially tells the `merge_start_stop()` function that the value of the `chemo` column should be `FALSE` for all time-intervals outside of the ones defined by the `d_chemo` dataset. Additionally, since the information in `d_demographics` is time-independent, it should be supplied to the `constant_vars` argument.
 
 
 

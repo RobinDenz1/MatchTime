@@ -26,10 +26,10 @@ A single character string specifying a column in \code{data} specifying the begi
 A single character string specifying a column in \code{data} specifying the ending of a time-interval. Defaults to \code{"stop"}.
   }
   \item{first_time}{
-Corresponds to the argument of the same name in the \code{\link{merge_td}} function.
+Corresponds to the argument of the same name in the \code{\link{merge_start_stop}} function.
   }
   \item{last_time}{
-Corresponds to the argument of the same name in the \code{\link{merge_td}} function.
+Corresponds to the argument of the same name in the \code{\link{merge_start_stop}} function.
   }
   \item{missing_indicator}{
 Either \code{TRUE} (default) or \code{FALSE}, specifying whether a logical column should be added to the data which includes an indicator whether the corresponding interval was present in the original data or not. If \code{TRUE}, this column will be added using the name \code{".in_data"}. This column is \code{TRUE} if the interval was present and \code{FALSE} if it was not.
@@ -38,13 +38,13 @@ Either \code{TRUE} (default) or \code{FALSE}, specifying whether a logical colum
 Either \code{TRUE} (default) or \code{FALSE}, specifying whether to take a shallow copy of the supplied \code{data.table} before running the code. Doing so ensures that all data in the parent environment stays unchanged. If set to \code{FALSE}, they may be modified in place which is more RAM efficient.
   }
   \item{...}{
-Further arguments passed to the \code{\link{merge_td}} function.
+Further arguments passed to the \code{\link{merge_start_stop}} function.
   }
 }
 \details{
 If the input data does not have any missing intervals, the input stays unchanged. If missing intervals are added, they have a value of \code{NA} in all columns other than \code{start}, \code{stop} and \code{id}.
 
-Internally, this function simply calls the \code{\link{merge_td}} function with appropriate input argument (merging the input \code{data} with an essentially empty second dataset using \code{all=TRUE}). As such, all arguments of the \code{\link{merge_td}} function, such as setting default values using the \code{defaults} argument may also be used here.
+Internally, this function simply calls the \code{\link{merge_start_stop}} function with appropriate input argument (merging the input \code{data} with an essentially empty second dataset using \code{all=TRUE}). As such, all arguments of the \code{\link{merge_start_stop}} function, such as setting default values using the \code{defaults} argument may also be used here.
 }
 \value{
 Returns a single \code{data.table} containing the start-stop data with all missing intervals added.
@@ -53,7 +53,7 @@ Returns a single \code{data.table} containing the start-stop data with all missi
 Robin Denz
 }
 \seealso{
-\code{\link{merge_td}}, \code{\link{subset_start_stop}}, \code{\link{simplify_start_stop}}
+\code{\link{merge_start_stop}}, \code{\link{subset_start_stop}}, \code{\link{simplify_start_stop}}
 }
 \examples{
 library(MatchTD)

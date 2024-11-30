@@ -10,7 +10,7 @@ match_td()
 		- output a "MatchTD" object (or similar stuff) with print(), summary() method
 	- allow support for "cobalt" package
 
-merge_td()
+merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
 
 long2start_stop()

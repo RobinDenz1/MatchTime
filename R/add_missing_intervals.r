@@ -41,8 +41,9 @@ add_missing_intervals <- function(data, id, start="start", stop="stop",
   d_min_max[, .placeholder := TRUE]
 
   # blow it up using merge_td()
-  out <- merge_td(data, d_min_max, by=id, start=start, stop=stop, all=TRUE,
-                  first_time=first_time, last_time=last_time, ...)
+  out <- merge_start_stop(data, d_min_max, by=id, start=start, stop=stop,
+                          all=TRUE, first_time=first_time, last_time=last_time,
+                          ...)
   out[, .placeholder := NULL]
 
   if (missing_indicator) {
