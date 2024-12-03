@@ -1,5 +1,5 @@
 
-## function to transform a list of data.tables into a single start-stop
+## function to transform multiple data.tables into a single start-stop
 ## data.table which may then be used in match_td()
 #' @importFrom data.table fifelse
 #' @importFrom data.table data.table

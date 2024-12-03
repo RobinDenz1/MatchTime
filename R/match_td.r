@@ -279,7 +279,8 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                         match_method=match_method,
                         match_vars=match_vars,
                         n_orig=length(unique(d_covars[[id]])),
-                        n_matched=length(unique(data$.id_new))))
+                        n_matched=length(unique(data$.id_new)),
+                        added_events=c()))
   class(out) <- "MatchTD"
 
   return(out)

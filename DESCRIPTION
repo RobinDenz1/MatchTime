@@ -4,12 +4,15 @@ Version: 0.1.0
 Authors@R: 
     person("Robin", "Denz", , "robin.denz@rub.de", role = c("aut", "cre"))
 Maintainer: Robin Denz <robin.denz@rub.de>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: Includes multiple methods to perform time-dependent matching with discrete and continuous time,
+    allowing treatment and covariate changes at arbitrary case-specific timings. Additionally includes various
+	functions to create and transform start-stop data, because that is the required input for the matching.
+	The package is designed specifically to handle very large datasets.
 License: GPL (>= 3)
 Imports: 
     data.table,
-	fastmatch
+	fastmatch,
+	cobalt
 Suggests:
 	MatchIt,
 	simDAG,

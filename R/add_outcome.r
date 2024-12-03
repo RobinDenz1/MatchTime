@@ -117,6 +117,9 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
   setnames(x$data, old=c(".event_time", ".status"),
            new=c(event_time_name, status_name))
 
+  # update vector of names already added
+  x$info$added_events <- c(x$info$added_events, event_time_name, status_name)
+
   return(x)
 }
 

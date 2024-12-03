@@ -3,7 +3,6 @@ match_td() features
 	- add more tests for continuous / date input
 	- add propensity score matching type methods
 	- finish documentation
-	- allow support for "cobalt" package
 
 match_td() output change
 	- add examples in documentation for add_outcome()
