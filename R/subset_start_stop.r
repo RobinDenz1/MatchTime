@@ -39,11 +39,11 @@ subset_start_stop <- function(data, first_time, last_time,
              "'truncate' must be either TRUE or FALSE.")
 
   # rename columns temporarily so that get() always works
-  setnames(data, old=c(start, stop), new=c("..start..", "..stop.."))
+  setnames(data, old=c(start, stop), new=c(".start", ".stop"))
   orig_start <- start
   orig_stop <- stop
-  start <- "..start.."
-  stop <- "..stop.."
+  start <- ".start"
+  stop <- ".stop"
 
   # remove rows before first_time and after last time
   if (!missing(first_time)) {
@@ -66,7 +66,7 @@ subset_start_stop <- function(data, first_time, last_time,
   }
 
   # set names back
-  setnames(data, old=c("..start..", "..stop.."), new=c(orig_start, orig_stop))
+  setnames(data, old=c(".start", ".stop"), new=c(orig_start, orig_stop))
 
   if (!missing(first_time)) {
     data[, .first_time := NULL]

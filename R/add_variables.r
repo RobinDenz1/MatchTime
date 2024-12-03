@@ -1,95 +1,14 @@
 
-## add time-to-event outcome to matched data
-#' @importFrom data.table :=
-#' @importFrom data.table fifelse
-add_tte_outcome <- function(id, time, data, d_event, d_longest,
-                            censor_at_treat, censor_pairs, units) {
-
-  .next_treat_time <- .treat_time <- .next_event_time <- status <-
-    event_time <- pair_id_event_time <- .artificial_cens_time <- pair_id <-
-    .max_t <- .time_to_max_t <- NULL
-
-  # add event information
-  data <- add_next_event_time(data=data, d_event=d_event, id=id, time=time,
-                              include_same_t=TRUE)
-
-  # shift times according to start
-  if (all(class(data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
-    data[, .next_treat_time := as.numeric(difftime(.next_treat_time,
-                                                   .treat_time,
-                                                   units=units))]
-    data[, .next_event_time := as.numeric(difftime(.next_event_time,
-                                                   .treat_time,
-                                                   units=units))]
-  } else {
-    data[, .next_treat_time := .next_treat_time - .treat_time]
-    data[, .next_event_time := .next_event_time - .treat_time]
-  }
-
-  # get event status indicator
-  data[, status := FALSE]
-  data[is.na(.next_treat_time) & !is.na(.next_event_time), status := TRUE]
-  data[.next_treat_time > .next_event_time, status := TRUE]
-
-  # add maximum follow-up time per person
-  data <- merge(data, d_longest, by=id, all.x=TRUE)
-
-  # time to max_t
-  if (all(class(data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
-    data[, .time_to_max_t := as.numeric(difftime(.max_t,
-                                                 .treat_time,
-                                                 units=units))]
-  } else {
-    data[, .time_to_max_t := .max_t - .treat_time]
-  }
-
-  # calculate corresponding event time
-  if (censor_at_treat) {
-    data[, event_time := pmin(.next_treat_time, .next_event_time,
-                              .time_to_max_t, na.rm=TRUE)]
-  } else {
-    data[, event_time := pmin(.next_event_time, .time_to_max_t, na.rm=TRUE)]
-  }
-  data[, .max_t := NULL]
-
-  # if specified and a control is censored because it became a case later,
-  # also censor the corresponding pair to which it is a control at the same time
-  if (censor_pairs && censor_at_treat) {
-
-    # needs to be the same type for older versions of data.table
-    if (all(class(data[[time]]) %in% c("Date", "POSIXct", "POSIXlt"))) {
-      max_time <- as.Date(Inf)
-    } else {
-      max_time <- Inf
-    }
-
-    # new variable that is Inf if no artificial censoring is needed or the
-    # minimum of the artificial censoring times inside matched pair groups
-    data[, .artificial_cens_time := fifelse(.next_treat_time == event_time,
-                                            event_time, max_time, na=max_time)]
-    data[, .artificial_cens_time := min(.artificial_cens_time), by=pair_id]
-
-    # update the data according to this
-    data[.artificial_cens_time < event_time, status := FALSE]
-    data[.artificial_cens_time < event_time,
-         event_time := .artificial_cens_time]
-    data[, .artificial_cens_time := NULL]
-  }
-
-  data[, .time_to_max_t := NULL]
-
-  return(data)
-}
-
 ## given the current matched data and a data.table containing none, one or
 ## multiple events per person, add the next event after .treat_time
 #' @importFrom data.table :=
-add_next_event_time <- function(data, d_event, id, time, include_same_t=TRUE) {
+add_next_event_time <- function(data, d_event, id, time, include_same_t=TRUE,
+                                next_time_name) {
 
   is_after <- .next_event_time <- .treat_time <- .id_new <- .in_risk <- NULL
 
   # merge to matched data, creating new rows
-  colnames(d_event)[colnames(d_event)==time] <- ".next_event_time"
+  setnames(d_event, old=time, new=".next_event_time")
   data <- merge(data, d_event, by=id, all.x=TRUE, allow.cartesian=TRUE)
 
   # check if event is after inclusion time
@@ -104,11 +23,14 @@ add_next_event_time <- function(data, d_event, id, time, include_same_t=TRUE) {
 
   # calculate time of first influenza after inclusion time
   data[is_after==FALSE, .next_event_time := NA]
-  data[, .next_event_time := min(.next_event_time, na.rm=TRUE), by=.id_new]
+  data[, .next_event_time := min(.next_event_time, na.rm=TRUE),
+       by=.id_new]
   data[, is_after := NULL]
 
   # remove duplicate rows
   data <- unique(data)
+
+  setnames(data, old=".next_event_time", new=next_time_name)
 
   return(data)
 }

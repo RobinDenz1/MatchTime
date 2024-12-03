@@ -25,8 +25,7 @@ test_that("matching on nothing", {
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
-                  event="influenza",
-                  match_method="none")
+                  match_method="none")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -40,7 +39,7 @@ test_that("matching on nothing", {
   expect_true(tab[1,1] != tab[2,1])
 
   # pair id always occurs 2 times
-  expect_true(all(table(out$pair_id)==2))
+  expect_true(all(table(out$.id_pair)==2))
 
   # .id_new is unique
   expect_true(length(unique(out$.id_new))==nrow(out))
@@ -54,12 +53,12 @@ test_that("matching on nothing", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 28)
 
   # same output with different names
   setnames(d_single,
-           old=c(".id", "start", "stop", "inclusion", "influenza"),
-           new=c("id", "beginning", "end", "incl", "event"))
+           old=c(".id", "start", "stop", "inclusion"),
+           new=c("id", "beginning", "end", "incl"))
 
   set.seed(1346)
   out2 <- match_td(formula=vacc ~ 1,
@@ -68,14 +67,13 @@ test_that("matching on nothing", {
                    start="beginning",
                    stop="end",
                    inclusion="incl",
-                   event="event",
-                   match_method="none")
+                   match_method="none")$data
   setnames(out2, old="id", new=".id")
   expect_equal(out, out2)
 
   setnames(d_single,
-           new=c(".id", "start", "stop", "inclusion", "influenza"),
-           old=c("id", "beginning", "end", "incl", "event"))
+           new=c(".id", "start", "stop", "inclusion"),
+           old=c("id", "beginning", "end", "incl"))
 })
 
 test_that("matching on time-fixed variable", {
@@ -84,8 +82,7 @@ test_that("matching on time-fixed variable", {
   out <- match_td(formula=vacc ~ mac,
                   data=d_single,
                   id=".id",
-                  inclusion="inclusion",
-                  event="influenza")
+                  inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -99,7 +96,7 @@ test_that("matching on time-fixed variable", {
   expect_true(tab[1,1] != tab[2,1])
 
   # pair id always occurs 2 times
-  expect_true(all(table(out$pair_id)==2))
+  expect_true(all(table(out$.id_pair)==2))
 
   # .id_new is unique
   expect_true(length(unique(out$.id_new))==nrow(out))
@@ -112,7 +109,7 @@ test_that("matching on time-fixed variable", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 29)
 })
 
 test_that("matching on time-dependent variable", {
@@ -121,8 +118,7 @@ test_that("matching on time-dependent variable", {
   out <- match_td(formula=vacc ~ meds,
                   data=d_single,
                   id=".id",
-                  inclusion="inclusion",
-                  event="influenza")
+                  inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -136,7 +132,7 @@ test_that("matching on time-dependent variable", {
   expect_equal(tab[1, ], tab[2, ])
 
   # pair id always occurs 2 times
-  expect_true(all(table(out$pair_id)==2))
+  expect_true(all(table(out$.id_pair)==2))
 
   # .id_new is unique
   expect_true(length(unique(out$.id_new))==nrow(out))
@@ -149,7 +145,7 @@ test_that("matching on time-dependent variable", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 49)
 })
 
 test_that("matching on time-fixed and time-dependent variable", {
@@ -158,8 +154,7 @@ test_that("matching on time-fixed and time-dependent variable", {
   out <- match_td(formula=vacc ~ mac + meds,
                   data=d_single,
                   id=".id",
-                  inclusion="inclusion",
-                  event="influenza")
+                  inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -173,7 +168,7 @@ test_that("matching on time-fixed and time-dependent variable", {
   expect_equal(tab[1,], tab[2, ])
 
   # pair id always occurs 2 times
-  expect_true(all(table(out$pair_id)==2))
+  expect_true(all(table(out$.id_pair)==2))
 
   # .id_new is unique
   expect_true(length(unique(out$.id_new))==nrow(out))
@@ -186,7 +181,7 @@ test_that("matching on time-fixed and time-dependent variable", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
 })
 
 test_that("using replace_at_t and replace_over_t", {
@@ -196,9 +191,8 @@ test_that("using replace_at_t and replace_over_t", {
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
-                  event="influenza",
                   replace_at_t=TRUE,
-                  replace_over_t=TRUE)
+                  replace_over_t=TRUE)$data
   expect_equal(max(table(out$.id)), 3)
 })
 
@@ -209,12 +203,11 @@ test_that("using 10 controls per case, replace_at_t=TRUE", {
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
-                  event="influenza",
                   replace_at_t=TRUE,
                   replace_over_t=FALSE,
                   ratio=10,
                   keep_all_columns=TRUE,
-                  if_no_match="nothing")
+                  if_no_match="nothing")$data
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -222,8 +215,8 @@ test_that("using 10 controls per case, replace_at_t=TRUE", {
   check <- out_untreated[, .(var = stats::var(.treat_time)), by=.id]
   expect_true(all(is.na(check$var) | check$var==0))
 
-  # only as much pair_ids as treated
-  expect_true(length(unique(out$pair_id))==229)
+  # only as much .id_pairs as treated
+  expect_true(length(unique(out$.id_pair))==229)
 })
 
 test_that("using 10 controls per case, replace_over_t=TRUE", {
@@ -233,12 +226,11 @@ test_that("using 10 controls per case, replace_over_t=TRUE", {
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
-                  event="influenza",
                   replace_at_t=FALSE,
                   replace_over_t=TRUE,
                   ratio=10,
                   keep_all_columns=TRUE,
-                  if_no_match="nothing")
+                  if_no_match="nothing")$data
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -246,8 +238,8 @@ test_that("using 10 controls per case, replace_over_t=TRUE", {
   check <- out_untreated[, .(var = stats::var(.treat_time)), by=.id]
   expect_true(all(is.na(check$var) | check$var!=0))
 
-  # only as much pair_ids as treated
-  expect_true(length(unique(out$pair_id))==229)
+  # only as much .id_pairs as treated
+  expect_true(length(unique(out$.id_pair))==229)
 })
 
 test_that("using 10 controls per case, replace_cases=FALSE", {
@@ -259,16 +251,15 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
                   data=d_single2,
                   id=".id",
                   inclusion="inclusion",
-                  event="influenza",
                   replace_at_t=FALSE,
                   replace_over_t=FALSE,
                   replace_cases=FALSE,
                   ratio=10,
                   keep_all_columns=TRUE,
-                  if_no_match="nothing")
+                  if_no_match="nothing")$data
 
   # a lot less cases than usual
-  expect_true(length(unique(out$pair_id))==88)
+  expect_true(length(unique(out$.id_pair))==88)
 })
 
 test_that("output of match_td() and match_td.fit() is equal", {
@@ -278,8 +269,8 @@ test_that("output of match_td() and match_td.fit() is equal", {
   out1 <- match_td(formula=vacc ~ mac,
                    data=d_single,
                    id=".id",
-                   inclusion="inclusion",
-                   event="influenza")
+                   inclusion="inclusion")$data
+  out1[, influenza := NULL]
 
   d_multi2 <- copy(d_multi)
 
@@ -287,9 +278,8 @@ test_that("output of match_td() and match_td.fit() is equal", {
   out2 <- match_td.fit(id=".id",
                        time=".time",
                        d_treat=d_multi2$d_treat,
-                       d_event=d_multi2$d_event,
                        d_covars=d_multi2$d_covars,
-                       match_vars="mac")
+                       match_vars="mac")$data
 
   expect_equal(out1, out2)
 
@@ -298,8 +288,8 @@ test_that("output of match_td() and match_td.fit() is equal", {
   out1 <- match_td(formula=vacc ~ mac + meds,
                    data=d_single,
                    id=".id",
-                   inclusion="inclusion",
-                   event="influenza")
+                   inclusion="inclusion")$data
+  out1[, influenza := NULL]
 
   d_multi2 <- copy(d_multi)
 
@@ -307,9 +297,8 @@ test_that("output of match_td() and match_td.fit() is equal", {
   out2 <- match_td.fit(id=".id",
                        time=".time",
                        d_treat=d_multi2$d_treat,
-                       d_event=d_multi2$d_event,
                        d_covars=d_multi2$d_covars,
-                       match_vars=c("mac", "meds"))
+                       match_vars=c("mac", "meds"))$data
 
   expect_equal(out1, out2)
 
@@ -319,8 +308,8 @@ test_that("output of match_td() and match_td.fit() is equal", {
   out3 <- match_td(formula=vacc ~ mac + meds,
                    data=d_single,
                    id="id",
-                   inclusion="inclusion",
-                   event="influenza")
+                   inclusion="inclusion")$data
+  out3[, influenza := NULL]
   setnames(out3, old="id", new=".id")
   setnames(d_single, old="id", new=".id")
 
@@ -334,8 +323,7 @@ test_that("using matchit", {
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
-                  event="influenza",
-                  match_method="nearest")
+                  match_method="nearest")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -349,7 +337,7 @@ test_that("using matchit", {
   expect_equal(tab[1,], tab[2, ])
 
   # pair id always occurs 2 times
-  expect_true(all(table(out$pair_id)==2))
+  expect_true(all(table(out$.id_pair)==2))
 
   # .id_new is unique
   expect_true(length(unique(out$.id_new))==nrow(out))
@@ -362,7 +350,7 @@ test_that("using matchit", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
 })
 
 test_that("using Date input", {
@@ -377,8 +365,7 @@ test_that("using Date input", {
   out <- match_td(formula=vacc ~ meds,
                   data=d_dates,
                   id=".id",
-                  inclusion="inclusion",
-                  event="influenza")
+                  inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -392,7 +379,7 @@ test_that("using Date input", {
   expect_equal(tab[1, ], tab[2, ])
 
   # pair id always occurs 2 times
-  expect_true(all(table(out$pair_id)==2))
+  expect_true(all(table(out$.id_pair)==2))
 
   # .id_new is unique
   expect_true(length(unique(out$.id_new))==nrow(out))
@@ -405,5 +392,5 @@ test_that("using Date input", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 49)
 })

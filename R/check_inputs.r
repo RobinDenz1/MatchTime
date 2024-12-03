@@ -24,11 +24,10 @@ stopifnotm <- function(assert, message) {
 
 ## input checks for the match_td() function
 #' @importFrom fastmatch %fin%
-check_inputs_match_td <- function(formula, data, id, inclusion, event,
+check_inputs_match_td <- function(formula, data, id, inclusion,
                                   replace_over_t, replace_at_t,
                                   replace_cases, estimand, ratio,
-                                  if_no_match, censor_at_treat, censor_pairs,
-                                  match_method, verbose, keep_all_columns,
+                                  if_no_match, match_method, verbose,
                                   start, stop) {
 
   # correct data
@@ -70,14 +69,6 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
              paste0("'inclusion' must be a single character string specifying",
                     " a logical variable in 'data' or NA."))
 
-  # correct event
-  stopifnotm(length(event)==1 &&
-              (is.na(event) || is.character(event)) &&
-              event %fin% colnames(data) &&
-              is.logical(data[[event]]),
-             paste0("'event' must be a single character string specifying",
-                    " a logical variable in 'data' or NA."))
-
   # correct ratio
   stopifnotm(length(ratio)==1 && is.numeric(ratio) && ratio >= 1 &&
                round(ratio)==ratio,
@@ -103,14 +94,8 @@ check_inputs_match_td <- function(formula, data, id, inclusion, event,
              "'replace_at_t' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(replace_cases),
              "'replace_cases' must be either TRUE or FALSE.")
-  stopifnotm(is_single_logical(censor_pairs),
-             "'censor_pairs' must be either TRUE or FALSE.")
-  stopifnotm(is_single_logical(censor_at_treat),
-             "'censor_at_treat' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(verbose),
              "'verbose' must be either TRUE or FALSE.")
-  stopifnotm(is_single_logical(keep_all_columns),
-             "'keep_all_columns' must be either TRUE or FALSE.")
 
   # correct estimand
   stopifnotm(is_single_character(estimand) &&

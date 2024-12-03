@@ -9,7 +9,7 @@
 fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
                                 estimand="ATT", if_no_match="warn",
                                 check_inputs=TRUE, copy_data=TRUE) {
-  ..strata.. <- NULL
+  .strata <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -31,21 +31,21 @@ fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
   }
 
   # create strata variable
-  data[, ..strata.. := do.call(paste0, .SD), .SDcols=strata_vars]
+  data[, .strata := do.call(paste0, .SD), .SDcols=strata_vars]
 
   # check inputs if specified
   if (check_inputs) {
     check_inputs_fast_exact_matching(data=data, treat=treat,
-                                     strata="..strata..", replace=replace,
+                                     strata=".strata", replace=replace,
                                      ratio=ratio, estimand=estimand,
                                      if_no_match=if_no_match)
   }
 
   # call real matching function
-  out <- fast_exact_matching.fit(data=data, treat=treat, strata="..strata..",
+  out <- fast_exact_matching.fit(data=data, treat=treat, strata=".strata",
                                  replace=replace, ratio=ratio,
                                  estimand=estimand, if_no_match=if_no_match)
-  out[, ..strata.. := NULL]
+  out[, .strata := NULL]
 
   return(out)
 }
@@ -60,51 +60,51 @@ fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
 fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
                                     ratio=1, estimand="ATT",
                                     if_no_match="stop") {
-  pair_id <- temp_id <- N <- ..treat.. <- ..strata.. <- NULL
+  .id_pair <- .temp_id <- N <- .treat <- .strata <- NULL
 
   # renaming columns to avoid get() issues
-  setnames(data, old=c(treat, strata), new=c("..treat..", "..strata.."))
+  setnames(data, old=c(treat, strata), new=c(".treat", ".strata"))
 
   if (estimand=="ATC") {
-    data[, ..treat.. := !..treat..]
+    data[, .treat := !.treat]
   }
 
   # split into cases and controls
-  d_controls <- data[..treat..==FALSE]
-  d_cases <- data[..treat..==TRUE]
+  d_controls <- data[.treat==FALSE]
+  d_cases <- data[.treat==TRUE]
 
   # count number of cases per strata
-  d_count <- d_cases[, .N, by="..strata.."]
+  d_count <- d_cases[, .N, by=".strata"]
 
   # use stratified sampling to get the right amount of controls for
   # each strata
   size <- d_count$N
-  names(size) <- d_count[["..strata.."]]
+  names(size) <- d_count[[".strata"]]
 
   d_samp <- stratified_sample(data=d_controls,
                               n=size * ratio,
-                              strata="..strata..",
+                              strata=".strata",
                               replace=replace,
                               if_lt_n=if_no_match)
 
   # add pair id for cases
-  d_cases[, pair_id := paste0(..strata.., "_", seq_len(.N)), by="..strata.."]
+  d_cases[, .id_pair := paste0(.strata, "_", seq_len(.N)), by=".strata"]
 
   # edge case where no controls could be found
   if (nrow(d_samp)==0) {
-    setnames(d_cases, old=c("..treat..", "..strata.."), new=c(treat, strata))
+    setnames(d_cases, old=c(".treat", ".strata"), new=c(treat, strata))
     return(d_cases)
   }
 
   # add pair id for controls
   if (ratio==1) {
-    d_samp[, pair_id := paste0(..strata.., "_", seq_len(.N)), by="..strata.."]
+    d_samp[, .id_pair := paste0(.strata, "_", seq_len(.N)), by=".strata"]
   } else {
-    d_samp <- merge.data.table(d_samp, d_count, by="..strata..", all.x=TRUE)
-    d_samp[, temp_id := ceiling(seq_len(.N) / N), by="..strata.."]
-    d_samp[, pair_id := paste0(..strata.., "_", seq_len(.N)),
-           by=c("..strata..", "temp_id")]
-    d_samp[, temp_id := NULL]
+    d_samp <- merge.data.table(d_samp, d_count, by=".strata", all.x=TRUE)
+    d_samp[, .temp_id := ceiling(seq_len(.N) / N), by=".strata"]
+    d_samp[, .id_pair := paste0(.strata, "_", seq_len(.N)),
+           by=c(".strata", ".temp_id")]
+    d_samp[, .temp_id := NULL]
     d_samp[, N := NULL]
   }
 
@@ -112,7 +112,7 @@ fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
   out <- rbind(d_cases, d_samp)
 
   # set names back to original ones
-  setnames(out, old=c("..treat..", "..strata.."), new=c(treat, strata))
+  setnames(out, old=c(".treat", ".strata"), new=c(treat, strata))
 
   return(out)
 }

@@ -27,8 +27,8 @@ test_that("1:1 matching without replacement", {
   # no duplicate id
   expect_true(max(table(out$id))==1)
 
-  # pair_id correctly assigned
-  expect_true(all(table(out$pair_id)==2))
+  # .id_pair correctly assigned
+  expect_true(all(table(out$.id_pair)==2))
 
   # same output when using formula directly
   set.seed(123431)
@@ -62,8 +62,8 @@ test_that("1:1 matching with replacement", {
   # no duplicate id
   expect_true(max(table(out$id))!=1)
 
-  # pair_id correctly assigned
-  expect_true(all(table(out$pair_id)==2))
+  # .id_pair correctly assigned
+  expect_true(all(table(out$.id_pair)==2))
 })
 
 test_that("2:1 matching without replacement", {
@@ -83,8 +83,8 @@ test_that("2:1 matching without replacement", {
   # no duplicate id
   expect_true(max(table(out$id))==1)
 
-  # pair_id correctly assigned
-  expect_true(all(table(out$pair_id)==3))
+  # .id_pair correctly assigned
+  expect_true(all(table(out$.id_pair)==3))
 })
 
 test_that("2:1 matching with replacement", {
@@ -103,8 +103,8 @@ test_that("2:1 matching with replacement", {
   # no duplicate id
   expect_true(max(table(out$id))!=1)
 
-  # pair_id correctly assigned
-  expect_true(all(table(out$pair_id)==3))
+  # .id_pair correctly assigned
+  expect_true(all(table(out$.id_pair)==3))
 })
 
 test_that("4:1 matching with replacement", {
@@ -123,6 +123,6 @@ test_that("4:1 matching with replacement", {
   # no duplicate id
   expect_true(max(table(out$id))!=1)
 
-  # pair_id correctly assigned
-  expect_true(all(table(out$pair_id)==5))
+  # .id_pair correctly assigned
+  expect_true(all(table(out$.id_pair)==5))
 })

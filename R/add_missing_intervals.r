@@ -11,7 +11,7 @@ add_missing_intervals <- function(data, id, start="start", stop="stop",
                                   first_time=NULL, last_time=NULL,
                                   missing_indicator=TRUE, copy_data=TRUE, ...) {
 
-  . <- .in_data <- .placeholder <- NULL
+  . <- .in_data <- .placeholder <- .start <- .stop <- NULL
 
   if (!is.data.table(data)) {
     data <- as.data.table(data)
@@ -27,23 +27,21 @@ add_missing_intervals <- function(data, id, start="start", stop="stop",
   # rename columns to avoid possible issued
   orig_start <- start
   orig_stop <- stop
-  setnames(data, old=c(start, stop), new=c("..start..", "..stop.."))
-  start <- "..start.."
-  stop <- "..stop.."
+  setnames(data, old=c(start, stop), new=c(".start", ".stop"))
 
   # indicator whether interval was already present in data
   data[, .in_data := TRUE]
 
   # get minimum and maximum time per id
-  d_min_max <- data[, .(start = min(get(start)), stop=max(get(stop))),
+  d_min_max <- data[, .(start = min(.start), stop=max(.stop)),
                     by=eval(id)]
-  setnames(d_min_max, old=c("start", "stop"), new=c(start, stop))
+  setnames(d_min_max, old=c("start", "stop"), new=c(".start", ".stop"))
   d_min_max[, .placeholder := TRUE]
 
   # blow it up using merge_td()
-  out <- merge_start_stop(data, d_min_max, by=id, start=start, stop=stop,
-                          all=TRUE, first_time=first_time, last_time=last_time,
-                          ...)
+  out <- merge_start_stop(data, d_min_max, by=id, start=".start",
+                          stop=".stop", all=TRUE, first_time=first_time,
+                          last_time=last_time, ...)
   out[, .placeholder := NULL]
 
   if (missing_indicator) {
@@ -52,7 +50,7 @@ add_missing_intervals <- function(data, id, start="start", stop="stop",
     out[, .in_data := NULL]
   }
 
-  setnames(out, old=c("..start..", "..stop.."), new=c(orig_start, orig_stop))
+  setnames(out, old=c(".start", ".stop"), new=c(orig_start, orig_stop))
 
   return(out)
 }

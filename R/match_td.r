@@ -5,13 +5,12 @@
 #' @importFrom data.table copy
 #' @importFrom data.table :=
 #' @export
-match_td <- function(formula, data, id, inclusion=NA, event=NA,
+match_td <- function(formula, data, id, inclusion=NA,
+                     start="start", stop="stop",
                      replace_over_t=FALSE, replace_at_t=FALSE,
                      replace_cases=TRUE, estimand="ATT", ratio=1,
-                     if_no_match="stop", censor_at_treat=TRUE,
-                     censor_pairs=TRUE, match_method="fast_exact",
-                     keep_all_columns=FALSE, units="auto", verbose=FALSE,
-                     start="start", stop="stop", ...) {
+                     if_no_match="stop", match_method="fast_exact",
+                     verbose=FALSE, ...) {
 
   ..inclusion.. <- NULL
 
@@ -24,17 +23,14 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 
   # check inputs
   check_inputs_match_td(formula=formula, data=data, id=id,
-                        inclusion=inclusion, event=event,
+                        inclusion=inclusion,
                         replace_over_t=replace_over_t,
                         replace_at_t=replace_at_t,
                         replace_cases=replace_cases,
                         estimand=estimand, ratio=ratio,
                         if_no_match=if_no_match,
-                        censor_at_treat=censor_at_treat,
-                        censor_pairs=censor_pairs,
                         match_method=match_method,
                         verbose=verbose,
-                        keep_all_columns=keep_all_columns,
                         start=start, stop=stop)
 
   # extract needed things from formula
@@ -52,16 +48,6 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
                                    start=start, stop=stop)
   data[, (treat) := NULL]
 
-  # extract relevant event times
-  if (!is.na(event)) {
-    d_event <- times_from_start_stop(data=data, name=event, id=id,
-                                     type="event", time_name=".time",
-                                     start=start, stop=stop)
-    data[, (event) := NULL]
-  } else {
-    d_event <- NULL
-  }
-
   # remove all rows when inclusion criteria are not met
   if (!is.na(inclusion)) {
     setnames(data, old=inclusion, new="..inclusion..")
@@ -71,14 +57,15 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 
   # call function that does all the work
   out <- match_td.fit(id=id, time=".time", d_treat=d_treat,
-                      d_event=d_event, d_covars=data,
-                      match_vars=match_vars, replace_over_t=replace_over_t,
+                      d_covars=data, match_vars=match_vars,
+                      replace_over_t=replace_over_t,
                       replace_at_t=replace_at_t, replace_cases=replace_cases,
-                      censor_pairs=censor_pairs, estimand=estimand,
-                      ratio=ratio, if_no_match=if_no_match,
-                      match_method=match_method, units=units,
-                      keep_all_columns=keep_all_columns, verbose=verbose,
+                      estimand=estimand, ratio=ratio, if_no_match=if_no_match,
+                      match_method=match_method, verbose=verbose,
                       start=start, stop=stop)
+
+  # add call to output
+  out$call <- match.call()
 
   return(out)
 }
@@ -92,55 +79,50 @@ match_td <- function(formula, data, id, inclusion=NA, event=NA,
 #' @importFrom data.table copy
 #' @importFrom data.table rbindlist
 #' @importFrom data.table setcolorder
-#' @export
-match_td.fit <- function(id, time, d_treat, d_event, d_covars,
+match_td.fit <- function(id, time, d_treat, d_covars,
                          match_vars=NULL, replace_over_t=FALSE,
                          replace_at_t=FALSE, replace_cases=TRUE,
-                         censor_at_treat=TRUE, censor_pairs=TRUE,
                          estimand="ATT", ratio=1,
                          if_no_match="stop", match_method="fast_exact",
-                         keep_all_columns=FALSE, units="auto",
-                         verbose=FALSE, start="start", stop="stop", ...) {
+                         verbose=FALSE, start="start", stop="stop",
+                         ...) {
 
-  .treat <- pair_id <- subclass <- .treat_time <- .strata <- ..start.. <-
-    .id_new <- .next_treat_time <- .next_event_time <- ..time.. <-
-    ..stop.. <- NULL
+  .treat <- .id_pair <- subclass <- .treat_time <- .strata <- .start <-
+    .id_new <- .next_treat_time <- .next_event_time <- .time <-
+    .stop <- NULL
 
   # rename id / time to prevent possible errors with get()
-  setnames(d_treat, old=c(id, time), new=c("..id..", "..time.."))
+  setnames(d_treat, old=c(id, time), new=c(".id", ".time"))
   setnames(d_covars, old=c(id, start, stop),
-           new=c("..id..", "..start..", "..stop.."))
+           new=c(".id", ".start", ".stop"))
 
   orig_id <- id
   orig_time <- time
-  id <- "..id.."
-  time <- "..time.."
+  id <- ".id"
+  time <- ".time"
 
   # get variables that should be matched on
   if (is.null(match_vars)) {
     cnames <- colnames(d_covars)
-    match_vars <- cnames[!cnames %fin% c(id, time, ".treat", "..start..",
-                                         "..stop..")]
+    match_vars <- cnames[!cnames %fin% c(id, time, ".treat", ".start",
+                                         ".stop")]
   }
   cnames <- colnames(d_covars)
-  select_vars <- cnames[!cnames %fin% c("..start..", "..stop..")]
+  select_vars <- cnames[!cnames %fin% c(".start", ".stop")]
 
-  # get maximum follow-up time per person, if needed later
-  if (!is.null(d_event)) {
-    setnames(d_event, old=c(orig_id, orig_time), new=c("..id..", "..time.."))
-    d_longest <- d_covars[, (.max_t = max(..stop..)), by=eval(id)]
-    colnames(d_longest) <- c(id, ".max_t")
-  }
+  # get maximum follow-up time per person (used for adding events later)
+  d_longest <- d_covars[, (.max_t = max(.stop)), by=eval(id)]
+  colnames(d_longest) <- c(orig_id, ".max_t")
 
   # keep only cases that meet inclusion criteria at treatment time
   d_covars <- merge(d_covars, d_treat, by=id, all.x=TRUE)
-  include <- d_covars[get(time) >= ..start.. & get(time) < ..stop..][[eval(id)]]
+  include <- d_covars[get(time) >= .start & get(time) < .stop][[eval(id)]]
   d_treat <- d_treat[get(id) %fin% include]
 
   # remove time durations after treatment onset
   d_covars <- subset_start_stop(data=d_covars, last_time=d_covars[[time]] + 1,
-                                start="..start..", stop="..stop..")
-  d_covars[, ..time.. := NULL]
+                                start=".start", stop=".stop")
+  d_covars[, .time := NULL]
 
   # identify all points in time at which at least one case happened
   case_times <- sort(unique(d_treat[[eval(time)]]))
@@ -185,7 +167,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
 
     # get dataset including them all at t
     d_all_i <- d_covars[get(id) %fin% all_ids &
-                        case_times[i] >= ..start.. & case_times[i] < ..stop..
+                        case_times[i] >= .start & case_times[i] < .stop
                         ][, select_vars, with=FALSE]
 
     # identify cases
@@ -204,8 +186,8 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                                      replace=replace_at_t,
                                      if_lt_n=if_no_match)
 
-      d_match_i[, pair_id := rep(seq_len(n_treat), ratio + 1)]
-      d_match_i[, pair_id := paste0(i, "_", pair_id)]
+      d_match_i[, .id_pair := rep(seq_len(n_treat), ratio + 1)]
+      d_match_i[, .id_pair := paste0(i, "_", .id_pair)]
       d_match_i[, .treat_time := case_times[i]]
 
     } else if (match_method=="fast_exact") {
@@ -221,7 +203,7 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
                                            if_no_match=if_no_match,
                                            ratio=ratio)
 
-      d_match_i[, pair_id := paste0(i, "_", pair_id)]
+      d_match_i[, .id_pair := paste0(i, "_", .id_pair)]
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .strata := NULL]
 
@@ -244,9 +226,9 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
       d_match_i <- do.call(MatchIt::matchit, args=args)
       d_match_i <- MatchIt::match.data(d_match_i)
 
-      # assign pair_id
+      # assign .id_pair
       d_match_i <- copy(d_match_i)
-      d_match_i[, pair_id := paste0(i, "_", subclass)]
+      d_match_i[, .id_pair := paste0(i, "_", subclass)]
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, c("distance", "weights", "subclass") := NULL]
     }
@@ -277,33 +259,28 @@ match_td.fit <- function(id, time, d_treat, d_event, d_covars,
   data <- merge(data, d_treat, by=id, all.x=TRUE)
   data[.treat==TRUE, .next_treat_time := NA]
 
-  # add event_time and status if specified
-  if (!is.null(d_event)) {
-    data <- add_tte_outcome(id=id, time=time, data=data, d_event=d_event,
-                            censor_pairs=censor_pairs, d_longest=d_longest,
-                            censor_at_treat=censor_at_treat, units=units)
-    first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
-                    ".next_treat_time", ".next_event_time", "event_time",
-                    "status")
-  } else {
-    first_cols <- c(id, ".id_new", "pair_id", ".treat", ".treat_time",
-                    ".next_treat_time")
-  }
-
   # change order of columns
+  first_cols <- c(id, ".id_new", ".id_pair", ".treat", ".treat_time",
+                  ".next_treat_time")
   last_cols <- colnames(data)[!colnames(data) %fin% first_cols]
   setcolorder(data, c(first_cols, last_cols))
   setnames(data, old=id, new=orig_id)
 
-  # remove some columns if specified
-  if (!keep_all_columns) {
-    data[, .treat_time := NULL]
-    data[, .next_treat_time := NULL]
+  # put together output
+  out <- list(data=data,
+              d_longest=d_longest,
+              id=orig_id,
+              time=orig_time,
+              info=list(replace_over_t=replace_over_t,
+                        replace_at_t=replace_at_t,
+                        replace_cases=replace_cases,
+                        estimand=estimand,
+                        ratio=ratio,
+                        match_method=match_method,
+                        match_vars=match_vars,
+                        n_orig=length(unique(d_covars[[id]])),
+                        n_matched=length(unique(data$.id_new))))
+  class(out) <- "MatchTD"
 
-    if (!is.null(d_event)) {
-      data[, .next_event_time := NULL]
-    }
-  }
-
-  return(data)
+  return(out)
 }
