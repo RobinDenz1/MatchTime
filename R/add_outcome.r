@@ -43,30 +43,35 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
   }
 
   # add event information
-  x$data <- add_next_event_time(data=x$data, d_event=d_event, id=id,
-                                time=time, include_same_t=TRUE,
+  x$data <- add_next_event_time(data=x$data, d_event=d_event, id=x$id,
+                                time=x$time, include_same_t=TRUE,
                                 next_time_name=".next_event_time")
 
   # shift times according to start
   if (all(class(x$data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
-    x$data[, .next_treat_time := as.numeric(difftime(.next_treat_time,
+    x$data[, .time_to_next_treat := as.numeric(difftime(.next_treat_time,
                                                      .treat_time,
                                                      units=units))]
-    x$data[, .next_event_time := as.numeric(
+    x$data[, .time_to_next_event := as.numeric(
       difftime(.next_event_time, .treat_time, units=units))]
   } else {
-    x$data[, .next_treat_time := .next_treat_time - .treat_time]
-    x$data[, .next_event_time := .next_event_time - .treat_time]
+    x$data[, .time_to_next_treat := .next_treat_time - .treat_time]
+    x$data[, .time_to_next_event := .next_event_time - .treat_time]
   }
 
   # get event status indicator
   x$data[, .status := FALSE]
-  x$data[is.na(.next_treat_time) & !is.na(.next_event_time),
-         .status := TRUE]
-  x$data[.next_treat_time > .next_event_time, .status := TRUE]
+
+  if (censor_at_treat){
+    x$data[is.na(.time_to_next_treat) & !is.na(.time_to_next_event),
+           .status := TRUE]
+    x$data[.time_to_next_treat > .time_to_next_event, .status := TRUE]
+  } else {
+    x$data[!is.na(.time_to_next_event), .status := TRUE]
+  }
 
   # add maximum follow-up time per person
-  x$data <- merge.data.table(x$data, x$d_longest, by=id, all.x=TRUE)
+  x$data <- merge.data.table(x$data, x$d_longest, by=x$id, all.x=TRUE)
 
   # time to max_t
   if (all(class(x$data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
@@ -79,10 +84,10 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
 
   # calculate corresponding event time
   if (censor_at_treat) {
-    x$data[, .event_time := pmin(.next_treat_time, .next_event_time,
+    x$data[, .event_time := pmin(.time_to_next_treat, .time_to_next_event,
                                  .time_to_max_t, na.rm=TRUE)]
   } else {
-    x$data[, .event_time := pmin(.next_event_time, .time_to_max_t,
+    x$data[, .event_time := pmin(.time_to_next_event, .time_to_max_t,
                                  na.rm=TRUE)]
   }
   x$data[, .max_t := NULL]
@@ -100,7 +105,7 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
 
     # new variable that is Inf if no artificial censoring is needed or the
     # minimum of the artificial censoring times inside matched pair groups
-    x$data[, .artificial_cens_time := fifelse(.next_treat_time==.event_time,
+    x$data[, .artificial_cens_time := fifelse(.time_to_next_treat==.event_time,
                                             .event_time, max_time, na=max_time)]
     x$data[, .artificial_cens_time := min(.artificial_cens_time), by=.id_pair]
 
@@ -113,6 +118,8 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
 
   x$data[, .time_to_max_t := NULL]
   x$data[, .next_event_time := NULL]
+  x$data[, .time_to_next_event := NULL]
+  x$data[, .time_to_next_treat := NULL]
 
   setnames(x$data, old=c(".event_time", ".status"),
            new=c(event_time_name, status_name))
