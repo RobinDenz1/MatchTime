@@ -16,7 +16,7 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
 
   .next_treat_time <- .treat_time <- .next_event_time <- .status <-
     .time_to_max_t <- .max_t <- .event_time <- .artificial_cens_time <-
-    .id_pair <- NULL
+    .id_pair <- .time_to_next_treat <- .time_to_next_event <- NULL
 
   if (copy_data) {
     x <- copy(x)

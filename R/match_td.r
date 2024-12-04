@@ -12,7 +12,7 @@ match_td <- function(formula, data, id, inclusion=NA,
                      if_no_match="stop", match_method="fast_exact",
                      verbose=FALSE, ...) {
 
-  ..inclusion.. <- NULL
+  .inclusion <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -50,9 +50,9 @@ match_td <- function(formula, data, id, inclusion=NA,
 
   # remove all rows when inclusion criteria are not met
   if (!is.na(inclusion)) {
-    setnames(data, old=inclusion, new="..inclusion..")
-    data <- data[..inclusion..==TRUE]
-    data[, ..inclusion.. := NULL]
+    setnames(data, old=inclusion, new=".inclusion")
+    data <- data[.inclusion==TRUE]
+    data[, .inclusion := NULL]
   }
 
   # call function that does all the work
@@ -131,7 +131,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   used_as_controls <- c()
   used_as_cases <- c()
 
-  out <- vector(mode="list", length=length(case_times))
+  out <- trace <- vector(mode="list", length=length(case_times))
   for (i in seq_len(length(case_times))) {
 
     # identify new cases at t
@@ -240,6 +240,15 @@ match_td.fit <- function(id, time, d_treat, d_covars,
     # append to output
     out[[i]] <- d_match_i
 
+    # save the trace of the functions work
+    n_m_controls <- length(controls_i)
+    n_cases <- length(ids_cases_i)
+    n_pot_controls <- length(ids_pot_controls_i)
+    trace[[i]] <- data.table(time=case_times[i],
+                             new_cases=n_cases,
+                             matched_controls=n_m_controls,
+                             potential_controls=n_pot_controls)
+
     if (verbose) {
       cat("Matched ", length(controls_i), " unique controls to ",
           length(ids_cases_i), " cases (with ", length(ids_pot_controls_i),
@@ -280,8 +289,11 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                         match_vars=match_vars,
                         n_orig=length(unique(d_covars[[id]])),
                         n_matched=length(unique(data$.id_new)),
-                        added_events=c()))
-  class(out) <- "MatchTD"
+                        n_unmatched=sum(!unique(d_covars[[id]]) %in%
+                                                 data[[id]]),
+                        added_events=c()),
+              trace=rbindlist(trace))
+  class(out) <- "match_td"
 
   return(out)
 }

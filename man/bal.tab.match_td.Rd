@@ -1,18 +1,18 @@
-\name{bal.tab.MatchTD}
-\alias{bal.tab.MatchTD}
+\name{bal.tab.match_td}
+\alias{bal.tab.match_td}
 
 \title{
-Display Balance Statistics in a Table for \code{MatchTD} objects
+Display Balance Statistics in a Table for \code{match_td} objects
 }
 \description{
-This function extends the \code{\link[cobalt]{bal.tab}} function from the \code{cobalt} package to allow the input of a \code{MatchTD} object. This allows users to directly call the \code{\link[cobalt]{bal.tab}} function on output of the \code{\link{match_td}} function, mimicking the usage of the same function when using the \code{\link[MatchIt]{matchit}} function of the \code{MatchIt} package. The existence of this function also allows users to directly call the \code{\link[cobalt]{love.plot}} function on \code{MatchTD} objects.
+This function extends the \code{\link[cobalt]{bal.tab}} function from the \code{cobalt} package to allow the input of a \code{match_td} object. This allows users to directly call the \code{\link[cobalt]{bal.tab}} function on output of the \code{\link{match_td}} function, mimicking the usage of the same function when using the \code{\link[MatchIt]{matchit}} function of the \code{MatchIt} package. The existence of this function also allows users to directly call the \code{\link[cobalt]{love.plot}} function on \code{match_td} objects.
 }
 \usage{
-\method{bal.tab}{MatchTD}(x, s.d.denom, ...)
+\method{bal.tab}{match_td}(x, s.d.denom, ...)
 }
 \arguments{
   \item{x}{
-A \code{MatchTD} object created using the \code{\link{match_td}} function.
+A \code{match_td} object created using the \code{\link{match_td}} function.
   }
   \item{s.d.denom}{
 Argument of the same name in \code{\link[cobalt]{bal.tab}}.
