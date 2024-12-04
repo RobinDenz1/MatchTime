@@ -12,16 +12,16 @@ match_td(formula, data, id, inclusion=NA,
          start="start", stop="stop",
          replace_over_t=FALSE, replace_at_t=FALSE,
          replace_cases=TRUE, estimand="ATT",
-         ratio=1, if_no_match="stop",
-         match_method="fast_exact", verbose=FALSE,
+         ratio=1, match_method="fast_exact",
+         if_no_match="warn", verbose=FALSE,
          ...)
 }
 \arguments{
   \item{formula}{
-A \code{formula} object with a binary treatment variable on the left hand side and the covariates to be balanced on the right hand side. Interactions and functions of covariates are currently not allowed.
+A \code{formula} object with a binary treatment variable on the left hand side and the covariates to be balanced on the right hand side. Interactions and functions of covariates are currently not allowed. The treatment variable is ideally coded as a logical variable (\code{TRUE} = treatment, \code{FALSE} = control). See details for how the "treated" group is identified with other input types.
   }
   \item{data}{
-A \code{data.table} like object in the start-stop format, containing information about both variables that are time-invariant or time-dependent. Each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. Intervals should be coded to be \emph{right-open} (corresponds to \code{[start, stop)}). Continuous (float) and discrete (integer, datetime) values are supported for both time columns. The dataset should also include an \code{id} variable (see argument \code{id}). See details and examples for more information.
+A \code{data.table} like object in the start-stop format, containing information about variables that are time-invariant or time-dependent. Each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. Intervals should be coded to be \emph{right-open} (corresponds to \code{[start, stop)}). Continuous (float) and discrete (integer, datetime) values are supported for both time columns. The dataset should also include an \code{id} variable (see argument \code{id}). See details and examples for more information.
   }
   \item{id}{
 A single character string specifying the unique case identifier in \code{data}.
@@ -50,11 +50,11 @@ Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset 
   \item{ratio}{
 How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching. If \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}, this argument will be passed to the argument of the same name in the \code{\link[MatchIt]{matchit}} function.
   }
-  \item{if_no_match}{
-Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{match_method="fast_exact"}.
-  }
   \item{match_method}{
 A single character string specifying which method should be used to perform matching at each point in time. Allowed values are \code{"none"} (to perform no matching on covariates), \code{"fast_exact"} (default, to use fast exact matching as implemented in the \code{\link{fast_exact_matching}} function of this package) or any valid method of the \code{\link[MatchIt]{matchit}} function. If the latter is used, this argument is passed to the \code{method} argument of the \code{\link[MatchIt]{matchit}} function directly. Further arguments may be passed to \code{\link[MatchIt]{matchit}} in this case using the three-dot syntax.
+  }
+  \item{if_no_match}{
+Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{match_method="fast_exact"}.
   }
   \item{verbose}{
 Whether to print a summary of how many matches were made for each point in time or not (default).
@@ -65,6 +65,12 @@ Further arguments passed to \code{\link[MatchIt]{matchit}} when \code{match_meth
 }
 \details{
 
+\strong{\emph{Identifying the "treated" group}}:
+
+Ideally, the treatment specified on the LHS of the \code{formula} argument is coded as a logical variable, where \code{TRUE} corresponds to the "treated" group and \code{FALSE} corresponds to the "control" group. If this is not the case, this function will coerce it to this type internally using the following rules:
+
+1.) if the variable only consists of the numbers \code{0} and \code{1} (coded as numeric), \code{0} will be considered the "control" group and \code{1} the "treated" group; 2.) otherwise, if the variable is a factor, \code{levels(treat)[1]} will be considered the "control" group and the other value the "treated" group; 3.) otherwise \code{sort(unique(treat))[1]} will be considered "control" and the other value the treated. It is safest to ensure that the treatment variable is a logical variable. In either case, the output will only contain the treatment as logical variable.
+
 \strong{\emph{Interval Coding}}:
 
 The intervals supplied to the \code{data} argument are required to be \emph{right-open} intervals \code{[start, stop)}, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message. Although events should be coded differently, this does not matter for this function itself because \code{data} should not contain events.
@@ -73,22 +79,34 @@ The intervals supplied to the \code{data} argument are required to be \emph{righ
 
 Users usually want to add outcomes and / or further baseline covariates to the data after matching. This can be done using the \code{add_outcome} and \code{add_covariate} functions and is described in detail in the respective documentation and vignette.
 
+\strong{\emph{Assessing Covariate Balance}}
+
+The balance of the covariates at baseline can be assessed using the associated \code{\link{summary.match_td}} or \code{\link{bal.tab.match_td}} functions. Note that with time-dependent matching it is only possible to assess balance at baseline, because the treatment is also time-dependent.
+
 }
 \value{
-Returns a \code{MatchTD} object containing the following objects:
+Returns a \code{match_td} object containing the following objects:
+
+\item{data}{A \code{data.table} containing the matched data. Note that this dataset also contains unmatched cases. This column contains at least the following columns: \code{id} (the original \code{id} used in the supplied \code{data}), \code{.id_new} (a new case-specific id in which \code{id}s who occur multiple times are treated as distinct values), \code{.id_pair} (an id to distinguish the matched pairs), \code{.treat} (the supplied treatment variable), \code{.treat_time} (the time at which the \code{id} was included in the matching process) and \code{.next_treat_time} (for controls that later receive treatment, the time at which they received the treatment). Potentially contains any number of additional covariates supplied in the original \code{data}, plus potential further variables added using \code{\link{add_outcome}}.}
+\item{d_longest}{A \code{data.table} containing the last time under observation for each \code{id} in the supplied \code{data}.}
+\item{id}{The value of the supplied \code{id} argument.}
+\item{time}{A character string used internally to identify the time in other datasets.}
+\item{info}{A \code{list} containing various information on the matching process.}
+\item{trace}{A \code{data.table} containing four columns: \code{time} (the time at which matching occurred), \code{new_cases} (the number of new cases at that point in time), \code{matched_controls} (the number of controls matched to the new cases at \code{time}) and \code{potential_controls} (the number of potential controls at \code{time}).}
+\item{call}{The original function call.}
 
 }
 \references{
 
 }
 \note{
-Column names starting with a single point (e.g. names like \code{.variable} or \code{.id}) cannot be used in \code{data}, because they are used internally, which could lead to weird errors.
+Column names starting with a single point (e.g. names like \code{".variable"} or \code{".id"}) cannot be used in \code{data}, because they are used internally, which could lead to weird errors.
 }
 \author{
 Robin Denz
 }
 \seealso{
-\code{\link{fast_exact_matching}}, \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}
+\code{\link{fast_exact_matching}}, \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}, \code{\link{summary.match_td}}, \code{\link{bal.tab.match_td}}
 }
 \examples{
 

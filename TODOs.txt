@@ -1,8 +1,10 @@
 
-match_td() features
+match_td()
 	- add more tests for continuous / date input
 	- add propensity score matching type methods
 	- finish documentation
+	- fix the (probably) error inducing + 1 in line 129
+	- fix known errors with "heart" survival data
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)

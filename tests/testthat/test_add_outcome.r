@@ -29,7 +29,7 @@ test_that("censor_at_treat=FALSE", {
                          .event_time=c(70, 20, 44, 13, 399, 887))
   setkey(expected, id)
 
-  out <- add_outcome(x=obj, d_event=d_event, censor_at_treat=FALSE,
+  out <- add_outcome(x=obj, data=d_event, censor_at_treat=FALSE,
                      censor_pairs=FALSE)$data
 
   expect_equal(out, expected)
@@ -48,7 +48,7 @@ test_that("censor_at_treat=TRUE without censor_pairs", {
                          .event_time=c(70, 20, 24, 13, 399, 887))
   setkey(expected, id)
 
-  out <- add_outcome(x=obj, d_event=d_event, censor_at_treat=TRUE,
+  out <- add_outcome(x=obj, data=d_event, censor_at_treat=TRUE,
                      censor_pairs=FALSE)$data
 
   expect_equal(out, expected)
@@ -72,7 +72,7 @@ test_that("censor_at_treat=TRUE with censor_pairs", {
                          .event_time=c(70, 20, 24, 13, 399, 24))
   setkey(expected, id)
 
-  out <- add_outcome(x=obj, d_event=d_event, censor_at_treat=TRUE,
+  out <- add_outcome(x=obj, data=d_event, censor_at_treat=TRUE,
                      censor_pairs=TRUE)$data
   expect_equal(out, expected)
 
@@ -107,7 +107,7 @@ test_that("censor_at_treat=TRUE with censor_pairs", {
                           .event_time=c(70, 20, 24, 13, 13, 24))
   setkey(expected, id)
 
-  out2 <- add_outcome(x=obj2, d_event=d_event2, censor_at_treat=TRUE,
+  out2 <- add_outcome(x=obj2, data=d_event2, censor_at_treat=TRUE,
                       censor_pairs=TRUE)$data
   expect_equal(out, expected)
 })
@@ -128,7 +128,7 @@ test_that("works with different names", {
   d_event3 <- copy(d_event)
   setnames(d_event3, old=c("id", "time"), new=c("ID_Pers", "some_time"))
 
-  out <- add_outcome(x=obj, d_event=d_event3, censor_at_treat=TRUE,
+  out <- add_outcome(x=obj, data=d_event3, censor_at_treat=TRUE,
                      censor_pairs=FALSE, status_name="status",
                      event_time_name="time_to_event",
                      id="ID_Pers", time="some_time")$data

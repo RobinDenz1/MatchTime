@@ -52,9 +52,9 @@ check_inputs_match_td <- function(formula, data, id, inclusion,
 
   # correct treatment
   treat <- all.vars(formula)[1]
-  stopifnotm(is.logical(data[[treat]]),
+  stopifnotm(length(unique(data[[treat]]))==2,
              paste0("The treatment variable specified on the LHS of the",
-                    " 'formula' argument must be logical."))
+                    " 'formula' argument must be binary."))
 
   # correct id
   stopifnotm(length(id)==1 && is.character(id) && id %fin% colnames(data),
@@ -62,10 +62,10 @@ check_inputs_match_td <- function(formula, data, id, inclusion,
                     " a variable in 'data'."))
 
   # correct inclusion
-  stopifnotm(length(inclusion)==1 &&
-              (is.na(inclusion) || is.character(inclusion)) &&
+  stopifnotm(is.na(inclusion) || (length(inclusion)==1 &&
+              is.character(inclusion) &&
               inclusion %fin% colnames(data) &&
-              is.logical(data[[inclusion]]),
+              is.logical(data[[inclusion]])),
              paste0("'inclusion' must be a single character string specifying",
                     " a logical variable in 'data' or NA."))
 

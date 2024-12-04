@@ -9,10 +9,10 @@ match_td <- function(formula, data, id, inclusion=NA,
                      start="start", stop="stop",
                      replace_over_t=FALSE, replace_at_t=FALSE,
                      replace_cases=TRUE, estimand="ATT", ratio=1,
-                     if_no_match="stop", match_method="fast_exact",
+                     match_method="fast_exact", if_no_match="warn",
                      verbose=FALSE, ...) {
 
-  .inclusion <- NULL
+  .inclusion <- .treat <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -40,6 +40,13 @@ match_td <- function(formula, data, id, inclusion=NA,
     match_vars <- vars[2:length(vars)]
   } else {
     match_vars <- NULL
+  }
+
+  # fix treatment variable if needed
+  if (!is.logical(data[[treat]])) {
+    setnames(data, old=treat, new=".treat")
+    data[, .treat := preprocess_treat(.treat)]
+    setnames(data, old=".treat", new=treat)
   }
 
   # extract relevant treatment times
@@ -83,7 +90,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                          match_vars=NULL, replace_over_t=FALSE,
                          replace_at_t=FALSE, replace_cases=TRUE,
                          estimand="ATT", ratio=1,
-                         if_no_match="stop", match_method="fast_exact",
+                         if_no_match="warn", match_method="fast_exact",
                          verbose=FALSE, start="start", stop="stop",
                          ...) {
 
@@ -125,7 +132,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   d_covars[, .time := NULL]
 
   # identify all points in time at which at least one case happened
-  case_times <- sort(unique(d_treat[[eval(time)]]))
+  case_times <- sort(unique(d_treat[[time]]))
 
   # initialize needed id collections
   used_as_controls <- c()
@@ -296,4 +303,24 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   class(out) <- "match_td"
 
   return(out)
+}
+
+## re-code integers, factors or characters to TRUE / FALSE treatment
+# NOTE: assumes that it has already been checked that treat only contains
+#       two values
+preprocess_treat <- function(treat) {
+
+  if (is.numeric(treat) && all(treat %in% c(0, 1))) {
+    treat <- fifelse(treat==0, FALSE, TRUE)
+  } else if (is.factor(treat)) {
+    treat <- fifelse(treat==levels(treat)[1], FALSE, TRUE)
+  } else if (is.character(treat)) {
+    treat <- fifelse(treat==sort(unique(treat))[1], FALSE, TRUE)
+  } else {
+    stop("The treatment variable specified by the LHS of 'formula'",
+         " needs to specify a variable coded as one of:\n ",
+         "(1) a logical vector, (2) an integer with only 0/1 values",
+         ", (3) a binary factor or (4) a binary character variable.")
+  }
+  return(treat)
 }

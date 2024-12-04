@@ -8,7 +8,7 @@
 #' @importFrom data.table is.data.table
 #' @importFrom data.table as.data.table
 #' @export
-add_outcome <- function(x, d_event, censor_at_treat=TRUE,
+add_outcome <- function(x, data, censor_at_treat=TRUE,
                         censor_pairs=FALSE, units="auto",
                         id=x$id, time=x$time,
                         event_time_name=".event_time",
@@ -22,13 +22,13 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
     x <- copy(x)
   }
 
-  if (!is.data.table(d_event)) {
-    d_event <- as.data.table(d_event)
+  if (!is.data.table(data)) {
+    data <- as.data.table(data)
   } else {
-    d_event <- copy(d_event)
+    data <- copy(data)
   }
 
-  check_inputs_add_outcome(x=x, d_event=d_event, id=id, time=time,
+  check_inputs_add_outcome(x=x, data=data, id=id, time=time,
                            censor_at_treat=censor_at_treat,
                            censor_pairs=censor_pairs,
                            event_time_name=event_time_name,
@@ -36,14 +36,14 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
 
   # make names consistent over datasets
   if (time!=x$time) {
-    setnames(d_event, old=time, new=x$time)
+    setnames(data, old=time, new=x$time)
   }
   if (id!=x$id) {
-    setnames(d_event, old=id, new=x$id)
+    setnames(data, old=id, new=x$id)
   }
 
   # add event information
-  x$data <- add_next_event_time(data=x$data, d_event=d_event, id=x$id,
+  x$data <- add_next_event_time(data=x$data, d_event=data, id=x$id,
                                 time=x$time, include_same_t=TRUE,
                                 next_time_name=".next_event_time")
 
@@ -131,7 +131,7 @@ add_outcome <- function(x, d_event, censor_at_treat=TRUE,
 }
 
 ## input checks for the add_outcome() function
-check_inputs_add_outcome <- function(x, id, time, d_event, censor_at_treat,
+check_inputs_add_outcome <- function(x, id, time, data, censor_at_treat,
                                      censor_pairs, event_time_name,
                                      status_name) {
 
@@ -151,12 +151,12 @@ check_inputs_add_outcome <- function(x, id, time, d_event, censor_at_treat,
   stopifnotm(is_single_character(time),
              "'time' must be a single character string.")
 
-  # d_event
-  stopifnotm(ncol(d_event)==2,
-             paste0("'d_event' should only have two columns, containing the ",
+  # data
+  stopifnotm(ncol(data)==2,
+             paste0("'data' should only have two columns, containing the ",
                     "case id and the time."))
-  stopifnotm(id %in% colnames(d_event),
-             "'id' must specify a valid column in 'd_event'.")
-  stopifnotm(time %in% colnames(d_event),
-             "'time' must specify a valid column in 'd_event'.")
+  stopifnotm(id %in% colnames(data),
+             "'id' must specify a valid column in 'data'.")
+  stopifnotm(time %in% colnames(data),
+             "'time' must specify a valid column in 'data'.")
 }
