@@ -2,7 +2,7 @@
 ## S3 print method for MatchTD objects
 #' @export
 print.match_td <- function(x, ...) {
-  cat("A MatchTD object\n")
+  cat("A match_td object\n")
 
   # matching info
   if (x$info$match_method=="none") {

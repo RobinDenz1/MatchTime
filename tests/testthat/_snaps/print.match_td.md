@@ -1,6 +1,6 @@
-# print.MatchTD, defaults
+# print.match_td, defaults
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases
@@ -8,9 +8,9 @@
      - target estimand: ATT
      - covariates: Only matched on time
 
-# print.MatchTD, fast_exact method
+# print.match_td, fast_exact method
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 exact matching
      - controls: Not replacing controls
      - cases: Using all cases
@@ -18,9 +18,9 @@
      - target estimand: ATT
      - covariates: Only matched on time
 
-# print.MatchTD, matchit based method
+# print.match_td, matchit based method
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 nearest neighbor matching (using matchit())
      - controls: Not replacing controls
      - cases: Using all cases
@@ -28,9 +28,9 @@
      - target estimand: ATT
      - covariates: Only matched on time
 
-# print.MatchTD, replace_over_t
+# print.match_td, replace_over_t
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls only over time
      - cases: Using all cases
@@ -38,9 +38,9 @@
      - target estimand: ATT
      - covariates: Only matched on time
 
-# print.MatchTD, replace_at_t
+# print.match_td, replace_at_t
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls only at each point in time
      - cases: Using all cases
@@ -48,9 +48,9 @@
      - target estimand: ATT
      - covariates: Only matched on time
 
-# print.MatchTD, replace_over_t & replace_at_t
+# print.match_td, replace_over_t & replace_at_t
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls at each point in time and over time
      - cases: Using all cases
@@ -58,9 +58,9 @@
      - target estimand: ATT
      - covariates: Only matched on time
 
-# print.MatchTD, replace_cases=FALSE
+# print.match_td, replace_cases=FALSE
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using only cases that were not used as controls
@@ -68,9 +68,9 @@
      - target estimand: ATT
      - covariates: Only matched on time
 
-# print.MatchTD, one covariate
+# print.match_td, one covariate
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases
@@ -78,9 +78,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.MatchTD, multiple covariates
+# print.match_td, multiple covariates
 
-    A MatchTD object
+    A match_td object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases

@@ -4,15 +4,15 @@ match_td() features
 	- add propensity score matching type methods
 	- finish documentation
 
-match_td() output change
-	- add examples in documentation for add_outcome()
-	- write S3 methods for "MatchTD" class (summary, ...)
-
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
 
 long2start_stop()
 	- allow event variables to be specified
+
+add_outcome()
+	- maybe allow different types of outcomes (event counts, binary etc.)
+	- add examples to documentation (needs to be added elsewhere as well)
 
 New features:
 	- add_covariate(): similar to add_outcome() but for covariates of different types
@@ -29,4 +29,4 @@ General TODOs:
 		- ...
 		
 Simulation:
-	- will currently fail because match_td() now uses overlapping intervals (among other changes)
+	- will currently fail because a lot has changed in match_td() and related functions

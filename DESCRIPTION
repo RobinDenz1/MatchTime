@@ -15,6 +15,7 @@ Imports:
 	cobalt
 Suggests:
 	MatchIt,
+	ggplot2,
 	simDAG,
     knitr,
     rmarkdown,
