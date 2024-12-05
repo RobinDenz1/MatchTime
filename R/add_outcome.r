@@ -43,9 +43,9 @@ add_outcome <- function(x, data, censor_at_treat=TRUE,
   }
 
   # add event information
-  x$data <- add_next_event_time(data=x$data, d_event=data, id=x$id,
-                                time=x$time, include_same_t=TRUE,
-                                next_time_name=".next_event_time")
+  x$data <- add_next_time_data(data=x$data, d_event=data, id=x$id,
+                               time=x$time, include_same_t=TRUE,
+                               next_time_name=".next_event_time")
 
   # shift times according to start
   if (all(class(x$data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {

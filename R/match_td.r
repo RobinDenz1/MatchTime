@@ -292,7 +292,8 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                         n_matched=nrow(data),
                         n_unmatched=sum(!unique(d_covars[[id]]) %in%
                                                  data[[id]]),
-                        added_events=c()),
+                        added_events=c(),
+                        added_next_time=c()),
               trace=rbindlist(trace))
   class(out) <- "match_td"
 
