@@ -17,6 +17,8 @@ d_multi$d_event[, .time := .time + 1]
 # - check if actual continuous input and datetime input works
 # - needs test on whether variables in final matched dataset at t correspond to
 #   values at t in original dataset
+# - test for using matchit() when no potential controls are left
+# - test for match_method="none" with potential controls < cases
 
 test_that("matching on nothing", {
 
@@ -48,12 +50,12 @@ test_that("matching on nothing", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(28, 28))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(26, 26))
   out[, n_id := NULL]
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 28)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 26)
 
   # same output with different names
   setnames(d_single,

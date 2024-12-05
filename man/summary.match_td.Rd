@@ -36,5 +36,25 @@ Silently returns a \code{list} containing the balance statistics and sample size
 \code{\link{match_td}}, \code{\link[MatchIt]{summary.matchit}}, \code{\link[MatchIt]{matchit}} \code{\link[cobalt]{bal.tab}}, \code{\link[cobalt]{love.plot}}
 }
 \examples{
+library(data.table)
+library(MatchTD)
 
+# only execute if packages are available
+if (requireNamespace("MatchIt") & requireNamespace("survival")) {
+
+library(MatchIt)
+library(survival)
+
+# set random seed to make the output replicably
+set.seed(1234)
+
+# load "heart" data from survival package
+data("heart")
+
+# perform nearest neighbor time-dependent matching on "age" and "surgery"
+# (plus exact matching on time)
+out <- match_td(transplant ~ age + surgery, data=heart, id="id",
+                match_method="nearest")
+summary(out)
+}
 }

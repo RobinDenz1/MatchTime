@@ -38,5 +38,25 @@ Returns a \code{bal.tab} object.
 \code{\link[cobalt]{bal.tab}}, \code{\link[cobalt]{love.plot}}
 }
 \examples{
+library(data.table)
+library(MatchTD)
 
+# only execute if packages are available
+if (requireNamespace("cobalt") & requireNamespace("survival")) {
+
+library(cobalt)
+library(survival)
+
+# set random seed to make the output replicably
+set.seed(1234)
+
+# load "heart" data from survival package
+data("heart")
+
+# perform nearest neighbor time-dependent matching on "age" and "surgery"
+# (plus exact matching on time)
+out <- match_td(transplant ~ age + surgery, data=heart, id="id",
+                match_method="nearest")
+bal.tab(out)
+}
 }

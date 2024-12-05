@@ -10,7 +10,7 @@ data <- data.table(id=c(1, 2, 3, 4, 5, 2),
 d_longest <- data.table(id=c(1, 2, 3, 4, 5),
                         .max_t=c(101, 204, 1011, 541, 891))
 obj <- list(data=data, id="id", time="time", d_longest=d_longest)
-class(obj) <- "MatchTD"
+class(obj) <- "match_td"
 
 # event times
 d_event <- data.table(id=c(1, 2, 3, 4, 4),
@@ -90,7 +90,7 @@ test_that("censor_at_treat=TRUE with censor_pairs", {
   d_longest2 <- data.table(id=c(1, 2, 3, 4, 5),
                           .max_t=c(101, 204, 1011, 541, 891))
   obj2 <- list(data=data2, id="id", time="time", d_longest=d_longest2)
-  class(obj2) <- "MatchTD"
+  class(obj2) <- "match_td"
 
   # event times
   d_event2 <- data.table(id=c(1, 2, 3, 4, 4, 5),

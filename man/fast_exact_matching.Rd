@@ -2,7 +2,7 @@
 \alias{fast_exact_matching}
 
 \title{
-Perform Fast Exact Matching on Catgeorical Variables with a Binary Treatment
+Fast Exact Matching with a Binary Treatment
 }
 \description{
 This function matches one or multiple controls to cases that have exactly the same values in one or multiple categorical variables. Technically works with continuous variables as well, but this will probably not work well in practice due to a very low probability of exact matches.
@@ -17,7 +17,7 @@ fast_exact_matching(formula, data, replace=FALSE,
 A formula object with the binary treatment variable on the left-hand side and the variables to be matched on on the right hand side.
   }
   \item{data}{
-A \code{data.table} containing two columns representing the treatment status (\code{treat}) and the strata \code{strata} that should be matched on. If multiple categorical variables should be matched on, the user should paste them together to get a single \code{strata} variable identifying the unique strata.
+A \code{data.table} like object containing the columns mentioned in \code{formula}. Additional columns are allowed and will be included in the output, although they will not be matched on if not mentioned on the right hand side of \code{formula}.
   }
   \item{replace}{
 Whether to sample controls with or without replacement.
@@ -29,7 +29,7 @@ How many control units should be matched to each treated unit in k:1 matching. S
 Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset with which to estimate the average treatment effect on the treated, or to \code{"ATC"} which would target the average treatment effect for the untreated.
   }
   \item{if_no_match}{
-Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases.
+Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases.
   }
   \item{check_inputs}{
 Whether to perform input checks or not. Can be set to \code{FALSE} for a very small speed-up if the user is sure that the input is correct.
@@ -44,7 +44,7 @@ This function first extracts all cases from \code{data}, which are defined as al
 Because controls are matched directly to cases by default, the resulting dataset may generally only be used to get estimates for the average treatment effect on the treated (ATT). By setting \code{estimand="ATC"}, the matching process is reversed. Instead of matching controls to cases, cases are then matched to controls resulting in a dataset that may be used to estimate the average treatment effect on the untreated (ATC). Other estimands are currently not supported.
 }
 \value{
-Returns a single \code{data.table} containing the same columns as \code{data} plus one additional column called \code{"pair_id"}, which identifies which rows belong to one matched control / case pair.
+Returns a single \code{data.table} containing the same columns as \code{data} plus one additional column called \code{".id_pair"}, which identifies which rows belong to one matched control / case pair.
 }
 \references{
 Elizabeth A. Stuart (2010). "Matching Methods for Causal Inference: A Review and a Look Forward". In: Statistical Science 25.1, pp. 1-21.

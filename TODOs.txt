@@ -3,8 +3,6 @@ match_td()
 	- add more tests for continuous / date input
 	- add propensity score matching type methods
 	- finish documentation
-	- fix the (probably) error inducing + 1 in line 129
-	- fix known errors with "heart" survival data
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
@@ -15,6 +13,12 @@ long2start_stop()
 add_outcome()
 	- maybe allow different types of outcomes (event counts, binary etc.)
 	- add examples to documentation (needs to be added elsewhere as well)
+
+fast_exact_matching()
+	- also allow other input types to treatment
+	
+times_from_start_stop()
+	- allow events to be coded as 0/1 as well
 
 New features:
 	- add_covariate(): similar to add_outcome() but for covariates of different types

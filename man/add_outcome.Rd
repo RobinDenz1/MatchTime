@@ -59,5 +59,34 @@ Robin Denz
 \code{\link{match_td}}
 }
 \examples{
+library(data.table)
+library(MatchTD)
 
+# only execute if packages are available
+if (requireNamespace("survival")) {
+
+library(survival)
+
+# set random seed to make the output replicably
+set.seed(1234)
+
+# load "heart" data from survival package
+data("heart")
+heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
+
+# suppose we had an extra dataset with events that looks like this
+# NOTE: these are not all events in the real "heart" data and is merely used
+#       for showcasing the functionality of add_outcome()
+d_events <- data.table(id=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                       time=c(50, 6, 16, 39, 18, 3, 675, 40, 85, 58))
+
+# perform nearest neighbor time-dependent matching on "age" and "surgery"
+# (plus exact matching on time)
+m_obj <- match_td(transplant ~ age + surgery, data=heart, id="id",
+                  match_method="nearest")
+
+# add the event times to match_td object
+m_obj <- add_outcome(m_obj, data=d_events, time="time")
+head(m_obj$data)
+}
 }

@@ -36,5 +36,34 @@ Returns a \code{ggplot2} object.
 \code{\link{match_td}}, \code{\link[MatchIt]{summary.matchit}}, \code{\link[MatchIt]{matchit}} \code{\link[cobalt]{bal.tab}}, \code{\link[cobalt]{love.plot}}
 }
 \examples{
+library(data.table)
+library(MatchTD)
 
+# only execute if packages are available
+if (requireNamespace("survival") & requireNamespace("ggplot2")) {
+
+library(survival)
+library(ggplot2)
+
+# set random seed to make the output replicably
+set.seed(1234)
+
+# load "heart" data from survival package
+data("heart")
+
+# perform nearest neighbor time-dependent matching on "age" and "surgery"
+# (plus exact matching on time)
+out <- match_td(transplant ~ age + surgery, data=heart, id="id",
+                match_method="nearest")
+
+# plot all three statistics over time
+# NOTE: here we can see that the green line (cum. no. matched controls)
+#       and the red line (cum. no. cases) is exactly the same up until
+#       around t = 45, at which point no controls are left (blue line at 0)
+#       the number of cases still grows, but no controls are matched anymore
+plot(out)
+
+# plot only controls and cases
+plot(out, include=c("cases", "controls"))
+}
 }

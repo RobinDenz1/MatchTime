@@ -96,43 +96,40 @@ match_td.fit <- function(id, time, d_treat, d_covars,
 
   .treat <- .id_pair <- subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .next_event_time <- .time <-
-    .stop <- NULL
+    .stop <- .id <- NULL
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c(".id", ".time"))
   setnames(d_covars, old=c(id, start, stop),
            new=c(".id", ".start", ".stop"))
 
-  orig_id <- id
-  orig_time <- time
-  id <- ".id"
-  time <- ".time"
-
   # get variables that should be matched on
   if (is.null(match_vars)) {
     cnames <- colnames(d_covars)
-    match_vars <- cnames[!cnames %fin% c(id, time, ".treat", ".start",
+    match_vars <- cnames[!cnames %fin% c(".id", ".time", ".treat", ".start",
                                          ".stop")]
   }
   cnames <- colnames(d_covars)
   select_vars <- cnames[!cnames %fin% c(".start", ".stop")]
 
   # get maximum follow-up time per person (used for adding events later)
-  d_longest <- d_covars[, (.max_t = max(.stop)), by=eval(id)]
-  colnames(d_longest) <- c(orig_id, ".max_t")
+  d_longest <- d_covars[, (.max_t = max(.stop)), by=".id"]
+  colnames(d_longest) <- c(id, ".max_t")
 
   # keep only cases that meet inclusion criteria at treatment time
-  d_covars <- merge(d_covars, d_treat, by=id, all.x=TRUE)
-  include <- d_covars[get(time) >= .start & get(time) < .stop][[eval(id)]]
-  d_treat <- d_treat[get(id) %fin% include]
-
-  # remove time durations after treatment onset
-  d_covars <- subset_start_stop(data=d_covars, last_time=d_covars[[time]] + 1,
-                                start=".start", stop=".stop")
-  d_covars[, .time := NULL]
+  d_covars <- merge.data.table(d_covars, d_treat, by=".id", all.x=TRUE)
+  include <- d_covars[.time >= .start & .time < .stop]$.id
+  d_treat <- d_treat[.id %fin% include]
 
   # identify all points in time at which at least one case happened
-  case_times <- sort(unique(d_treat[[time]]))
+  case_times <- sort(unique(d_treat$.time))
+
+  # remove time durations after treatment onset
+  min_t_passed <- min(shift(case_times, type="lead") - case_times, na.rm=TRUE)
+  d_covars <- subset_start_stop(data=d_covars,
+                                last_time=d_covars$.time + min_t_passed,
+                                start=".start", stop=".stop")
+  d_covars[, .time := NULL]
 
   # initialize needed id collections
   used_as_controls <- c()
@@ -142,7 +139,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   for (i in seq_len(length(case_times))) {
 
     # identify new cases at t
-    ids_cases_i <- d_treat[get(time)==case_times[i]][[eval(id)]]
+    ids_cases_i <- d_treat[.time==case_times[i]]$.id
 
     # potentially remove cases that were previously used as controls
     if (!replace_cases) {
@@ -159,7 +156,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
     used_as_cases <- c(used_as_cases, ids_cases_i)
 
     # identify all potential controls that fulfill inclusion criteria at t
-    ids_pot_controls_i <- unique(d_covars[[eval(id)]])
+    ids_pot_controls_i <- unique(d_covars$.id)
     ids_pot_controls_i <- ids_pot_controls_i[!ids_pot_controls_i %fin%
                                                used_as_cases]
 
@@ -173,34 +170,29 @@ match_td.fit <- function(id, time, d_treat, d_covars,
     all_ids <- c(ids_pot_controls_i, ids_cases_i)
 
     # get dataset including them all at t
-    d_all_i <- d_covars[get(id) %fin% all_ids &
+    d_all_i <- d_covars[.id %fin% all_ids &
                         case_times[i] >= .start & case_times[i] < .stop
                         ][, select_vars, with=FALSE]
 
     # identify cases
-    d_all_i[, .treat := get(id) %fin% ids_cases_i]
+    d_all_i[, .treat := .id %fin% ids_cases_i]
 
-    ## perform matching at t, if specified
-    if (match_method=="none") {
+    # return only cases if no controls left
+    if (nrow(d_all_i)==length(ids_cases_i)) {
 
-      n_treat <- sum(d_all_i$.treat)
-      size <- c(n_treat, n_treat*ratio)
-      names(size) <- c("TRUE", "FALSE")
-
-      d_match_i <- stratified_sample(data=d_all_i,
-                                     n=size,
-                                     strata=".treat",
-                                     replace=replace_at_t,
-                                     if_lt_n=if_no_match)
-
-      d_match_i[, .id_pair := rep(seq_len(n_treat), ratio + 1)]
-      d_match_i[, .id_pair := paste0(i, "_", .id_pair)]
+      d_match_i <- d_all_i
+      d_match_i[, .id_pair := paste0(i, "_", seq_len(.N))]
       d_match_i[, .treat_time := case_times[i]]
 
-    } else if (match_method=="fast_exact") {
+    # fast exact or no matching
+    } else if (match_method=="fast_exact" || match_method=="none") {
 
       # create strata variable
-      d_all_i[, .strata := do.call(paste0, .SD), .SDcols=match_vars]
+      if (match_method=="none") {
+        d_all_i[, .strata := TRUE]
+      } else {
+        d_all_i[, .strata := do.call(paste0, .SD), .SDcols=match_vars]
+      }
 
       # perform exact matching
       d_match_i <- fast_exact_matching.fit(d_all_i,
@@ -241,7 +233,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
     }
 
     # update used_as_controls vector
-    controls_i <- unique(d_match_i[.treat==FALSE][[eval(id)]])
+    controls_i <- unique(d_match_i[.treat==FALSE]$.id)
     used_as_controls <- c(used_as_controls, controls_i)
 
     # append to output
@@ -250,15 +242,15 @@ match_td.fit <- function(id, time, d_treat, d_covars,
     # save the trace of the functions work
     n_m_controls <- length(controls_i)
     n_cases <- length(ids_cases_i)
-    n_pot_controls <- length(ids_pot_controls_i)
+    n_pot_controls <- nrow(d_all_i) - n_cases
     trace[[i]] <- data.table(time=case_times[i],
                              new_cases=n_cases,
                              matched_controls=n_m_controls,
                              potential_controls=n_pot_controls)
 
     if (verbose) {
-      cat("Matched ", length(controls_i), " unique controls to ",
-          length(ids_cases_i), " cases (with ", length(ids_pot_controls_i),
+      cat("Matched ", n_m_controls, " unique controls to ",
+          n_cases, " cases (with ", n_pot_controls,
           " potential unique controls) at t = ", case_times[i], ".\n", sep="")
     }
   }
@@ -271,22 +263,24 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   data[, .id_new := .I]
 
   # for controls, add time of next treatment
-  colnames(d_treat)[colnames(d_treat)==time] <- ".next_treat_time"
-  data <- merge(data, d_treat, by=id, all.x=TRUE)
+  #colnames(d_treat)[colnames(d_treat)==time] <- ".next_treat_time"
+  setnames(d_treat, old=".time", new=".next_treat_time")
+  data <- merge.data.table(data, d_treat, by=".id", all.x=TRUE)
   data[.treat==TRUE, .next_treat_time := NA]
 
   # change order of columns
-  first_cols <- c(id, ".id_new", ".id_pair", ".treat", ".treat_time",
+  first_cols <- c(".id", ".id_new", ".id_pair", ".treat", ".treat_time",
                   ".next_treat_time")
   last_cols <- colnames(data)[!colnames(data) %fin% first_cols]
   setcolorder(data, c(first_cols, last_cols))
-  setnames(data, old=id, new=orig_id)
+  setnames(data, old=".id", new=id)
+  setnames(d_covars, old=".id", new=id)
 
   # put together output
   out <- list(data=data,
               d_longest=d_longest,
-              id=orig_id,
-              time=orig_time,
+              id=id,
+              time=time,
               info=list(replace_over_t=replace_over_t,
                         replace_at_t=replace_at_t,
                         replace_cases=replace_cases,
@@ -295,7 +289,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                         match_method=match_method,
                         match_vars=match_vars,
                         n_orig=length(unique(d_covars[[id]])),
-                        n_matched=length(unique(data$.id_new)),
+                        n_matched=nrow(data),
                         n_unmatched=sum(!unique(d_covars[[id]]) %in%
                                                  data[[id]]),
                         added_events=c()),
@@ -308,6 +302,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
 ## re-code integers, factors or characters to TRUE / FALSE treatment
 # NOTE: assumes that it has already been checked that treat only contains
 #       two values
+#' @importFrom data.table fifelse
 preprocess_treat <- function(treat) {
 
   if (is.numeric(treat) && all(treat %in% c(0, 1))) {
