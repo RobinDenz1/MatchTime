@@ -3,24 +3,57 @@
 #' @importFrom data.table :=
 #' @importFrom data.table merge.data.table
 #' @importFrom data.table setnames
-add_previous_event_count <- function(data, d_prev, id, id_new, time, duration,
-                                     name, include_same_t=FALSE) {
+#' @importFrom data.table copy
+#' @export
+add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
+                                     include_same_t=TRUE, units="auto",
+                                     name=".prev_event_count") {
 
-  . <- .prev_time <- .count <- .diff <- NULL
+  . <- .time <- .count <- .diff <- .treat_time <- NULL
 
-  setnames(d_prev, old=time, new=".prev_time")
-  data <- merge.data.table(data, d_prev, by=id, all.x=TRUE)
-  data[, .diff := as.vector(.prev_time - get(time))]
+  x <- copy(x)
 
+  if (!is.data.table(data)) {
+    data <- as.data.table(data)
+  } else {
+    data <- copy(data)
+  }
+
+  check_inputs_add_variable(x=x, data=data, id=id, time=time,
+                            include_same_t=include_same_t,
+                            name=name)
+
+  # make names of columns consistent
+  setnames(data, old=time, new=".time")
+
+  if (id!=x$id) {
+    setnames(data, old=id, new=x$id)
+  }
+
+  # merge to matched data, creating new rows
+  data <- merge.data.table(x$data, data, by=x$id, all.x=TRUE, sort=FALSE)
+
+  # calculate difference between event time and inclusion time
+  if (all(class(data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
+    data[, .diff := as.numeric(difftime(.time, .treat_time, units=units))]
+  } else {
+    data[, .diff := .time - .treat_time]
+  }
+
+  # count number of events per .id_new
   if (include_same_t) {
     out <- data[, .(.count = sum(.diff <= 0 & .diff >= -duration)),
-                by=eval(id_new)]
+                by=".id_new"]
   } else {
     out <- data[, .(.count = sum(.diff < 0 & .diff >= -duration)),
-                by=eval(id_new)]
+                by=".id_new"]
   }
   out[is.na(.count), .count := 0]
-  setnames(out, old=".count", new=name)
 
-  return(out)
+  # merge back to original data
+  x$data <- merge.data.table(x$data, out, by=".id_new", all.x=TRUE, sort=FALSE)
+  setnames(x$data, old=".count", new=name)
+  setkeyv(x$data, c(x$id))
+
+  return(x)
 }

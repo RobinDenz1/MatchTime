@@ -20,9 +20,9 @@ add_previous_event <- function(x, data, id=x$id, time=x$time, duration,
     data <- copy(data)
   }
 
-  check_inputs_add_next_time(x=x, data=data, id=id, time=time,
-                             include_same_t=include_same_t,
-                             name=name)
+  check_inputs_add_variable(x=x, data=data, id=id, time=time,
+                            include_same_t=include_same_t,
+                            name=name)
 
   # make names consistent over datasets
   setnames(data, old=time, new=".time")

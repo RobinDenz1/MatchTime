@@ -25,11 +25,11 @@ A single character string specifying a column in \code{data}, specifying the uni
   \item{time}{
 A single character string specifying a column in \code{data}, specifying the column containing the event times. By default the same name that was used in the original \code{\link{match_td}} is used here.
   }
-  \item{name}{
-A single character string specifying the name of the column containing the next event time that will be added to the \code{data} object contained in \code{x}. Defaults to \code{.next_time}. If the name is already present, an error message is returned instead.
-  }
   \item{include_same_t}{
 Either \code{TRUE} or \code{FALSE}, specifying whether the time of inclusion (\code{.treat_time} in \code{x$data}) should be included when adding the next event time. If \code{TRUE} (default), an event happening exactly at the time of inclusion will be considered the next event. If \code{FALSE}, an event happening exactly at the time of inclusion will be considered a "past event" instead. In the latter case, only events strictly after inclusion time are added to the matched data.
+  }
+  \item{name}{
+A single character string specifying the name of the column containing the next event time that will be added to the \code{data} object contained in \code{x}. Defaults to \code{.next_time}. If the name is already present, an error message is returned instead.
   }
 }
 \details{

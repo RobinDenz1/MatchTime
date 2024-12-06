@@ -140,3 +140,28 @@ check_inputs_fast_exact_matching <- function(data, treat, strata, replace,
   stopifnotm(is_single_logical(replace),
              "'replace' must be either TRUE or FALSE.")
 }
+
+## input checks for multiple add_...() functions
+check_inputs_add_variable <- function(x, id, time, data, name, include_same_t) {
+
+  stopifnotm(inherits(x, "match_td"),
+             paste0("'x' must be a 'match_td' object created using the",
+                    " match_td() function."))
+  stopifnotm(is_single_logical(include_same_t),
+             "'include_same_t' must be either TRUE or FALSE.")
+  stopifnotm(is_single_character(name),
+             "'name' must be a single character string.")
+  stopifnotm(is_single_character(id),
+             "'id' must be a single character string.")
+  stopifnotm(is_single_character(time),
+             "'time' must be a single character string.")
+
+  # data
+  stopifnotm(ncol(data)==2,
+             paste0("'data' should only have two columns, containing the ",
+                    "case id and the time."))
+  stopifnotm(id %in% colnames(data),
+             "'id' must specify a valid column in 'data'.")
+  stopifnotm(time %in% colnames(data),
+             "'time' must specify a valid column in 'data'.")
+}

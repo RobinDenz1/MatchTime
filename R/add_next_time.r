@@ -14,9 +14,9 @@ add_next_time <- function(x, data, id=x$id, time=x$time,
     data <- copy(data)
   }
 
-  check_inputs_add_next_time(x=x, data=data, id=id, time=time,
-                             include_same_t=include_same_t,
-                             name=name)
+  check_inputs_add_variable(x=x, data=data, id=id, time=time,
+                            include_same_t=include_same_t,
+                            name=name)
 
   # make names consistent over datasets
   if (time!=x$time) {
@@ -70,30 +70,4 @@ add_next_time_data <- function(data, d_event, id, time, include_same_t=TRUE,
   setnames(data, old=".next_event_time", new=name)
 
   return(data)
-}
-
-## input checks for the add_outcome() function
-check_inputs_add_next_time <- function(x, id, time, data, name,
-                                       include_same_t) {
-
-  stopifnotm(inherits(x, "match_td"),
-             paste0("'x' must be a 'match_td' object created using the",
-                    " match_td() function."))
-  stopifnotm(is_single_logical(include_same_t),
-             "'include_same_t' must be either TRUE or FALSE.")
-  stopifnotm(is_single_character(name),
-             "'name' must be a single character string.")
-  stopifnotm(is_single_character(id),
-             "'id' must be a single character string.")
-  stopifnotm(is_single_character(time),
-             "'time' must be a single character string.")
-
-  # data
-  stopifnotm(ncol(data)==2,
-             paste0("'data' should only have two columns, containing the ",
-                    "case id and the time."))
-  stopifnotm(id %in% colnames(data),
-             "'id' must specify a valid column in 'data'.")
-  stopifnotm(time %in% colnames(data),
-             "'time' must specify a valid column in 'data'.")
 }
