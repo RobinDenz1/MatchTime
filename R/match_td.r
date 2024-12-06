@@ -263,7 +263,6 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   data[, .id_new := .I]
 
   # for controls, add time of next treatment
-  #colnames(d_treat)[colnames(d_treat)==time] <- ".next_treat_time"
   setnames(d_treat, old=".time", new=".next_treat_time")
   data <- merge.data.table(data, d_treat, by=".id", all.x=TRUE)
   data[.treat==TRUE, .next_treat_time := NA]
