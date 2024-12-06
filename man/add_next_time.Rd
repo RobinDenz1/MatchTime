@@ -10,7 +10,7 @@ In some cases, some relevant events occur after the time at which a case was inc
 \usage{
 add_next_time(x, data, id=x$id, time=x$time,
               include_same_t=TRUE,
-              next_time_name=".next_time")
+              name=".next_time")
 }
 \arguments{
   \item{x}{
@@ -25,7 +25,7 @@ A single character string specifying a column in \code{data}, specifying the uni
   \item{time}{
 A single character string specifying a column in \code{data}, specifying the column containing the event times. By default the same name that was used in the original \code{\link{match_td}} is used here.
   }
-  \item{next_time_name}{
+  \item{name}{
 A single character string specifying the name of the column containing the next event time that will be added to the \code{data} object contained in \code{x}. Defaults to \code{.next_time}. If the name is already present, an error message is returned instead.
   }
   \item{include_same_t}{
@@ -36,7 +36,7 @@ Either \code{TRUE} or \code{FALSE}, specifying whether the time of inclusion (\c
 On first glance it might be confusing whether to use \code{add_next_time} or \code{\link{add_outcome}}, but the distinction is actually quite simple. Use \code{add_next_time} whenever you want to add the \emph{actual time of occurence of the next event after inclusion time} and use \code{\link{add_outcome}} whenever you are interested in adding the \emph{time until the next event as measured from the inclusion time} (possible subject to censoring). As the name suggests, the latter is usually used for time-to-event outcomes, while the former is usually used to add extra information required to add more sorts of right-censoring etc.
 }
 \value{
-Returns a modified \code{match_td} object. It is essentially the same object as the supplied \code{x}, but it also contains a new column: \code{next_time_name} (the time of occurence of the next event).
+Returns a modified \code{match_td} object. It is essentially the same object as the supplied \code{x}, but it also contains a new column: \code{name} (the time of occurence of the next event).
 }
 \author{
 Robin Denz
@@ -62,7 +62,7 @@ heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
 
 # suppose we had an extra dataset with events that looks like this
 # NOTE: these are not all events in the real "heart" data and is merely used
-#       for showcasing the functionality of add_outcome()
+#       for showcasing the functionality of add_next_time()
 d_events <- data.table(id=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                        time=c(50, 6, 16, 39, 18, 3, 675, 40, 85, 58))
 

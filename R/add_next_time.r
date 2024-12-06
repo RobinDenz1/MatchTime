@@ -4,7 +4,7 @@
 #' @importFrom data.table copy
 #' @export
 add_next_time <- function(x, data, id=x$id, time=x$time,
-                          include_same_t=TRUE, next_time_name=".next_time") {
+                          include_same_t=TRUE, name=".next_time") {
 
   x <- copy(x)
 
@@ -16,7 +16,7 @@ add_next_time <- function(x, data, id=x$id, time=x$time,
 
   check_inputs_add_next_time(x=x, data=data, id=id, time=time,
                              include_same_t=include_same_t,
-                             next_time_name=next_time_name)
+                             name=name)
 
   # make names consistent over datasets
   if (time!=x$time) {
@@ -29,8 +29,8 @@ add_next_time <- function(x, data, id=x$id, time=x$time,
   # add the information
   x$data <- add_next_time_data(data=x$data, d_event=data, id=x$id, time=x$time,
                                include_same_t=include_same_t,
-                               next_time_name=next_time_name)
-  x$info$added_next_time <- c(x$info$added_next_time, next_time_name)
+                               name=name)
+  x$info$added_next_time <- c(x$info$added_next_time, name)
 
   return(x)
 }
@@ -41,7 +41,7 @@ add_next_time <- function(x, data, id=x$id, time=x$time,
 #' @importFrom data.table merge.data.table
 #' @importFrom data.table setnames
 add_next_time_data <- function(data, d_event, id, time, include_same_t=TRUE,
-                               next_time_name) {
+                               name) {
 
   .is_after <- .next_event_time <- .treat_time <- .id_new <- .in_risk <- NULL
 
@@ -67,13 +67,13 @@ add_next_time_data <- function(data, d_event, id, time, include_same_t=TRUE,
 
   # remove duplicate rows
   data <- unique(data)
-  setnames(data, old=".next_event_time", new=next_time_name)
+  setnames(data, old=".next_event_time", new=name)
 
   return(data)
 }
 
 ## input checks for the add_outcome() function
-check_inputs_add_next_time <- function(x, id, time, data, next_time_name,
+check_inputs_add_next_time <- function(x, id, time, data, name,
                                        include_same_t) {
 
   stopifnotm(inherits(x, "match_td"),
@@ -81,8 +81,8 @@ check_inputs_add_next_time <- function(x, id, time, data, next_time_name,
                     " match_td() function."))
   stopifnotm(is_single_logical(include_same_t),
              "'include_same_t' must be either TRUE or FALSE.")
-  stopifnotm(is_single_character(next_time_name),
-             "'nect_time_name' must be a single character string.")
+  stopifnotm(is_single_character(name),
+             "'name' must be a single character string.")
   stopifnotm(is_single_character(id),
              "'id' must be a single character string.")
   stopifnotm(is_single_character(time),

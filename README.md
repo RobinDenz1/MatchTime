@@ -63,6 +63,14 @@ or
 ```R
 bal.tab(m_obj)
 ```
+The actual number of cases and matched controls over time, as well as the number of potential controls at these points in time can additionally be visualized using:
+```R
+plot(m_obj)
+```
+<p align="center">
+	<img src="man/figures/example_plot.match_td.png" width="450" />
+</p>
+In this particular example, after around t = 45, there are no potential controls anymore, because no replacement was used and there are more cases than controls.
 
 ## Citation
 
