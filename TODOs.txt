@@ -1,12 +1,12 @@
 
 general:
 	- think about the copy_data as argument thing
-	- which numbers should be displayed as "matched" and "unmatched"?
 
 match_td()
 	- add more tests for continuous / date input
 	- add propensity score matching type methods
 	- finish documentation
+	- fix bug with replace_at_t=TRUE & using matchit()
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
@@ -16,9 +16,6 @@ long2start_stop()
 
 add_outcome()
 	- maybe allow different types of outcomes (event counts, binary etc.)
-
-fast_exact_matching()
-	- also allow other input types to treatment
 	
 times_from_start_stop()
 	- allow events to be coded as 0/1 as well

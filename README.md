@@ -48,7 +48,7 @@ library(MatchTD)
 library(MatchIt)
 library(survival)
 
-data("heart)
+data("heart")
 
 set.seed(1234)
 

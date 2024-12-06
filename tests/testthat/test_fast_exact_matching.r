@@ -44,6 +44,14 @@ test_that("1:1 matching without replacement", {
   setnames(out3, old=c("treat", "strata"), new=c("treatment", "strat"))
   setnames(dat, old=c("treat", "strata"), new=c("treatment", "strat"))
   expect_equal(out, out3)
+
+  # works with non-logical binary treatment variable
+  set.seed(123431)
+  dat2 <- copy(dat)
+  dat2[, treatment := as.numeric(treatment)]
+  out4 <- fast_exact_matching(treatment ~ strat, data=dat2, replace=FALSE,
+                              ratio=1)
+  expect_equal(out, out4)
 })
 
 test_that("1:1 matching with replacement", {

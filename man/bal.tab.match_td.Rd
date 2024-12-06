@@ -8,7 +8,8 @@ Display Balance Statistics in a Table for \code{match_td} objects
 This function extends the \code{\link[cobalt]{bal.tab}} function from the \code{cobalt} package to allow the input of a \code{match_td} object. This allows users to directly call the \code{\link[cobalt]{bal.tab}} function on output of the \code{\link{match_td}} function, mimicking the usage of the same function when using the \code{\link[MatchIt]{matchit}} function of the \code{MatchIt} package. The existence of this function also allows users to directly call the \code{\link[cobalt]{love.plot}} function on \code{match_td} objects.
 }
 \usage{
-\method{bal.tab}{match_td}(x, s.d.denom, ...)
+\method{bal.tab}{match_td}(x, s.d.denom, remove_unmatched=TRUE,
+        n_required=x$info$ratio, ...)
 }
 \arguments{
   \item{x}{
@@ -16,6 +17,12 @@ A \code{match_td} object created using the \code{\link{match_td}} function.
   }
   \item{s.d.denom}{
 Argument of the same name in \code{\link[cobalt]{bal.tab}}.
+  }
+  \item{remove_unmatched}{
+Whether to remove unmatched individuals before calculating the balance statistics. Internally, the \code{\link{match_data}} function is called for this, please see the documentation of that function for more information. This has no influence on the computed sample sizes.
+  }
+  \item{n_required}{
+Same as the argument of the same name in \code{\link{match_data}}.
   }
   \item{...}{
 Further arguments passed to \code{\link[cobalt]{bal.tab}}.

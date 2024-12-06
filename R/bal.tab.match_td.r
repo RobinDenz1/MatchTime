@@ -2,11 +2,13 @@
 ## S3 method for bal.tab() function of cobalt package
 #' @importFrom cobalt bal.tab
 #' @export
-bal.tab.match_td <- function(x, s.d.denom, ...) {
+bal.tab.match_td <- function(x, s.d.denom, remove_unmatched=TRUE,
+                             n_required=x$info$ratio, ...) {
 
   # use only relevant covariates
   not_rel_cols <- c(x$id, ".id_new", ".id_pair", ".treat", ".treat_time",
-                    ".next_treat_time", x$info$added_events)
+                    ".next_treat_time", ".fully_matched",
+                    x$info$added_events)
   covariates <- colnames(x$data)[!colnames(x$data) %in% not_rel_cols]
 
   if (missing(s.d.denom)) {
@@ -14,6 +16,15 @@ bal.tab.match_td <- function(x, s.d.denom, ...) {
                         ifelse(x$info$estimand=="ATC", "control", "pooled"))
   }
 
-  bal.tab(x=x$data[, covariates, with=FALSE], treat=x$data$.treat,
-          s.d.denom=s.d.denom, ...)
+  if (remove_unmatched){
+    data <- match_data(object=x, remove_unmatched=remove_unmatched,
+                       n_required=n_required)
+    treat <- data$.treat
+    data <- data[, covariates, with=FALSE]
+  } else {
+    treat <- x$data$.treat
+    data <- x$data[, covariates, with=FALSE]
+  }
+
+  bal.tab(x=data, treat=treat, s.d.denom=s.d.denom, ...)
 }

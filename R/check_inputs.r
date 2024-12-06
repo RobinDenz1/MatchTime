@@ -112,10 +112,10 @@ check_inputs_fast_exact_matching <- function(data, treat, strata, replace,
                                              ratio, estimand, if_no_match) {
 
   # correct treat
-  stopifnotm(is_single_character(treat) && treat %in% colnames(data) &&
-              is.logical(data[[treat]]),
-             paste0("'treat' must be a single character string specifying",
-                    " a logical variable in 'data'."))
+  stopifnotm(is_single_character(treat) && length(unique(data[[treat]]))==2,
+             paste0("The treatment variable specified on the LHS of the",
+                    " 'formula' argument must specify a binary variable",
+                    " in 'data'."))
 
   # correct strata
   stopifnotm(is_single_character(strata) && strata %in% colnames(data),

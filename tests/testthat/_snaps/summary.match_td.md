@@ -15,9 +15,11 @@
     macTRUE       0.0000000
     
     Sample Sizes:
-              Controls Treated
-    Matched        229     229
-    Unmatched      566      NA
+              Controls Treated  All
+    Matched        229     229  458
+    Unmatched      566       0  566
+    Included      1000     229 1000
+    Supplied      1000     236 1000
     
     Points in Time:
     Matching was performed at 168 unique points in time between 2 and 359.

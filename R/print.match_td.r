@@ -39,8 +39,9 @@ print.match_td <- function(x, ...) {
   cat(" - cases: ", replace_e_str, sep="")
 
   # number of observations
-  cat(" - number of obs.: ", x$info$n_orig, " (original), ",
-      x$info$n_matched, " (matched)\n", sep="")
+  cat(" - number of obs.: ", x$sizes$n_input_all, " (original), ",
+      x$size$n_matched_cases + x$size$n_matched_controls, " (matched)\n",
+      sep="")
 
   # target estimand
   cat(" - target estimand: ", x$info$estimand, "\n", sep="")

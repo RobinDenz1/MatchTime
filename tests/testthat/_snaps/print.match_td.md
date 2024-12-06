@@ -4,9 +4,9 @@
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
-     - covariates: Only matched on time
+     - covariates: mac
 
 # print.match_td, fast_exact method
 
@@ -14,9 +14,9 @@
      - method: 1:1 exact matching
      - controls: Not replacing controls
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
-     - covariates: Only matched on time
+     - covariates: mac
 
 # print.match_td, matchit based method
 
@@ -24,9 +24,9 @@
      - method: 1:1 nearest neighbor matching (using matchit())
      - controls: Not replacing controls
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
-     - covariates: Only matched on time
+     - covariates: mac
 
 # print.match_td, replace_over_t
 
@@ -34,9 +34,9 @@
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls only over time
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
-     - covariates: Only matched on time
+     - covariates: mac
 
 # print.match_td, replace_at_t
 
@@ -44,9 +44,9 @@
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls only at each point in time
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
-     - covariates: Only matched on time
+     - covariates: mac
 
 # print.match_td, replace_over_t & replace_at_t
 
@@ -54,9 +54,9 @@
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls at each point in time and over time
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
-     - covariates: Only matched on time
+     - covariates: mac
 
 # print.match_td, replace_cases=FALSE
 
@@ -64,9 +64,9 @@
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using only cases that were not used as controls
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
-     - covariates: Only matched on time
+     - covariates: mac
 
 # print.match_td, one covariate
 
@@ -74,7 +74,7 @@
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
      - covariates: mac
 
@@ -84,7 +84,7 @@
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases
-     - number of obs.: 1000 (original), 802 (matched)
+     - number of obs.: 1000 (original), 458 (matched)
      - target estimand: ATT
      - covariates: mac, A, B, C
 

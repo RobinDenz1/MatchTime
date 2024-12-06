@@ -14,6 +14,5 @@ test_that("general test case", {
                   match_method="fast_exact")
 
   out <- bal.tab(obj)
-
   expect_equal(round(out$Balance$Diff.Un, 3), c(0.24, 0.00, 0.00))
 })

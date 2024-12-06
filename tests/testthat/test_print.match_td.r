@@ -1,14 +1,15 @@
 
-fake_obj <- list(info=list(replace_over_t=FALSE,
-                           replace_at_t=FALSE,
-                           replace_cases=TRUE,
-                           estimand="ATT",
-                           ratio=1,
-                           match_method="none",
-                           match_vars=NULL,
-                           n_orig=1000,
-                           n_matched=802))
-class(fake_obj) <- "match_td"
+d_single <- readRDS(system.file("testdata",
+                                "single_n1000.Rds",
+                                package="MatchTD"))
+d_single[, stop := stop + 1]
+
+set.seed(1346)
+fake_obj <- match_td(formula=vacc ~ mac,
+                     data=d_single,
+                     id=".id",
+                     inclusion="inclusion",
+                     match_method="none")
 
 test_that("print.match_td, defaults", {
   expect_snapshot_output(print(fake_obj))

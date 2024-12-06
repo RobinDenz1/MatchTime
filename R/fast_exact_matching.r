@@ -65,6 +65,11 @@ fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
   # renaming columns to avoid get() issues
   setnames(data, old=c(treat, strata), new=c(".treat", ".strata"))
 
+  # fix treatment variable if needed
+  if (!is.logical(data$.treat)) {
+    data[, .treat := preprocess_treat(.treat)]
+  }
+
   if (estimand=="ATC") {
     data[, .treat := !.treat]
   }

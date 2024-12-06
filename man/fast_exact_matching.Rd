@@ -14,7 +14,7 @@ fast_exact_matching(formula, data, replace=FALSE,
 }
 \arguments{
   \item{formula}{
-A formula object with the binary treatment variable on the left-hand side and the variables to be matched on on the right hand side.
+A formula object with the binary treatment variable on the left-hand side and the variables to be matched on on the right hand side. The binary treatment should ideally be coded as a logical variable (\code{TRUE} = treated, \code{FALSE} = untreated). If this is not the case, the function internally coerces the variable to be logical using the rules described in the details.
   }
   \item{data}{
 A \code{data.table} like object containing the columns mentioned in \code{formula}. Additional columns are allowed and will be included in the output, although they will not be matched on if not mentioned on the right hand side of \code{formula}.
@@ -42,6 +42,12 @@ Whether to take a shallow copy of the \code{data} first. Taking the copy ensures
 This function first extracts all cases from \code{data}, which are defined as all rows in \code{data} where the binary variable (left-hand side of \code{formula}) is \code{TRUE}. A stratified random sample is then drawn from the remaining dataset consisting only of controls, where the strata are the variables that should be matched on. By drawing \code{ratio} controls for each case with exactly the same values in the strata as the respective case, perfectly exact \code{ratio:1} matching is performed. This is a very basic form of matching without a lot of flexibility. It also only supports binary treatments. In almost every case it would be much better to just use the \code{\link[MatchIt]{matchit}} function from the excellent \code{MatchIt} package instead. The only reason to use the \code{fast_exact_matching} function is the better performance on large datasets.
 
 Because controls are matched directly to cases by default, the resulting dataset may generally only be used to get estimates for the average treatment effect on the treated (ATT). By setting \code{estimand="ATC"}, the matching process is reversed. Instead of matching controls to cases, cases are then matched to controls resulting in a dataset that may be used to estimate the average treatment effect on the untreated (ATC). Other estimands are currently not supported.
+
+\strong{\emph{Identifying the "treated" group}}:
+
+Ideally, the treatment specified on the LHS of the \code{formula} argument is coded as a logical variable, where \code{TRUE} corresponds to the "treated" group and \code{FALSE} corresponds to the "control" group. If this is not the case, this function will coerce it to this type internally using the following rules:
+
+1.) if the variable only consists of the numbers \code{0} and \code{1} (coded as numeric), \code{0} will be considered the "control" group and \code{1} the "treated" group; 2.) otherwise, if the variable is a factor, \code{levels(treat)[1]} will be considered the "control" group and the other value the "treated" group; 3.) otherwise \code{sort(unique(treat))[1]} will be considered "control" and the other value the treated. It is safest to ensure that the treatment variable is a logical variable. In either case, the output will only contain the treatment as logical variable.
 }
 \value{
 Returns a single \code{data.table} containing the same columns as \code{data} plus one additional column called \code{".id_pair"}, which identifies which rows belong to one matched control / case pair.

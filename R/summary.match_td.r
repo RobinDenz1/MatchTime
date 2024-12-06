@@ -1,18 +1,23 @@
 
 ## S3 summary method for MatchTD objects
 #' @export
-summary.match_td <- function(object, standardize=TRUE, ...) {
+summary.match_td <- function(object, standardize=TRUE, remove_unmatched=TRUE,
+                             n_required=object$info$ratio, ...) {
 
   requireNamespace("MatchIt")
 
   # get relevant columns
   not_rel_cols <- c(object$id, ".id_new", ".id_pair", ".treat", ".treat_time",
-                    ".next_treat_time", object$info$added_events)
+                    ".next_treat_time", ".fully_matched",
+                    object$info$added_events)
   covariates <- colnames(object$data)[!colnames(object$data) %in% not_rel_cols]
 
   # get model matrix
   form <- stats::as.formula(paste0("~ ", paste0(covariates, collapse=" + ")))
-  mod_mat <- stats::model.matrix(form, data=object$data)
+  mod_mat <- stats::model.matrix(form,
+    data=match_data(object=object, remove_unmatched=remove_unmatched,
+                    n_required=n_required)
+  )
   mod_mat <- mod_mat[,seq(2, ncol(mod_mat))]
 
   # get some defaults for internal functions of MatchIt
@@ -39,14 +44,23 @@ summary.match_td <- function(object, standardize=TRUE, ...) {
   dimnames(d_bal_stats) <- list(colnames(mod_mat), names(bal_stats[[1]]))
   d_bal_stats <- d_bal_stats[, -7]
 
-  # compute sample sizes
-  n_matched_treat <- sum(object$trace$new_cases)
-  n_matched_controls <- sum(object$trace$matched_controls)
-
-  d_samp <- matrix(c(n_matched_controls, n_matched_treat,
-                     object$info$n_unmatched, NA), ncol=2, byrow=TRUE)
-  colnames(d_samp) <- c("Controls", "Treated")
-  rownames(d_samp) <- c("Matched", "Unmatched")
+  # put together sample sizes
+  d_samp <- matrix(c(object$sizes$n_matched_controls,
+                     object$sizes$n_matched_cases,
+                     object$sizes$n_matched_controls +
+                       object$sizes$n_matched_cases,
+                     object$sizes$n_unmatched_controls,
+                     object$sizes$n_unmatched_cases,
+                     object$sizes$n_unmatched_controls +
+                       object$sizes$n_unmatched_cases,
+                     object$sizes$n_incl_controls,
+                     object$sizes$n_incl_cases,
+                     object$sizes$n_incl_all,
+                     object$sizes$n_input_controls,
+                     object$sizes$n_input_cases,
+                     object$sizes$n_input_all), ncol=3, byrow=TRUE)
+  colnames(d_samp) <- c("Controls", "Treated", "All")
+  rownames(d_samp) <- c("Matched", "Unmatched", "Included", "Supplied")
 
   # print it all out
   cat("Call:\n")
