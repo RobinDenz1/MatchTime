@@ -9,8 +9,7 @@ Given a \code{data.table}-like object containing information in the start-stop f
 }
 \usage{
 simplify_start_stop(data, id, start="start", stop="stop",
-                    cols, remove_other_cols=TRUE,
-                    copy_data=TRUE)
+                    cols, remove_other_cols=TRUE)
 }
 \arguments{
   \item{data}{
@@ -30,9 +29,6 @@ A character vector specifying the columns that should be used to check whether t
   }
   \item{remove_other_cols}{
 Either \code{TRUE} or \code{FALSE}, specifying whether the columns \emph{not} named in the \code{cols} argument (other than \code{id}, \code{start}, \code{stop}) should be removed from the output. Defaults to \code{TRUE}, because keeping these columns may be misleading. If set to \code{FALSE}, please remember that the value of these columns is not neccesarily correct, since intervals have been combined without looking at their values first.
-  }
-  \item{copy_data}{
-Whether to take a shallow copy of the input data before performing the computations. Setting this to \code{TRUE} ensures that the input \code{data} stays unchanged. Setting this to \code{FALSE} (if you don't care about changing the input) uses less RAM.
   }
 }
 \details{

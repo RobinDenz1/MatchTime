@@ -16,7 +16,7 @@
 #' @importFrom data.table copy
 #' @export
 long2start_stop <- function(data, id, time, varying, start_name="start",
-                            stop_name="stop", check_inputs=TRUE) {
+                            stop_name="stop") {
 
   start <- .is_equal_to_next <- .is_last <- NULL
 
@@ -27,11 +27,9 @@ long2start_stop <- function(data, id, time, varying, start_name="start",
     data <- copy(data)
   }
 
-  if (check_inputs) {
-    check_inputs_long2start_stop(data=data, id=id, time=time,
-                                 varying=varying, start_name=start_name,
-                                 stop_name=stop_name)
-  }
+  check_inputs_long2start_stop(data=data, id=id, time=time,
+                               varying=varying, start_name=start_name,
+                               stop_name=stop_name)
 
   setkeyv(data, c(id, time))
 

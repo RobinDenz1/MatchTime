@@ -7,14 +7,13 @@
 #' @importFrom data.table .SD
 #' @export
 fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
-                                estimand="ATT", if_no_match="warn",
-                                check_inputs=TRUE, copy_data=TRUE) {
+                                estimand="ATT", if_no_match="warn") {
   .strata <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
     data <- as.data.table(data)
-  } else if (copy_data) {
+  } else {
     data <- copy(data)
   }
 
@@ -33,13 +32,11 @@ fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
   # create strata variable
   data[, .strata := do.call(paste0, .SD), .SDcols=strata_vars]
 
-  # check inputs if specified
-  if (check_inputs) {
-    check_inputs_fast_exact_matching(data=data, treat=treat,
-                                     strata=".strata", replace=replace,
-                                     ratio=ratio, estimand=estimand,
-                                     if_no_match=if_no_match)
-  }
+  # check inputs
+  check_inputs_fast_exact_matching(data=data, treat=treat,
+                                   strata=".strata", replace=replace,
+                                   ratio=ratio, estimand=estimand,
+                                   if_no_match=if_no_match)
 
   # call real matching function
   out <- fast_exact_matching.fit(data=data, treat=treat, strata=".strata",

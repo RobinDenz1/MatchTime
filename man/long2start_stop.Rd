@@ -9,7 +9,7 @@ This function transforms a \code{data.table} like object in the long-format (one
 }
 \usage{
 long2start_stop(data, id, time, varying, start_name="start",
-                stop_name="stop", check_inputs=TRUE)
+                stop_name="stop")
 }
 \arguments{
   \item{data}{
@@ -29,9 +29,6 @@ A single character string, specifying the name that the \code{"start"} variable 
   }
   \item{stop_name}{
 Same as \code{start_name} but for the \code{"stop"} column.
-  }
-  \item{check_inputs}{
-Whether to check if the user input is correct or not. Can be turned off by setting it to \code{FALSE} to save computation time.
   }
 }
 \details{

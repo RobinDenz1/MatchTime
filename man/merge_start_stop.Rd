@@ -16,8 +16,7 @@ merge_start_stop(x, y, ..., dlist, by, start="start",
                  center_on_first=FALSE, units="auto",
                  defaults=NULL, event_times=NULL,
                  time_to_first_event=FALSE,
-                 status="status", constant_vars=NULL,
-                 check_inputs=TRUE, copy_data=TRUE)
+                 status="status", constant_vars=NULL)
 }
 \arguments{
   \item{x, y, ...}{
@@ -76,12 +75,6 @@ A single character string specifying how the status variable should be named. De
   }
   \item{constant_vars}{
 An optional \code{data.table} containing values of variables that are constant over time for some or all cases in the supplied data or \code{NULL} (default). If specified, the constant variables are simply merged to the final start-stop data. The input to \code{constant_vars} should therefore contain a column named as the \code{by} argument.
-  }
-  \item{check_inputs}{
-Either \code{TRUE} (default) or \code{FALSE}, specifying whether to perform input checks. May be turned off to save a little computational time.
-  }
-  \item{copy_data}{
-Either \code{TRUE} (default) or \code{FALSE}, specifying whether to take a shallow copy of the supplied \code{data.table}s before running the code. Doing so ensures that all data in the parent environment stays unchanged. If set to \code{FALSE}, they may be modified in place which is more RAM efficient.
   }
 }
 \details{

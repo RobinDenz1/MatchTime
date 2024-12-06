@@ -18,8 +18,7 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
                              remove_before_first=TRUE, remove_after_last=TRUE,
                              center_on_first=FALSE, units="auto", defaults=NULL,
                              event_times=NULL, time_to_first_event=FALSE,
-                             status="status", constant_vars=NULL,
-                             check_inputs=TRUE, copy_data=TRUE) {
+                             status="status", constant_vars=NULL) {
 
   . <- .id <- .first_time <- .event_time <- .last_per_id <- dataset <- NULL
 
@@ -27,20 +26,15 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
     dlist <- list(x, y, ...)
   }
 
-  if (check_inputs) {
-    check_inputs_merge_td(dlist=dlist, first_time=first_time,
-                          last_time=last_time,
-                          remove_before_first=remove_before_first,
-                          remove_after_last=remove_after_last,
-                          center_on_first=center_on_first, defaults=defaults,
-                          by=by, start=start, stop=stop,
-                          constant_vars=constant_vars, event_times=event_times,
-                          status=status, copy_data=copy_data)
-  }
-
-  if (copy_data) {
-    dlist <- copy(dlist)
-  }
+  check_inputs_merge_start_stop(dlist=dlist, first_time=first_time,
+                                last_time=last_time,
+                                remove_before_first=remove_before_first,
+                                remove_after_last=remove_after_last,
+                                center_on_first=center_on_first,
+                                defaults=defaults, by=by, start=start,
+                                stop=stop, constant_vars=constant_vars,
+                                event_times=event_times, status=status)
+  dlist <- copy(dlist)
 
   ## prepare dlist for further processing
   col_types <- list()

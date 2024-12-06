@@ -9,15 +9,13 @@
 #' @export
 add_missing_intervals <- function(data, id, start="start", stop="stop",
                                   first_time=NULL, last_time=NULL,
-                                  missing_indicator=TRUE, copy_data=TRUE, ...) {
+                                  missing_indicator=TRUE, ...) {
 
   . <- .in_data <- .placeholder <- .start <- .stop <- NULL
 
   if (!is.data.table(data)) {
     data <- as.data.table(data)
-  }
-
-  if (copy_data) {
+  } else {
     data <- copy(data)
   }
 

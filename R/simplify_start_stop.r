@@ -8,15 +8,13 @@
 #' @importFrom data.table .SD
 #' @export
 simplify_start_stop <- function(data, id, start="start", stop="stop", cols,
-                                remove_other_cols=TRUE, copy_data=TRUE) {
+                                remove_other_cols=TRUE) {
 
   .is_equal_to_next <- .temp_shift <- NULL
 
   if (!is.data.table(data)) {
     data <- as.data.table(data)
-  }
-
-  if (copy_data) {
+  } else {
     data <- copy(data)
   }
 

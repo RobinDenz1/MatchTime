@@ -9,8 +9,8 @@ This function matches one or multiple controls to cases that have exactly the sa
 }
 \usage{
 fast_exact_matching(formula, data, replace=FALSE,
-                    ratio=1, estimand="ATT", if_no_match="warn",
-                    check_inputs=TRUE, copy_data=TRUE)
+                    ratio=1, estimand="ATT",
+                    if_no_match="warn")
 }
 \arguments{
   \item{formula}{
@@ -30,12 +30,6 @@ Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset 
   }
   \item{if_no_match}{
 Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases.
-  }
-  \item{check_inputs}{
-Whether to perform input checks or not. Can be set to \code{FALSE} for a very small speed-up if the user is sure that the input is correct.
-  }
-  \item{copy_data}{
-Whether to take a shallow copy of the \code{data} first. Taking the copy ensures that \code{data} is not changed by operations performed in this function. If you do not care about preserving the original \code{data} and want to save some RAM, this can be set to \code{FALSE}, in which case all operations are performed in place.
   }
 }
 \details{

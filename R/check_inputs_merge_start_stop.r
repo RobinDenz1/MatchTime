@@ -11,11 +11,12 @@ col_type_dlist <- function(dlist, col) {
 }
 
 ## check inputs for merge_td() function
-check_inputs_merge_td <- function(dlist, first_time, last_time,
-                                  remove_before_first, remove_after_last,
-                                  center_on_first, defaults,
-                                  by, start, stop, constant_vars,
-                                  event_times, status, copy_data) {
+check_inputs_merge_start_stop <- function(dlist, first_time, last_time,
+                                          remove_before_first,
+                                          remove_after_last,
+                                          center_on_first, defaults,
+                                          by, start, stop, constant_vars,
+                                          event_times, status) {
 
   # dlist
   stopifnotm(length(dlist) > 1,
@@ -107,10 +108,6 @@ check_inputs_merge_td <- function(dlist, first_time, last_time,
   # center_on_first
   stopifnotm(is_single_logical(center_on_first),
              "'center_on_first' must be either TRUE or FALSE.")
-
-  # copy_data
-  stopifnotm(is_single_logical(copy_data),
-             "'copy_data' must be either TRUE or FALSE.")
 
   # constant vars
   stopifnotm(is.null(constant_vars) || is.data.table(constant_vars),

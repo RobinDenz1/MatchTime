@@ -10,7 +10,7 @@ Some start-stop datasets may be missing some intervals for some cases. This func
 \usage{
 add_missing_intervals(data, id, start="start", stop="stop",
                       first_time=NULL, last_time=NULL,
-                      missing_indicator=TRUE, copy_data=TRUE, ...)
+                      missing_indicator=TRUE, ...)
 }
 \arguments{
   \item{data}{
@@ -33,9 +33,6 @@ Corresponds to the argument of the same name in the \code{\link{merge_start_stop
   }
   \item{missing_indicator}{
 Either \code{TRUE} (default) or \code{FALSE}, specifying whether a logical column should be added to the data which includes an indicator whether the corresponding interval was present in the original data or not. If \code{TRUE}, this column will be added using the name \code{".in_data"}. This column is \code{TRUE} if the interval was present and \code{FALSE} if it was not.
-  }
-  \item{copy_data}{
-Either \code{TRUE} (default) or \code{FALSE}, specifying whether to take a shallow copy of the supplied \code{data.table} before running the code. Doing so ensures that all data in the parent environment stays unchanged. If set to \code{FALSE}, they may be modified in place which is more RAM efficient.
   }
   \item{...}{
 Further arguments passed to the \code{\link{merge_start_stop}} function.
