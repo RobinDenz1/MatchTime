@@ -14,10 +14,9 @@ d_multi$d_event[, .time := .time + 1]
 # TODO:
 # - test if add_previous_event returns the same results as match_td()
 #   when not matching on meds
-# - check if actual continuous input and datetime input works
+# - check if datetime input works
 # - needs test on whether variables in final matched dataset at t correspond to
 #   values at t in original dataset
-# - test for using matchit() when no potential controls are left
 # - test for match_method="none" with potential controls < cases
 
 test_that("matching on nothing", {
@@ -395,4 +394,41 @@ test_that("using Date input", {
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 49)
+})
+
+test_that("works with actual continuous data", {
+
+  data("heart", package="survival")
+  heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
+
+  # using matchit because age is continuous
+  set.seed(12341432)
+  m_obj <- suppressWarnings(
+    match_td(transplant ~ age + surgery, data=heart, id="id",
+             match_method="nearest", exact="surgery")
+  )
+  out <- match_data(m_obj)
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(51, 51))
+
+  # surgery equally distributed in each level of .treat
+  tab <- table(out$.treat, out$surgery)
+  expect_true(tab[1,1] == tab[2,1])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$.id_pair)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id only occurs once or twice, if twice then once as control and once
+  # as a new case
+  expect_true(max(table(out$id))==2)
+  out[, n_id := .N, by=id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(16, 16))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 34)
 })

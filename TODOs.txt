@@ -1,8 +1,7 @@
 
 match_td()
-	- add more tests for continuous / date input
+	- add more tests for date input
 	- add propensity score matching type methods
-	- finish documentation
 	- fix bug with replace_at_t=TRUE & using matchit()
 
 merge_start_stop()

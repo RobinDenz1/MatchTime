@@ -65,6 +65,14 @@ Further arguments passed to \code{\link[MatchIt]{matchit}} when \code{match_meth
 }
 \details{
 
+\strong{\emph{How it works}}:
+
+This function offers a very general implementation of time-dependent matching, also known as \emph{balanced risk set matching} or \emph{sequential trial emulation}. It works by first identifying all times in point at which the treatment status of an individual switches from "control" to "treated" and sorting them from the first to the last. The matching is then performed subsequently at each of these distinct points in time. All individuals whose treatment status changed from "control" to "treated" at \eqn{t} are included in the matched data as "cases". For each included individual, \code{ratio} controls are choosen from those individuals who did not yet receive the treatment at \eqn{t} and are also included in the matched data. The time of inclusion is then considered the "time-zero" for all individuals included in this way.
+
+Individuals who were included as controls at some point will usually still be included as cases when they switch to "treated", unless \code{replace_cases=FALSE}. Controls may be picked as controls multiple times at the same \eqn{t} (argument \code{replace_at_t}) and / or over multiple points in time (argument \code{replace_over_t}). The argument \code{match_method} controls how exactly the controls are choosen. It is possible to just pick them at random (\code{match_method="none"}) or to pick them by classical matching methods (setting \code{match_method} to \code{"fast_exact"}, \code{"nearest"}, etc.).
+
+The result is a dataset that can be analyzed using standard time-to-event methods, without the need to use special methods, such as marginal structural models, to adjust for treatment-confounder feedback or other forms of time-dependent confounding. More details and examples are given in the cited literature and the vignettes of this package.
+
 \strong{\emph{Identifying the "treated" group}}:
 
 Ideally, the treatment specified on the LHS of the \code{formula} argument is coded as a logical variable, where \code{TRUE} corresponds to the "treated" group and \code{FALSE} corresponds to the "control" group. If this is not the case, this function will coerce it to this type internally using the following rules:
@@ -83,6 +91,10 @@ Users usually want to add outcomes and / or further baseline covariates to the d
 
 The balance of the covariates at baseline can be assessed using the associated \code{\link{summary.match_td}} or \code{\link{bal.tab.match_td}} functions. Note that with time-dependent matching it is only possible to assess balance at baseline, because the treatment is also time-dependent.
 
+\strong{\emph{Performance Considerations}}
+
+This function was designed to be work on very large datasets (~ 20 million rows) with large amounts of points in time (> 1000) on regular computers. It achieves this through the use of the incredible \pkg{data.table} package. While it does work with such large datasets, it does become slow due to the inherent computational complexity of the method. With large data, using complicated matching methods such as \code{match_method="genetic"} is not feasible. However, only matching on time \code{match_method="none"} or matching only on some categorical variables using \code{match_method="fast_exact"} should still work.
+
 }
 \value{
 Returns a \code{match_td} object containing the following objects:
@@ -98,7 +110,9 @@ Returns a \code{match_td} object containing the following objects:
 
 }
 \references{
+Thomas, L. E., Yang, S., Wojdyla, D., and Schaubel, D. E. (2020). Matching with time-dependent treatments: A review and look forward. Statistics in Medicine 39, 2350–2370
 
+Dagan, N., Barda, N., Kepten, E., Miron, O., Perchik, S., Katz, M. A., et al. (2021). Bnt162b2 MRNA Covid-19 vaccine in a nationwide mass vaccination setting. The New England Journal of Medicine 384, 1412–1423
 }
 \note{
 Column names starting with a single point (e.g. names like \code{".variable"} or \code{".id"}) cannot be used in \code{data}, because they are used internally, which could lead to weird errors.
@@ -110,5 +124,41 @@ Robin Denz
 \code{\link{fast_exact_matching}}, \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}, \code{\link{summary.match_td}}, \code{\link{bal.tab.match_td}}
 }
 \examples{
+library(data.table)
+library(MatchTD)
 
+if (requireNamespace("survival") & requireNamespace("MatchIt") &
+    requireNamespace("ggplot2")) {
+
+library(survival)
+library(MatchIt)
+library(ggplot2)
+
+# load some example data from the survival package
+data("heart", package="survival")
+
+# keep only columns relevant for matching
+heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
+
+## time-dependent matching, using "transplant" as treatment and only
+## "surgery" as variable to match on
+m.obj <- match_td(transplant ~ surgery, data=heart, id="id",
+                  match_method="fast_exact")
+
+# show some balance statistics + the resulting sample sizes
+summary(m.obj)
+
+# plot the number of cases / controls / potential controls over time
+plot(m.obj)
+
+## allow replacement of controls over time
+m.obj <- match_td(transplant ~ surgery, data=heart, id="id",
+                  match_method="fast_exact", replace_over_t=TRUE)
+
+## use nearest neighbor matching instead, matching also on continuous "age"
+# NOTE: this requires the "MatchIt" package
+m.obj <- match_td(transplant ~ surgery + age, data=heart, id="id",
+                  match_method="nearest")
+summary(m.obj)
+}
 }
