@@ -20,7 +20,7 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
                              event_times=NULL, time_to_first_event=FALSE,
                              status="status", constant_vars=NULL) {
 
-  . <- .id <- .first_time <- .event_time <- .last_per_id <- dataset <- NULL
+  . <- .id <- .first_time <- .event_time <- .last_per_id <- .dataset <- NULL
 
   if (missing(dlist)) {
     dlist <- list(x, y, ...)
@@ -63,12 +63,12 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
     # get supplied data.tables into long format if it contains more than one
     # variable with actual values
     if (ncol(dlist[[i]])==4) {
-      dlist[[i]][, dataset := cnames]
+      dlist[[i]][, .dataset := cnames]
       setnames(dlist[[i]], old=cnames, new="value")
     } else {
       dlist[[i]] <- suppressWarnings(
         melt.data.table(dlist[[i]], id.vars=c(by, start, stop),
-                        variable.name="dataset",
+                        variable.name=".dataset",
                         variable.factor=FALSE)
       )
     }
@@ -128,12 +128,12 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
   data <- data[!is.na(stop) & start!=stop]
 
   # create column names for later
-  var_names <- unique(value_dat$dataset)
+  var_names <- unique(value_dat$.dataset)
   var_names_stop <- paste0(stop, "_", var_names)
   var_names_value <- paste0("value_", var_names)
 
   # create one end date for each start + corresponding value
-  formula <- stats::as.formula(paste0(by, " + ", start, " ~ dataset"))
+  formula <- stats::as.formula(paste0(by, " + ", start, " ~ .dataset"))
   value_dat <- dcast(value_dat, formula=formula, value.var=c(stop, "value"),
                      drop=TRUE)
   setnames(value_dat, old=c(by, start), new=c(".id", "start"))
@@ -254,21 +254,21 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
 #' @importFrom data.table .N
 set_na_locf_by_id <- function(data, name) {
 
-  .id <- leading_na <- NULL
+  .id <- .leading_na <- NULL
 
   # identify first non-NA by .id
-  data[!is.na(get(name)), leading_na := seq_len(.N)==1, by=.id]
-  data[is.na(leading_na), leading_na := FALSE]
+  data[!is.na(get(name)), .leading_na := seq_len(.N)==1, by=.id]
+  data[is.na(.leading_na), .leading_na := FALSE]
 
   # cumsum() by .id, making everything == 0 a leading NA value
-  data[, leading_na := cumsum(leading_na), by=.id]
+  data[, .leading_na := cumsum(.leading_na), by=.id]
 
   # call na_locf() a single time
   data[, (name) := na_locf(get(name))]
 
   # set leading NAs that were wrongly filled up back to NA
-  data[leading_na==0, (name) := NA]
-  data[, leading_na := NULL]
+  data[.leading_na==0, (name) := NA]
+  data[, .leading_na := NULL]
 }
 
 ## last observation carried forward

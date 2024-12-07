@@ -27,6 +27,14 @@ test_that("general test case", {
                          .time=c(37, 111, 135, 80, 37, 40, 128))
   setkeyv(expected, c("id", ".time"))
   expect_equal(out, expected)
+
+  # works with a 0/1 variable
+  data2 <- copy(data)
+  data2[, event := fifelse(event, 1, 0)]
+  out2 <- times_from_start_stop(data=data2, name="event", id="id", type="event",
+                                time_name=".time")
+  expect_equal(out2, out)
+
 })
 
 test_that("no events", {

@@ -18,7 +18,7 @@
 long2start_stop <- function(data, id, time, varying, start_name="start",
                             stop_name="stop") {
 
-  start <- .is_equal_to_next <- .is_last <- NULL
+  .start <- .stop <- .is_equal_to_next <- .is_last <- NULL
 
   # transform to data.table if needed
   if (!is.data.table(data)) {
@@ -48,29 +48,29 @@ long2start_stop <- function(data, id, time, varying, start_name="start",
   data[, .is_equal_to_next := NULL]
 
   # assign start and stop
-  setnames(data, old=time, new="start")
-  data[, stop := shift(start, type="lead"), by=eval(id)]
-  data[is.na(stop), stop := start]
+  setnames(data, old=time, new=".start")
+  data[, .stop := shift(.start, type="lead"), by=eval(id)]
+  data[is.na(.stop), .stop := .start]
 
   # remove more rows
-  data <- unique(data, by=c(id, "stop", varying))
+  data <- unique(data, by=c(id, ".stop", varying))
 
   # correct last stop
   data[, .is_last := seq_len(.N)==.N, by=eval(id)]
-  data[.is_last==TRUE, stop := stop + 1]
+  data[.is_last==TRUE, .stop := .stop + 1]
   data[, .is_last := NULL]
 
   # reorder columns
-  first_cols <- c(id, "start", "stop", varying)
+  first_cols <- c(id, ".start", ".stop", varying)
   setcolorder(data, c(first_cols,
                       colnames(data)[!colnames(data) %in% first_cols]))
   setkey(data, NULL)
 
-  if (start_name != "start") {
-    setnames(data, old="start", new=start_name)
+  if (start_name != ".start") {
+    setnames(data, old=".start", new=start_name)
   }
-  if (stop_name != "stop") {
-    setnames(data, old="stop", new=stop_name)
+  if (stop_name != ".stop") {
+    setnames(data, old=".stop", new=stop_name)
   }
 
   return(data)

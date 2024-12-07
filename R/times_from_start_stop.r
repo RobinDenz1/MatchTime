@@ -3,6 +3,9 @@
 #' @importFrom data.table :=
 #' @importFrom data.table shift
 #' @importFrom data.table setkeyv
+#' @importFrom data.table as.data.table
+#' @importFrom data.table is.data.table
+#' @importFrom data.table copy
 #' @export
 times_from_start_stop <- function(data, id, name, type, start="start",
                                   stop="stop", time_name="time") {
@@ -18,6 +21,11 @@ times_from_start_stop <- function(data, id, name, type, start="start",
   check_inputs_times_from_start_stop(data=data, id=id, name=name, type=type,
                                      start=start, stop=stop,
                                      time_name=time_name)
+
+  # coerce to logical if 0/1
+  if (is.numeric(data[[name]])) {
+    data[, (name) := fifelse(data[[name]]==0, FALSE, TRUE)]
+  }
 
   if (type!="event") {
 
@@ -51,9 +59,11 @@ check_inputs_times_from_start_stop <- function(data, id, name, type, start,
   stopifnotm(is_single_character(id) && id %in% colnames(data),
      "'id' needs to be a single character specifying a valid column in 'data'.")
   stopifnotm(is_single_character(name) && name %in% colnames(data) &&
-               is.logical(data[[name]]),
+               (is.logical(data[[name]]) || (is.numeric(data[[name]]) &&
+                                             all(data[[name]] %in% c(0, 1)))),
              paste0("'name' needs to be a single character specifying a ",
-                    "logical variable in 'data'."))
+                    "logical variable, or a numeric variable with only 0",
+                    " and 1 in 'data'."))
   stopifnotm(is_single_character(start) && start %in% colnames(data),
   "'start' needs to be a single character specifying a valid column in 'data'.")
   stopifnotm(is_single_character(stop) && stop %in% colnames(data),

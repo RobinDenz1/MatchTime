@@ -2,6 +2,8 @@
 ## main function of the package, but is only a wrapper around the true
 ## estimation function called match_td.fit()
 #' @importFrom data.table is.data.table
+#' @importFrom data.table as.data.table
+#' @importFrom data.table setnames
 #' @importFrom data.table copy
 #' @importFrom data.table :=
 #' @export
@@ -103,8 +105,8 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                          ...) {
 
   .treat <- .id_pair <- subclass <- .treat_time <- .strata <- .start <-
-    .id_new <- .next_treat_time <- .next_event_time <- .time <-
-    .stop <- .id <- .fully_matched <- NULL
+    .id_new <- .next_treat_time <- .time <- .stop <- .id <-
+    .fully_matched <- NULL
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c(".id", ".time"))

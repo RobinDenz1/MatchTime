@@ -19,7 +19,7 @@ A \code{data.table} like object including at least three columns: \code{id} (the
 A single character string specifying the column containing the unique case identifier.
   }
   \item{name}{
-A single character string specifying the "event" column in \code{data}. The specified column should be of class "logical" (containing only either \code{TRUE} or \code{FALSE}).
+A single character string specifying the "event" column in \code{data}. The specified column should be of class "logical" (containing only either \code{TRUE} or \code{FALSE}). Alternatively, the specified variable may be a numeric variable containing only 0 (considered \code{FALSE}) and 1 (considered \code{TRUE}).
   }
   \item{type}{
 A single character string specifying which type of variable the column specified by \code{name} is. If the variable is an actual event, meaning that existing intervals end at the exact time that \code{name} occured, it should be set to \code{type="event"}. In this case, the \code{stop} value of all intervals where \code{name} is \code{TRUE} are extracted. If the variable refers to a time-varying binary variable instead (for example a time-dependent exposure that can be present or absent), the \code{start} time of each duration where \code{name} was \code{TRUE} are extracted. See details.
