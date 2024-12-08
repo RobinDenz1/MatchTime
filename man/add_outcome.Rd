@@ -12,7 +12,7 @@ add_outcome(x, data, censor_at_treat=TRUE,
             censor_pairs=FALSE, units="auto",
             id=x$id, time=x$time,
             event_time_name=".event_time",
-            status_name=".status", copy_data=TRUE)
+            status_name=".status")
 }
 \arguments{
   \item{x}{
@@ -41,9 +41,6 @@ A single character string specifying the name of the event time column that will
   }
   \item{status_name}{
 A single character string specifying the name of the status column that will be added to the \code{data} object contained in \code{x}. Defaults to \code{.status}. If the name is already present, an error message is returned instead.
-  }
-  \item{copy_data}{
-Either \code{TRUE} (default) or \code{FALSE}, specifying whether to take a shallow copy of the supplied data before running the code. Doing so ensures that all data in the parent environment stays unchanged. If set to \code{FALSE}, they may be modified in place which is more RAM efficient.
   }
 }
 \details{

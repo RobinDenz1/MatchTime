@@ -9,7 +9,7 @@ summary.match_td <- function(object, standardize=TRUE, remove_unmatched=TRUE,
   # get relevant columns
   not_rel_cols <- c(object$id, ".id_new", ".id_pair", ".treat", ".treat_time",
                     ".next_treat_time", ".fully_matched",
-                    object$info$added_events)
+                    object$info$added_event_times, object$info$added_status)
   covariates <- colnames(object$data)[!colnames(object$data) %in% not_rel_cols]
 
   # get model matrix

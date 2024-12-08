@@ -94,6 +94,7 @@ match_td <- function(formula, data, id, inclusion=NA,
 #' @importFrom data.table :=
 #' @importFrom data.table .SD
 #' @importFrom data.table copy
+#' @importFrom data.table .GRP
 #' @importFrom data.table rbindlist
 #' @importFrom data.table setcolorder
 match_td.fit <- function(id, time, d_treat, d_covars,
@@ -276,6 +277,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
 
   # create new .id_new to differentiate between persons
   data[, .id_new := .I]
+  data[, .id_pair := .GRP, by=".id_pair"]
 
   # for controls, add time of next treatment
   setnames(d_treat, old=".time", new=".next_treat_time")
@@ -307,7 +309,8 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                         ratio=ratio,
                         match_method=match_method,
                         match_vars=match_vars,
-                        added_events=c(),
+                        added_event_times=c(),
+                        added_status=c(),
                         added_next_time=c()),
               sizes=list(n_unmatched_controls=sum(!unique(d_covars[[id]]) %in%
                                                   data[[id]]),
