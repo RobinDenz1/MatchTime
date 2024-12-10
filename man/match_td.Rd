@@ -5,7 +5,7 @@
 Perform Time-Dependent Matching in Discrete and Continuous Time
 }
 \description{
-This function utilizies the approach described in XX and XX to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as sequential target trial emulation. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \code{MatchIt} package to perform the actual matching at each point in time for more flexibility.
+This function utilizies the approach described in Li et al. (2001) and Thomas et al. (2020) to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as \emph{sequential trial emulation}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
 }
 \usage{
 match_td(formula, data, id, inclusion=NA,
@@ -14,7 +14,7 @@ match_td(formula, data, id, inclusion=NA,
          replace_cases=TRUE, estimand="ATT",
          ratio=1, match_method="fast_exact",
          if_no_match="warn", verbose=FALSE,
-         ...)
+         save_matchit=FALSE, ...)
 }
 \arguments{
   \item{formula}{
@@ -58,6 +58,9 @@ Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Contr
   }
   \item{verbose}{
 Whether to print a summary of how many matches were made for each point in time or not (default).
+  }
+  \item{save_matchit}{
+Whether to save the objects created by each \code{\link[MatchIt]{matchit}} call at different points in time when using a \code{match_method} that is used in \code{\link[MatchIt]{matchit}}. If set to \code{TRUE}, the \code{matchit_objects} list will include one entry per point in time at which matching was performed. Defaults to \code{FALSE} to save RAM space.
   }
   \item{...}{
 Further arguments passed to \code{\link[MatchIt]{matchit}} when \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}.
@@ -110,9 +113,11 @@ Returns a \code{match_td} object containing the following objects:
 
 }
 \references{
-Thomas, L. E., Yang, S., Wojdyla, D., and Schaubel, D. E. (2020). Matching with time-dependent treatments: A review and look forward. Statistics in Medicine 39, 2350–2370
+Thomas, L. E., Yang, S., Wojdyla, D., and Schaubel, D. E. (2020). Matching with time-dependent treatments: A review and look forward. Statistics in Medicine 39, 2350-2370
 
-Dagan, N., Barda, N., Kepten, E., Miron, O., Perchik, S., Katz, M. A., et al. (2021). Bnt162b2 MRNA Covid-19 vaccine in a nationwide mass vaccination setting. The New England Journal of Medicine 384, 1412–1423
+Li, Y. P., Propert, K. J., Rosenbaum, P. R. (2001). Balanced Risk Set Matching. Journal of the American Statistical Association 96 (455), 870-882.
+
+Dagan, N., Barda, N., Kepten, E., Miron, O., Perchik, S., Katz, M. A., et al. (2021). Bnt162b2 MRNA Covid-19 vaccine in a nationwide mass vaccination setting. The New England Journal of Medicine 384, 1412-1423
 }
 \note{
 Column names starting with a single point (e.g. names like \code{".variable"} or \code{".id"}) cannot be used in \code{data}, because they are used internally, which could lead to weird errors.

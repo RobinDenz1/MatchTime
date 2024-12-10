@@ -61,6 +61,8 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
   } else if (id_type==".id_pair") {
     plotdata <- subset(x$data, .id_pair %in% include)
     setkey(plotdata, .id_pair)
+  } else {
+    stop("'id_type' must be one of x$id, '.id_new' or '.id_pair'.")
   }
   plotdata[, .id_new := factor(.id_new, levels=.id_new)]
 

@@ -47,9 +47,8 @@ add_outcome <- function(x, data, censor_at_treat=TRUE,
 
   # shift times according to start
   if (all(class(x$data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
-    x$data[, .time_to_next_treat := as.numeric(difftime(.next_treat_time,
-                                                     .treat_time,
-                                                     units=units))]
+    x$data[, .time_to_next_treat := as.numeric(
+      difftime(.next_treat_time, .treat_time, units=units))]
     x$data[, .time_to_next_event := as.numeric(
       difftime(.next_event_time, .treat_time, units=units))]
   } else {

@@ -72,8 +72,8 @@ summary.match_td <- function(object, standardize=TRUE, remove_unmatched=TRUE,
   print(d_samp)
   cat("\nPoints in Time:\n")
   cat("Matching was performed at ", nrow(object$trace), " unique points",
-      " in time between ", min(object$trace$time), " and ",
-      max(object$trace$time), ".\n", sep="")
+      " in time between ", as.character(min(object$trace$time)), " and ",
+      as.character(max(object$trace$time)), ".\n", sep="")
 
   return(invisible(list(balance=d_bal_stats,
                         sample_size=d_samp)))

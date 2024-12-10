@@ -12,7 +12,7 @@ match_td <- function(formula, data, id, inclusion=NA,
                      replace_over_t=FALSE, replace_at_t=FALSE,
                      replace_cases=TRUE, estimand="ATT", ratio=1,
                      match_method="fast_exact", if_no_match="warn",
-                     verbose=FALSE, ...) {
+                     verbose=FALSE, save_matchit=FALSE, ...) {
 
   .inclusion <- .treat <- .time <- NULL
 
@@ -76,7 +76,7 @@ match_td <- function(formula, data, id, inclusion=NA,
                       replace_at_t=replace_at_t, replace_cases=replace_cases,
                       estimand=estimand, ratio=ratio, if_no_match=if_no_match,
                       match_method=match_method, verbose=verbose,
-                      start=start, stop=stop)
+                      start=start, stop=stop, save_matchit=save_matchit)
 
   # add stuff to output
   out$call <- match.call()
@@ -103,7 +103,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                          estimand="ATT", ratio=1,
                          if_no_match="warn", match_method="fast_exact",
                          verbose=FALSE, start="start", stop="stop",
-                         ...) {
+                         save_matchit=FALSE, ...) {
 
   .treat <- .id_pair <- subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
@@ -151,7 +151,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   used_as_controls <- c()
   used_as_cases <- c()
 
-  out <- trace <- vector(mode="list", length=length(case_times))
+  out <- trace <- matchit_out <- vector(mode="list", length=length(case_times))
   for (i in seq_len(length(case_times))) {
 
     # identify new cases at t
@@ -239,6 +239,11 @@ match_td.fit <- function(id, time, d_treat, d_covars,
       args <- c(args, list(...))
 
       d_match_i <- do.call(MatchIt::matchit, args=args)
+
+      if (save_matchit) {
+        matchit_out[[i]] <- d_match_i
+      }
+
       d_match_i <- MatchIt::match.data(d_match_i)
 
       # assign .id_pair
@@ -267,7 +272,8 @@ match_td.fit <- function(id, time, d_treat, d_covars,
     if (verbose) {
       cat("Matched ", n_m_controls_i, " unique controls to ",
           n_cases_i, " cases (with ", n_pot_controls_i,
-          " potential unique controls) at t = ", case_times[i], ".\n", sep="")
+          " potential unique controls) at t = ", as.character(case_times[i]),
+          ".\n", sep="")
     }
   }
 
@@ -321,8 +327,14 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                          n_incl_all=n_incl_all,
                          n_incl_cases=n_incl_cases,
                          n_incl_controls=n_incl_controls),
-              trace=rbindlist(trace))
+              trace=rbindlist(trace),
+              matchit_objects=NULL)
   class(out) <- "match_td"
+
+  if (save_matchit) {
+    names(matchit_out) <- as.character(case_times)
+    out$matchit_objects <- matchit_out
+  }
 
   return(out)
 }

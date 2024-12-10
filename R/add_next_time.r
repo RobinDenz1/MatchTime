@@ -62,7 +62,8 @@ add_next_time_data <- function(data, d_event, id, time, include_same_t=TRUE,
 
   # calculate time of first influenza after inclusion time
   data[.is_after==FALSE, .next_event_time := NA]
-  data[, .next_event_time := min(.next_event_time, na.rm=TRUE), by=.id_new]
+  data[, .next_event_time := min_custom(.next_event_time, na.rm=TRUE),
+       by=.id_new]
   data[, .is_after := NULL]
 
   # remove duplicate rows
@@ -70,4 +71,15 @@ add_next_time_data <- function(data, d_event, id, time, include_same_t=TRUE,
   setnames(data, old=".next_event_time", new=name)
 
   return(data)
+}
+
+## same as min() but it returns NA instead of Inf whenever all inputs are NA
+min_custom <- function(x, na.rm=FALSE) {
+
+  if (all(is.na(x))) {
+    out <- NA
+  } else {
+    out <- min(x, na.rm=na.rm)
+  }
+  return(out)
 }
