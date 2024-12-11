@@ -26,7 +26,7 @@ Whether to sample controls with or without replacement.
 How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching.
   }
   \item{estimand}{
-Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset with which to estimate the average treatment effect on the treated, or to \code{"ATC"} which would target the average treatment effect for the untreated.
+Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset with which to estimate the average treatment effect on the treated, or to \code{"ATC"} which would target the average treatment effect for the untreated. When using \code{"ATC"}, the treatment labels are simply swapped internally before matching and swapped back afterwards.
   }
   \item{if_no_match}{
 Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases.
@@ -37,6 +37,8 @@ This function first extracts all cases from \code{data}, which are defined as al
 
 Because controls are matched directly to cases by default, the resulting dataset may generally only be used to get estimates for the average treatment effect on the treated (ATT). By setting \code{estimand="ATC"}, the matching process is reversed. Instead of matching controls to cases, cases are then matched to controls resulting in a dataset that may be used to estimate the average treatment effect on the untreated (ATC). Other estimands are currently not supported.
 
+The \code{.weights} column in the output is calculated using the same method that is used in \code{\link[MatchIt]{matchit}}.
+
 \strong{\emph{Identifying the "treated" group}}:
 
 Ideally, the treatment specified on the LHS of the \code{formula} argument is coded as a logical variable, where \code{TRUE} corresponds to the "treated" group and \code{FALSE} corresponds to the "control" group. If this is not the case, this function will coerce it to this type internally using the following rules:
@@ -44,7 +46,7 @@ Ideally, the treatment specified on the LHS of the \code{formula} argument is co
 1.) if the variable only consists of the numbers \code{0} and \code{1} (coded as numeric), \code{0} will be considered the "control" group and \code{1} the "treated" group; 2.) otherwise, if the variable is a factor, \code{levels(treat)[1]} will be considered the "control" group and the other value the "treated" group; 3.) otherwise \code{sort(unique(treat))[1]} will be considered "control" and the other value the treated. It is safest to ensure that the treatment variable is a logical variable. In either case, the output will only contain the treatment as logical variable.
 }
 \value{
-Returns a single \code{data.table} containing the same columns as \code{data} plus one additional column called \code{".id_pair"}, which identifies which rows belong to one matched control / case pair.
+Returns a single \code{data.table} containing the same columns as \code{data} plus two additional columns called \code{".id_pair"}, which identifies which rows belong to one matched control / case pair and \code{.weights} (a numeric column including the matching weights).
 }
 \references{
 Elizabeth A. Stuart (2010). "Matching Methods for Causal Inference: A Review and a Look Forward". In: Statistical Science 25.1, pp. 1-21.

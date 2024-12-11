@@ -11,14 +11,6 @@ d_multi$d_covars[, inclusion := NULL]
 d_multi$d_covars[, stop := stop + 1]
 d_multi$d_event[, .time := .time + 1]
 
-# TODO:
-# - test if add_previous_event returns the same results as match_td()
-#   when not matching on meds
-# - check if datetime input works
-# - needs test on whether variables in final matched dataset at t correspond to
-#   values at t in original dataset
-# - test for match_method="none" with potential controls < cases
-
 test_that("matching on nothing", {
 
   set.seed(1346)
@@ -396,6 +388,21 @@ test_that("using Date input", {
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 49)
 })
 
+test_that("match_method='none' with less controls than cases", {
+
+  data("heart", package="survival")
+  heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
+
+  # using matchit because age is continuous
+  set.seed(12341432)
+  m_obj <- suppressWarnings(
+    match_td(transplant ~ age + surgery, data=heart, id="id",
+             match_method="none", replace_over_t=FALSE)
+  )
+
+  expect_s3_class(m_obj, "match_td")
+})
+
 test_that("works with actual continuous data", {
 
   data("heart", package="survival")
@@ -431,4 +438,21 @@ test_that("works with actual continuous data", {
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 34)
+
+  # coerce to Date, do matching again and check if its the same output
+
+  heart$start <- as.Date(heart$start, origin="1970-01-01")
+  heart$stop <- as.Date(heart$stop, origin="1970-01-01")
+
+  set.seed(12341432)
+  m_obj <- suppressWarnings(
+    match_td(transplant ~ age + surgery, data=heart, id="id",
+             match_method="nearest")
+  )
+  out2 <- match_data(m_obj)
+  out2[, .treat_time := as.numeric(.treat_time)]
+  out2[, .next_treat_time := as.numeric(.next_treat_time)]
+  out[, n_id := NULL]
+
+  expect_equal(out2, out)
 })

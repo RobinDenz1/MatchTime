@@ -7,8 +7,9 @@ summary.match_td <- function(object, standardize=TRUE, remove_unmatched=TRUE,
   requireNamespace("MatchIt")
 
   # get relevant columns
+  # TODO: put this in a function and call it in bal.tab() and here
   not_rel_cols <- c(object$id, ".id_new", ".id_pair", ".treat", ".treat_time",
-                    ".next_treat_time", ".fully_matched",
+                    ".next_treat_time", ".fully_matched", ".weights",
                     object$info$added_event_times, object$info$added_status)
   covariates <- colnames(object$data)[!colnames(object$data) %in% not_rel_cols]
 

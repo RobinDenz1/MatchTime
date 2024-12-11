@@ -98,12 +98,8 @@ check_inputs_match_td <- function(formula, data, id, inclusion,
              "'verbose' must be either TRUE or FALSE.")
 
   # correct estimand
-  stopifnotm(is_single_character(estimand) &&
-             ((match_method %in% c("none", "fast_exact") &&
-               estimand %fin% c("ATT", "ATC")) ||
-               !match_method %in% c("none", "fast_exact")),
-             paste0("'estimand' must be either 'ATT' or 'ATC' ",
-                    "when match_method='fast_exact'."))
+  stopifnotm(is_single_character(estimand) && estimand %in% c("ATT", "ATC"),
+             paste0("'estimand' must be either 'ATT' or 'ATC'."))
 }
 
 ## check inputs for the fast_exact_matching() function

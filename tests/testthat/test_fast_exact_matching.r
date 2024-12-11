@@ -52,6 +52,16 @@ test_that("1:1 matching without replacement", {
   out4 <- fast_exact_matching(treatment ~ strat, data=dat2, replace=FALSE,
                               ratio=1)
   expect_equal(out, out4)
+
+  # same output with reversed treatment and estimand "ATC"
+  dat3 <- copy(dat)
+  dat3[, treatment := !treatment]
+
+  set.seed(123431)
+  out5 <- fast_exact_matching(treatment ~ strat, data=dat3, replace=FALSE,
+                              ratio=1, estimand="ATC")
+  out5[, treatment := !treatment]
+  expect_equal(out, out5)
 })
 
 test_that("1:1 matching with replacement", {

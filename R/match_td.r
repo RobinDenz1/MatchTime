@@ -105,9 +105,9 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                          verbose=FALSE, start="start", stop="stop",
                          save_matchit=FALSE, ...) {
 
-  .treat <- .id_pair <- subclass <- .treat_time <- .strata <- .start <-
+  .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
-    .fully_matched <- NULL
+    .fully_matched <- .weights <- NULL
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c(".id", ".time"))
@@ -141,7 +141,9 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   case_times <- sort(unique(d_treat$.time))
 
   # remove time durations after treatment onset
-  min_t_passed <- min(shift(case_times, type="lead") - case_times, na.rm=TRUE)
+  min_t_passed <- as.numeric(
+    min(shift(case_times, type="lead") - case_times, na.rm=TRUE)
+  )
   d_covars <- subset_start_stop(data=d_covars,
                                 last_time=d_covars$.time + min_t_passed,
                                 start=".start", stop=".stop")
@@ -199,6 +201,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
       d_match_i <- d_all_i
       d_match_i[, .id_pair := paste0(i, "_", seq_len(.N))]
       d_match_i[, .treat_time := case_times[i]]
+      d_match_i[, .weights := 1]
 
     # fast exact or no matching
     } else if (match_method=="fast_exact" || match_method=="none") {
@@ -214,6 +217,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
       d_match_i <- fast_exact_matching.fit(d_all_i,
                                            treat=".treat",
                                            strata=".strata",
+                                           estimand="ATT",
                                            replace=replace_at_t,
                                            if_no_match=if_no_match,
                                            ratio=ratio)
@@ -233,7 +237,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
       args <- list(formula=stats::as.formula(main_formula),
                    data=d_all_i,
                    method=match_method,
-                   estimand=estimand,
+                   estimand="ATT",
                    replace=replace_at_t,
                    ratio=ratio)
       args <- c(args, list(...))
@@ -244,13 +248,16 @@ match_td.fit <- function(id, time, d_treat, d_covars,
         matchit_out[[i]] <- d_match_i
       }
 
-      d_match_i <- MatchIt::match.data(d_match_i)
+      d_match_i <- MatchIt::match.data(d_match_i,
+                                       weights=".weights",
+                                       subclass=".subclass",
+                                       distance=".distance")
 
       # assign .id_pair
       d_match_i <- copy(d_match_i)
-      d_match_i[, .id_pair := paste0(i, "_", subclass)]
+      d_match_i[, .id_pair := paste0(i, "_", .subclass)]
       d_match_i[, .treat_time := case_times[i]]
-      d_match_i[, c("distance", "weights", "subclass") := NULL]
+      d_match_i[, c(".distance", ".subclass") := NULL]
     }
 
     # update used_as_controls vector
@@ -278,7 +285,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
   }
 
   # full dataset
-  data <- rbindlist(out)
+  data <- rbindlist(out, use.names=TRUE)
   rm(out)
 
   # create new .id_new to differentiate between persons
@@ -297,7 +304,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
 
   # change order of columns
   first_cols <- c(".id", ".id_new", ".id_pair", ".treat", ".treat_time",
-                  ".next_treat_time", ".fully_matched")
+                  ".next_treat_time", ".fully_matched", ".weights")
   last_cols <- colnames(data)[!colnames(data) %fin% first_cols]
   setcolorder(data, c(first_cols, last_cols))
   setnames(data, old=".id", new=id)

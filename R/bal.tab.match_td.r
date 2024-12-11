@@ -7,7 +7,7 @@ bal.tab.match_td <- function(x, s.d.denom, remove_unmatched=TRUE,
 
   # use only relevant covariates
   not_rel_cols <- c(x$id, ".id_new", ".id_pair", ".treat", ".treat_time",
-                    ".next_treat_time", ".fully_matched",
+                    ".next_treat_time", ".fully_matched", ".weights",
                     x$info$added_event_times, x$info$added_status)
   covariates <- colnames(x$data)[!colnames(x$data) %in% not_rel_cols]
 
