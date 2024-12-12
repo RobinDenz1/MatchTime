@@ -80,7 +80,7 @@ d_vers <- sim2data(sim_discrete_time(dag, n_sim=10000, max_t=2000),
 #     - Inclusion criteria: death, versicherungszeiten, ICD ausschlüsse
 # - starting data: alle
 
-# 2.) Perform Matching with match_td.fit()
+# 2.) Perform Matching with match_time.fit()
 #     - hier können d_vacc und d_outcome direkt als input einfließen
 
 # 3.) Add further adjustment variables

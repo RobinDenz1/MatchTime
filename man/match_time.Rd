@@ -1,5 +1,5 @@
-\name{match_td}
-\alias{match_td}
+\name{match_time}
+\alias{match_time}
 
 \title{
 Perform Time-Dependent Matching in Discrete and Continuous Time
@@ -8,13 +8,13 @@ Perform Time-Dependent Matching in Discrete and Continuous Time
 This function utilizies the approach described in Li et al. (2001) and Thomas et al. (2020) to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as \emph{sequential trial emulation}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
 }
 \usage{
-match_td(formula, data, id, inclusion=NA,
-         start="start", stop="stop",
-         replace_over_t=FALSE, replace_at_t=FALSE,
-         replace_cases=TRUE, estimand="ATT",
-         ratio=1, match_method="fast_exact",
-         if_no_match="warn", verbose=FALSE,
-         save_matchit=FALSE, ...)
+match_time(formula, data, id, inclusion=NA,
+           start="start", stop="stop",
+           replace_over_t=FALSE, replace_at_t=FALSE,
+           replace_cases=TRUE, estimand="ATT",
+           ratio=1, match_method="fast_exact",
+           if_no_match="warn", verbose=FALSE,
+           save_matchit=FALSE, ...)
 }
 \arguments{
   \item{formula}{
@@ -92,7 +92,7 @@ Users usually want to add outcomes and / or further baseline covariates to the d
 
 \strong{\emph{Assessing Covariate Balance}}
 
-The balance of the covariates at baseline can be assessed using the associated \code{\link{summary.match_td}} or \code{\link{bal.tab.match_td}} functions. Note that with time-dependent matching it is only possible to assess balance at baseline, because the treatment is also time-dependent.
+The balance of the covariates at baseline can be assessed using the associated \code{\link{summary.match_time}} or \code{\link{bal.tab.match_time}} functions. Note that with time-dependent matching it is only possible to assess balance at baseline, because the treatment is also time-dependent.
 
 \strong{\emph{Performance Considerations}}
 
@@ -100,7 +100,7 @@ This function was designed to be work on very large datasets (~ 20 million rows)
 
 }
 \value{
-Returns a \code{match_td} object containing the following objects:
+Returns a \code{match_time} object containing the following objects:
 
 \item{data}{A \code{data.table} containing the matched data. Note that this dataset also contains unmatched cases. To obtain a dataset without unmatched individuals, please use the \code{\link{match_data}} function. The dataset here contains at least the following columns: \code{id} (the original \code{id} used in the supplied \code{data}), \code{.id_new} (a new case-specific id in which \code{id}s who occur multiple times are treated as distinct values), \code{.id_pair} (an id to distinguish the matched pairs, if applicable), \code{.treat} (the supplied treatment variable), \code{.treat_time} (the time at which the \code{id} was included in the matching process), \code{.next_treat_time} (for controls that later receive treatment, the time at which they received the treatment), \code{.fully_matched} (a logical variable that is \code{TRUE} if the corresponding \code{.id_pair} consists of one case and \code{ratio} matched controls and \code{FALSE} otherwise) and \code{.weights} (a column containing the matching weights, generated separately at each point in time). Potentially contains any number of additional covariates supplied in the original \code{data}, plus potential further variables added using \code{\link{add_outcome}}.}
 \item{d_longest}{A \code{data.table} containing the last time under observation for each \code{id} in the supplied \code{data}.}
@@ -126,7 +126,7 @@ Column names starting with a single point (e.g. names like \code{".variable"} or
 Robin Denz
 }
 \seealso{
-\code{\link{fast_exact_matching}}, \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}, \code{\link{summary.match_td}}, \code{\link{bal.tab.match_td}}
+\code{\link{fast_exact_matching}}, \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}, \code{\link{summary.match_time}}, \code{\link{bal.tab.match_time}}
 }
 \examples{
 library(data.table)
@@ -147,8 +147,8 @@ heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
 
 ## time-dependent matching, using "transplant" as treatment and only
 ## "surgery" as variable to match on
-m.obj <- match_td(transplant ~ surgery, data=heart, id="id",
-                  match_method="fast_exact")
+m.obj <- match_time(transplant ~ surgery, data=heart, id="id",
+                    match_method="fast_exact")
 
 # show some balance statistics + the resulting sample sizes
 summary(m.obj)
@@ -157,13 +157,13 @@ summary(m.obj)
 plot(m.obj)
 
 ## allow replacement of controls over time
-m.obj <- match_td(transplant ~ surgery, data=heart, id="id",
-                  match_method="fast_exact", replace_over_t=TRUE)
+m.obj <- match_time(transplant ~ surgery, data=heart, id="id",
+                    match_method="fast_exact", replace_over_t=TRUE)
 
 ## use nearest neighbor matching instead, matching also on continuous "age"
 # NOTE: this requires the "MatchIt" package
-m.obj <- match_td(transplant ~ surgery + age, data=heart, id="id",
-                  match_method="nearest")
+m.obj <- match_time(transplant ~ surgery + age, data=heart, id="id",
+                    match_method="nearest")
 summary(m.obj)
 }
 }

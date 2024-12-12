@@ -2,10 +2,10 @@
 \alias{plot_timeline}
 
 \title{
-Plot the time under observation for ids in a \code{match_td} object
+Plot the time under observation for ids in a \code{match_time} object
 }
 \description{
-Given a \code{match_td} object created using the \code{\link{match_td}} function, this \code{plot_timeline} function displays the time under observation of ids in relation to an event added using the \code{\link{add_outcome}} function. This function may be used to visually explain the matching process or the used censoring method.
+Given a \code{match_time} object created using the \code{\link{match_time}} function, this \code{plot_timeline} function displays the time under observation of ids in relation to an event added using the \code{\link{add_outcome}} function. This function may be used to visually explain the matching process or the used censoring method.
 }
 \usage{
 plot_timeline(x, include, id_type=x$id, time_name,
@@ -19,7 +19,7 @@ plot_timeline(x, include, id_type=x$id, time_name,
 }
 \arguments{
   \item{x}{
-A \code{match_td} object created using the \code{\link{match_td}} function.
+A \code{match_time} object created using the \code{\link{match_time}} function.
   }
   \item{include}{
 An optional numeric vector of ids that should be displayed in the plot. If this argument is not specified, the timelines for all \code{.id_new} in the matched data will be displayed. Even for small sample sizes this might not be the best option, which is why a warning message is returned by default if \code{warn=TRUE}. Which of the three possible ids in \code{x$data} should be used should be specified using the \code{id_type} argument.
@@ -86,7 +86,7 @@ The displayed timelines always start at the "time-zero" defined by the matching 
 Returns a \code{ggplot2} object.
 }
 \seealso{
-\code{\link{match_td}}, \code{\link{add_outcome}}
+\code{\link{match_time}}, \code{\link{add_outcome}}
 }
 \examples{
 library(data.table)
@@ -106,8 +106,8 @@ data("heart")
 
 # perform nearest neighbor time-dependent matching on "age" and "surgery"
 # (plus exact matching on time)
-out <- match_td(transplant ~ age + surgery, data=heart, id="id",
-                match_method="nearest", replace_over_t=TRUE)
+out <- match_time(transplant ~ age + surgery, data=heart, id="id",
+                  match_method="nearest", replace_over_t=TRUE)
 
 # suppose we had an extra dataset with events that looks like this
 # NOTE: these are not all events in the real "heart" data and is merely used
@@ -115,7 +115,7 @@ out <- match_td(transplant ~ age + surgery, data=heart, id="id",
 d_events <- data.table(id=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
                        time=c(50, 6, 16, 39, 18, 3, 675, 40, 85, 58))
 
-# add the outcome to the match_td object
+# add the outcome to the match_time object
 out <- add_outcome(out, data=d_events, time="time", censor_at_treat=TRUE)
 
 # plot the timeline for the original ids

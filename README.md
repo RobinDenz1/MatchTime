@@ -74,7 +74,7 @@ data("heart")
 
 set.seed(1234)
 
-m_obj <- match_td(transplant ~ age + surgery, data=heart, id="id",
+m_obj <- match_time(transplant ~ age + surgery, data=heart, id="id",
                   match_method="nearest")
 ```
 
@@ -84,7 +84,7 @@ using:
 ``` r
 summary(m_obj)
 #> Call:
-#> match_td(formula = transplant ~ age + surgery, data = heart, 
+#> match_time(formula = transplant ~ age + surgery, data = heart, 
 #>     id = "id", match_method = "nearest")
 #> 
 #> Summary of Balance for Matched Data at Baseline:

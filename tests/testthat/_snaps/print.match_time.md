@@ -1,6 +1,6 @@
-# print.match_td, defaults
+# print.match_time, defaults
 
-    A match_td object
+    A match_time object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases
@@ -8,9 +8,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, fast_exact method
+# print.match_time, fast_exact method
 
-    A match_td object
+    A match_time object
      - method: 1:1 exact matching
      - controls: Not replacing controls
      - cases: Using all cases
@@ -18,9 +18,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, matchit based method
+# print.match_time, matchit based method
 
-    A match_td object
+    A match_time object
      - method: 1:1 nearest neighbor matching (using matchit())
      - controls: Not replacing controls
      - cases: Using all cases
@@ -28,9 +28,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, replace_over_t
+# print.match_time, replace_over_t
 
-    A match_td object
+    A match_time object
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls only over time
      - cases: Using all cases
@@ -38,9 +38,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, replace_at_t
+# print.match_time, replace_at_t
 
-    A match_td object
+    A match_time object
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls only at each point in time
      - cases: Using all cases
@@ -48,9 +48,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, replace_over_t & replace_at_t
+# print.match_time, replace_over_t & replace_at_t
 
-    A match_td object
+    A match_time object
      - method: 1:1 (exact) matching only on time
      - controls: Replacing controls at each point in time and over time
      - cases: Using all cases
@@ -58,9 +58,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, replace_cases=FALSE
+# print.match_time, replace_cases=FALSE
 
-    A match_td object
+    A match_time object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using only cases that were not used as controls
@@ -68,9 +68,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, one covariate
+# print.match_time, one covariate
 
-    A match_td object
+    A match_time object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases
@@ -78,9 +78,9 @@
      - target estimand: ATT
      - covariates: mac
 
-# print.match_td, multiple covariates
+# print.match_time, multiple covariates
 
-    A match_td object
+    A match_time object
      - method: 1:1 (exact) matching only on time
      - controls: Not replacing controls
      - cases: Using all cases

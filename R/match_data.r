@@ -8,8 +8,8 @@ match_data <- function(object, remove_unmatched=TRUE,
 
   .id_pair <- .count_id_pair <- .fully_matched <- NULL
 
-  stopifnotm(inherits(object, "match_td"),
-    "'object' must be a match_td object created using the match_td() function.")
+  stopifnotm(inherits(object, "match_time"),
+    "'object' must be a match_time object created using the match_time() function.")
   stopifnotm(is_single_logical(remove_unmatched),
              "'remove_unmatched' must be either TRUE or FALSE.")
   stopifnotm(length(n_required)==1 && is.numeric(n_required) &&

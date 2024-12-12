@@ -1,7 +1,7 @@
 
 ## S3 summary method for MatchTD objects
 #' @export
-summary.match_td <- function(object, standardize=TRUE, remove_unmatched=TRUE,
+summary.match_time <- function(object, standardize=TRUE, remove_unmatched=TRUE,
                              n_required=object$info$ratio, ...) {
 
   requireNamespace("MatchIt")

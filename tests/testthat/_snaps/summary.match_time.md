@@ -1,8 +1,8 @@
 # general test case
 
     Call:
-    match_td(formula = vacc ~ mac, data = d_single, id = ".id", inclusion = "inclusion", 
-        match_method = "fast_exact")
+    match_time(formula = vacc ~ mac, data = d_single, id = ".id", 
+        inclusion = "inclusion", match_method = "fast_exact")
     
     Summary of Balance for Matched Data at Baseline:
                   Means Treated Means Control Std. Mean Diff. Var. Ratio eCDF Mean

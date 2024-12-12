@@ -19,8 +19,8 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
   ## various input checks
 
   # x
-  stopifnotm(inherits(x, "match_td"),
-         "'x' must be a match_td object created using the match_td() function.")
+  stopifnotm(inherits(x, "match_time"),
+         "'x' must be a match_time object created using the match_time() function.")
 
   # include
   if (!missing(include)) {
@@ -69,13 +69,13 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
   # set event-time / status if there is only one
   if (length(x$info$added_event_times)==0) {
     stop("Timelines can only be plotted if at least one event was added",
-         " to the match_td object using the add_outcome() function.")
+         " to the match_time object using the add_outcome() function.")
   } else if (length(x$info$added_event_times)==1 & missing(time_name)) {
     time_name <- x$info$added_event_times
     status_name <- x$info$added_status
   } else if (missing(time_name)) {
     stop("Arguments 'time_name' and 'status_name' must be specified when",
-         " more than one event was added to the match_td object using",
+         " more than one event was added to the match_time object using",
          " the add_outcome() function.")
   }
 

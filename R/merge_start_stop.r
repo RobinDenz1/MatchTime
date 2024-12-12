@@ -1,6 +1,6 @@
 
 ## function to transform multiple data.tables into a single start-stop
-## data.table which may then be used in match_td()
+## data.table which may then be used in match_time()
 #' @importFrom data.table fifelse
 #' @importFrom data.table data.table
 #' @importFrom data.table setkey

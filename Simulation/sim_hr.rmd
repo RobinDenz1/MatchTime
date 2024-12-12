@@ -88,7 +88,7 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
     #### time-dependent matching based estimates ####
     
     # extract required data
-    d_input <- get_data_for_match_td(sim=sim,
+    d_input <- get_data_for_match_time(sim=sim,
                                      treat="vacc",
                                      event="influenza",
                                      baseline_vars=baseline_covars,
@@ -97,7 +97,7 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
                                      max_t=max_t,
                                      all_in_one=FALSE)
     # perform the matching
-    d_match <- match_td.fit(id=".id",
+    d_match <- match_time.fit(id=".id",
                             time=".time",
                             d_treat=d_input$d_treat,
                             d_event=d_input$d_event,
@@ -142,8 +142,8 @@ get_event_times <- function(sim, name) {
   return(d_prev)
 }
 
-## convenience function to get data for match_td() function from simDT object
-get_data_for_match_td <- function(sim, treat="vacc", event="influenza",
+## convenience function to get data for match_time() function from simDT object
+get_data_for_match_time <- function(sim, treat="vacc", event="influenza",
                                   baseline_vars="mac", td_vars=NULL,
                                   durations=NULL, dur_event=20, dur_treat=Inf,
                                   max_t=365, all_in_one=TRUE) {
@@ -271,9 +271,9 @@ summary(mod)
 ## Beispiel Matching
 
 ```{r}
-d_input <- get_data_for_match_td(sim, all_in_one=FALSE)
+d_input <- get_data_for_match_time(sim, all_in_one=FALSE)
 
-d_match <- match_td.fit(id=".id", time=".time",
+d_match <- match_time.fit(id=".id", time=".time",
                         d_treat=d_input$d_treat,
                         d_covars=d_input$d_covars,
                         d_event=d_input$d_event,
@@ -359,10 +359,10 @@ summary(mod)
 ## Matching Beispiel
 
 ```{r}
-d_input <- get_data_for_match_td(sim, baseline_vars=c("mac", "sex"),
+d_input <- get_data_for_match_time(sim, baseline_vars=c("mac", "sex"),
                                  all_in_one=FALSE)
 
-d_match <- match_td.fit(id=".id",
+d_match <- match_time.fit(id=".id",
                         time=".time",
                         d_treat=d_input$d_treat,
                         d_covars=d_input$d_covars,
@@ -452,13 +452,13 @@ summary(mod)
 ## Matching Beispiel (ohne Adjustierung)
 
 ```{r}
-d_input <- get_data_for_match_td(sim,
+d_input <- get_data_for_match_time(sim,
                                  td_vars="meds",
                                  baseline_vars=c("mac", "sex"),
                                  durations=Inf,
                                  all_in_one=FALSE)
 
-d_match <- match_td.fit(id=".id",
+d_match <- match_time.fit(id=".id",
                         time=".time",
                         d_treat=d_input$d_treat,
                         d_event=d_input$d_event,
@@ -488,7 +488,7 @@ summary(mod)
 ## Matching Beispiel (mit Adjustierung, mit Matching für meds)
 
 ```{r}
-d_match <- match_td.fit(id=".id",
+d_match <- match_time.fit(id=".id",
                         time=".time",
                         d_treat=d_input$d_treat,
                         d_event=d_input$d_event,
@@ -587,12 +587,12 @@ summary(mod)
 ## Matching Beispiel (ohne Adjustierung)
 
 ```{r}
-d_input <- get_data_for_match_td(sim,
+d_input <- get_data_for_match_time(sim,
                                  td_vars="meds",
                                  durations=Inf,
                                  all_in_one=FALSE)
 
-d_match <- match_td.fit(id=".id",
+d_match <- match_time.fit(id=".id",
                         time=".time",
                         d_treat=d_input$d_treat,
                         d_event=d_input$d_event,
@@ -622,12 +622,12 @@ summary(mod)
 ## Matching Beispiel (mit Adjustierung mit Matching für zeitabhängige Variable)
 
 ```{r}
-d_input <- get_data_for_match_td(sim,
+d_input <- get_data_for_match_time(sim,
                                  td_vars="meds",
                                  durations=Inf,
                                  all_in_one=FALSE)
 
-d_match <- match_td.fit(id=".id",
+d_match <- match_time.fit(id=".id",
                         time=".time",
                         d_treat=d_input$d_treat,
                         d_event=d_input$d_event,

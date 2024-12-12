@@ -1,6 +1,6 @@
 
 ## add the time of occurrence of some event or similar thing after
-## inclusion to a match_td object
+## inclusion to a match_time object
 #' @importFrom data.table copy
 #' @export
 add_next_time <- function(x, data, id=x$id, time=x$time,

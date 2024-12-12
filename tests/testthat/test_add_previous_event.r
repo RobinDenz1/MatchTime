@@ -1,5 +1,5 @@
 
-# create input object, resembling output of match_td()
+# create input object, resembling output of match_time()
 data <- data.table(id=c(1, 2, 3, 4, 5, 2),
                    .id_new=c(1, 2, 3, 4, 5, 6),
                    .id_pair=c(1, 1, 2, 2, 3, 3),
@@ -10,7 +10,7 @@ data <- data.table(id=c(1, 2, 3, 4, 5, 2),
 d_longest <- data.table(id=c(1, 2, 3, 4, 5),
                         .max_t=c(101, 204, 1011, 541, 891))
 obj <- list(data=data, id="id", time="time", d_longest=d_longest)
-class(obj) <- "match_td"
+class(obj) <- "match_time"
 
 # event times
 d_event <- data.table(id=c(1, 2, 3, 4, 4),

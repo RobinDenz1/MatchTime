@@ -2,10 +2,10 @@
 \alias{add_outcome}
 
 \title{
-Add a Time-to-Event Outcome to a \code{match_td} object
+Add a Time-to-Event Outcome to a \code{match_time} object
 }
 \description{
-After performing time-dependent matching using the \code{\link{match_td}} function, users usually want to add one or more outcomes to the data. This function may be used to do this efficiently, potentially using different censoring schemes.
+After performing time-dependent matching using the \code{\link{match_time}} function, users usually want to add one or more outcomes to the data. This function may be used to do this efficiently, potentially using different censoring schemes.
 }
 \usage{
 add_outcome(x, data, censor_at_treat=TRUE,
@@ -16,7 +16,7 @@ add_outcome(x, data, censor_at_treat=TRUE,
 }
 \arguments{
   \item{x}{
-A \code{match_td} object created using the \code{\link{match_td}} function.
+A \code{match_time} object created using the \code{\link{match_time}} function.
   }
   \item{data}{
 A \code{data.table} like object including exactly two columns: \code{id} (the unique case identifier), \code{time} (the time at which an event occurred). May also be any object that can be coerced to be a \code{data.table}, such as a \code{data.frame} or a \code{tibble}. The event times supplied using this argument will then be put into relation with the time at which each case was included during the matching process, giving the time until the event. Cases with no events can simply be omitted from \code{data}. If multiple events per person exist, they should be included in the long-format (multiple rows per \code{id}). Only the time until the first event after inclusion into the matching data will be used, all previous events and all events afterwards are not used.
@@ -31,10 +31,10 @@ Either \code{TRUE} or \code{FALSE}. Only used if \code{censor_at_treat=TRUE}. If
 Corresponds to the argument of the same name in the \code{\link{difftime}} function. This argument is only used when the \code{time} column corresponds to a \code{Date} (or similar) variable. It should be used to indicate the time-scale of the created event time (seconds, days, years, ...).
   }
   \item{id}{
-A single character string specifying a column in \code{data}, specifying the unique case identifier. By default the same name that was used in the original \code{\link{match_td}} is used here.
+A single character string specifying a column in \code{data}, specifying the unique case identifier. By default the same name that was used in the original \code{\link{match_time}} is used here.
   }
   \item{time}{
-A single character string specifying a column in \code{data}, specifying the column containing the event times. By default the same name that was used in the original \code{\link{match_td}} is used here.
+A single character string specifying a column in \code{data}, specifying the column containing the event times. By default the same name that was used in the original \code{\link{match_time}} is used here.
   }
   \item{event_time_name}{
 A single character string specifying the name of the event time column that will be added to the \code{data} object contained in \code{x}. Defaults to \code{.event_time}. If the name is already present, an error message is returned instead.
@@ -47,13 +47,13 @@ A single character string specifying the name of the status column that will be 
 Different censoring schemes can be used for different target estimands. In intention-to-treat type analysis, users usually should not be censoring cases at their following treatment times. For per-protocol type analysis, setting \code{censor_at_treat} is usually the right decision. Whether to use \code{censor_pairs} is an additional choice that depends on how the user wants to handle the dependent censoring introduced by using \code{censor_at_treat=TRUE}.
 }
 \value{
-Returns a modified \code{match_td} object. It is essentially the same object as the supplied \code{x}, but it also contains two new columns: \code{event_time_name} (the time until the event or censoring) and \code{status_name} (a logical variable indicating whether the event occurred or the case was censored).
+Returns a modified \code{match_time} object. It is essentially the same object as the supplied \code{x}, but it also contains two new columns: \code{event_time_name} (the time until the event or censoring) and \code{status_name} (a logical variable indicating whether the event occurred or the case was censored).
 }
 \author{
 Robin Denz
 }
 \seealso{
-\code{\link{match_td}}
+\code{\link{match_time}}
 }
 \examples{
 library(data.table)
@@ -79,10 +79,10 @@ d_events <- data.table(id=c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
 
 # perform nearest neighbor time-dependent matching on "age" and "surgery"
 # (plus exact matching on time)
-m_obj <- match_td(transplant ~ age + surgery, data=heart, id="id",
-                  match_method="nearest")
+m_obj <- match_time(transplant ~ age + surgery, data=heart, id="id",
+                    match_method="nearest")
 
-# add the event times to match_td object
+# add the event times to match_time object
 m_obj <- add_outcome(m_obj, data=d_events, time="time")
 head(m_obj$data)
 }

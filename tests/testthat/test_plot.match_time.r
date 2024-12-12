@@ -5,7 +5,7 @@ d_single <- readRDS(system.file("testdata",
 d_single[, stop := stop + 1]
 
 set.seed(1346)
-out <- match_td(formula=vacc ~ mac,
+out <- match_time(formula=vacc ~ mac,
                 data=d_single,
                 id=".id",
                 inclusion="inclusion",

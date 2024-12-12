@@ -1,20 +1,20 @@
-\name{plot.match_td}
-\alias{plot.match_td}
+\name{plot.match_time}
+\alias{plot.match_time}
 
 \title{
 Plot cumulative number of matched cases and controls
 }
 \description{
-Given a \code{match_td} object created using the \code{\link{match_td}} function, this \code{plot} method displays the cumulative number of included cases, the cumulative number of matched controls and the number of potential controls available over the observed time range.
+Given a \code{match_time} object created using the \code{\link{match_time}} function, this \code{plot} method displays the cumulative number of included cases, the cumulative number of matched controls and the number of potential controls available over the observed time range.
 }
 \usage{
-\method{plot}{match_td}(x,
+\method{plot}{match_time}(x,
      include=c("cases", "controls", "potential_controls"),
      ...)
 }
 \arguments{
   \item{x}{
-A \code{match_td} object created using the \code{\link{match_td}} function.
+A \code{match_time} object created using the \code{\link{match_time}} function.
   }
   \item{include}{
 A character vector including one or more of \code{"cases"}, \code{"controls"} and \code{"potential_controls"}. Controls whether the plot should contain the cumulative number of cases, cumulative number of controls and number of potential controls at t respectively.
@@ -33,7 +33,7 @@ If \code{ratio=1} was used and the matching was successful for all cases, the cu
 Returns a \code{ggplot2} object.
 }
 \seealso{
-\code{\link{match_td}}, \code{\link[MatchIt]{summary.matchit}}, \code{\link[MatchIt]{matchit}} \code{\link[cobalt]{bal.tab}}, \code{\link[cobalt]{love.plot}}
+\code{\link{match_time}}, \code{\link[MatchIt]{summary.matchit}}, \code{\link[MatchIt]{matchit}} \code{\link[cobalt]{bal.tab}}, \code{\link[cobalt]{love.plot}}
 }
 \examples{
 library(data.table)
@@ -53,8 +53,8 @@ data("heart")
 
 # perform nearest neighbor time-dependent matching on "age" and "surgery"
 # (plus exact matching on time)
-out <- match_td(transplant ~ age + surgery, data=heart, id="id",
-                match_method="nearest")
+out <- match_time(transplant ~ age + surgery, data=heart, id="id",
+                  match_method="nearest")
 
 # plot all three statistics over time
 # NOTE: here we can see that the green line (cum. no. matched controls)

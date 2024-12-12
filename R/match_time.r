@@ -1,18 +1,18 @@
 
 ## main function of the package, but is only a wrapper around the true
-## estimation function called match_td.fit()
+## estimation function called match_time.fit()
 #' @importFrom data.table is.data.table
 #' @importFrom data.table as.data.table
 #' @importFrom data.table setnames
 #' @importFrom data.table copy
 #' @importFrom data.table :=
 #' @export
-match_td <- function(formula, data, id, inclusion=NA,
-                     start="start", stop="stop",
-                     replace_over_t=FALSE, replace_at_t=FALSE,
-                     replace_cases=TRUE, estimand="ATT", ratio=1,
-                     match_method="fast_exact", if_no_match="warn",
-                     verbose=FALSE, save_matchit=FALSE, ...) {
+match_time <- function(formula, data, id, inclusion=NA,
+                       start="start", stop="stop",
+                       replace_over_t=FALSE, replace_at_t=FALSE,
+                       replace_cases=TRUE, estimand="ATT", ratio=1,
+                       match_method="fast_exact", if_no_match="warn",
+                       verbose=FALSE, save_matchit=FALSE, ...) {
 
   .inclusion <- .treat <- .time <- NULL
 
@@ -24,7 +24,7 @@ match_td <- function(formula, data, id, inclusion=NA,
   }
 
   # check inputs
-  check_inputs_match_td(formula=formula, data=data, id=id,
+  check_inputs_match_time(formula=formula, data=data, id=id,
                         inclusion=inclusion,
                         replace_over_t=replace_over_t,
                         replace_at_t=replace_at_t,
@@ -70,13 +70,13 @@ match_td <- function(formula, data, id, inclusion=NA,
   }
 
   # call function that does all the work
-  out <- match_td.fit(id=id, time=".time", d_treat=d_treat,
-                      d_covars=data, match_vars=match_vars,
-                      replace_over_t=replace_over_t,
-                      replace_at_t=replace_at_t, replace_cases=replace_cases,
-                      estimand=estimand, ratio=ratio, if_no_match=if_no_match,
-                      match_method=match_method, verbose=verbose,
-                      start=start, stop=stop, save_matchit=save_matchit)
+  out <- match_time.fit(id=id, time=".time", d_treat=d_treat,
+                        d_covars=data, match_vars=match_vars,
+                        replace_over_t=replace_over_t,
+                        replace_at_t=replace_at_t, replace_cases=replace_cases,
+                        estimand=estimand, ratio=ratio, if_no_match=if_no_match,
+                        match_method=match_method, verbose=verbose,
+                        start=start, stop=stop, save_matchit=save_matchit)
 
   # add stuff to output
   out$call <- match.call()
@@ -97,13 +97,13 @@ match_td <- function(formula, data, id, inclusion=NA,
 #' @importFrom data.table .GRP
 #' @importFrom data.table rbindlist
 #' @importFrom data.table setcolorder
-match_td.fit <- function(id, time, d_treat, d_covars,
-                         match_vars=NULL, replace_over_t=FALSE,
-                         replace_at_t=FALSE, replace_cases=TRUE,
-                         estimand="ATT", ratio=1,
-                         if_no_match="warn", match_method="fast_exact",
-                         verbose=FALSE, start="start", stop="stop",
-                         save_matchit=FALSE, ...) {
+match_time.fit <- function(id, time, d_treat, d_covars,
+                           match_vars=NULL, replace_over_t=FALSE,
+                           replace_at_t=FALSE, replace_cases=TRUE,
+                           estimand="ATT", ratio=1,
+                           if_no_match="warn", match_method="fast_exact",
+                           verbose=FALSE, start="start", stop="stop",
+                           save_matchit=FALSE, ...) {
 
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
@@ -336,7 +336,7 @@ match_td.fit <- function(id, time, d_treat, d_covars,
                          n_incl_controls=n_incl_controls),
               trace=rbindlist(trace),
               matchit_objects=NULL)
-  class(out) <- "match_td"
+  class(out) <- "match_time"
 
   if (save_matchit) {
     names(matchit_out) <- as.character(case_times)

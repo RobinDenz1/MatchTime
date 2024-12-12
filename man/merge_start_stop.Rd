@@ -78,7 +78,7 @@ An optional \code{data.table} containing values of variables that are constant o
   }
 }
 \details{
-The start-stop format, also known as counting process or period format corresponds to a \code{data.table} containing one or multiple rows per \code{by}, where each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. This type of dataset is required for the \code{\link{match_td}} function and most of the existing time-to-event models with time-varying variables, such as \code{coxph}. Bringing existing data on period information into this format can become tricky and computationally expensive fast. The purpose of this function is to make this transformation as fast and easy as possible.
+The start-stop format, also known as counting process or period format corresponds to a \code{data.table} containing one or multiple rows per \code{by}, where each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. This type of dataset is required for the \code{\link{match_time}} function and most of the existing time-to-event models with time-varying variables, such as \code{coxph}. Bringing existing data on period information into this format can become tricky and computationally expensive fast. The purpose of this function is to make this transformation as fast and easy as possible.
 
 \strong{\emph{Interval Coding for Time-Varying Variables}}:
 
@@ -137,7 +137,7 @@ Sy Han Chiou, Gongjun Xu, Jun Yan, and Chiung-Yu Huang (2023). "Regression Model
 Robin Denz
 }
 \seealso{
-\code{\link{match_td}}
+\code{\link{match_time}}
 }
 \examples{
 library(MatchTD)

@@ -6,7 +6,7 @@ test_that("general test case", {
   set.seed(1234)
 
   out <- suppressWarnings(
-    match_td(transplant ~ age + surgery, data=heart, id="id",
+    match_time(transplant ~ age + surgery, data=heart, id="id",
                   match_method="nearest", if_no_match="warn",
                   replace_over_t=FALSE)
   )
@@ -29,7 +29,7 @@ test_that("with ratio > 1", {
   set.seed(1234)
 
   out <- suppressWarnings(
-    match_td(transplant ~ age + surgery, data=heart, id="id",
+    match_time(transplant ~ age + surgery, data=heart, id="id",
              match_method="nearest", if_no_match="warn",
              replace_over_t=FALSE, ratio=2)
   )

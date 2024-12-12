@@ -1,7 +1,7 @@
 
 ## plot number of cases and number of controls over time
 #' @export
-plot.match_td <- function(x,
+plot.match_time <- function(x,
                           include=c("cases", "controls", "potential_controls"),
                           ...) {
 

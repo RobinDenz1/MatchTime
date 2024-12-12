@@ -22,9 +22,9 @@ stopifnotm <- function(assert, message) {
   }
 }
 
-## input checks for the match_td() function
+## input checks for the match_time() function
 #' @importFrom fastmatch %fin%
-check_inputs_match_td <- function(formula, data, id, inclusion,
+check_inputs_match_time <- function(formula, data, id, inclusion,
                                   replace_over_t, replace_at_t,
                                   replace_cases, estimand, ratio,
                                   if_no_match, match_method, verbose,
@@ -140,9 +140,9 @@ check_inputs_fast_exact_matching <- function(data, treat, strata, replace,
 ## input checks for multiple add_...() functions
 check_inputs_add_variable <- function(x, id, time, data, name, include_same_t) {
 
-  stopifnotm(inherits(x, "match_td"),
-             paste0("'x' must be a 'match_td' object created using the",
-                    " match_td() function."))
+  stopifnotm(inherits(x, "match_time"),
+             paste0("'x' must be a 'match_time' object created using the",
+                    " match_time() function."))
   stopifnotm(is_single_logical(include_same_t),
              "'include_same_t' must be either TRUE or FALSE.")
   stopifnotm(is_single_character(name),

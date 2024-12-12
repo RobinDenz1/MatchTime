@@ -2,7 +2,7 @@
 ## S3 method for bal.tab() function of cobalt package
 #' @importFrom cobalt bal.tab
 #' @export
-bal.tab.match_td <- function(x, s.d.denom, remove_unmatched=TRUE,
+bal.tab.match_time <- function(x, s.d.denom, remove_unmatched=TRUE,
                              n_required=x$info$ratio, ...) {
 
   # use only relevant covariates

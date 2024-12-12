@@ -7,7 +7,7 @@ heart <- heart[, c("id", "start", "stop", "age", "surgery", "transplant")]
 set.seed(41231)
 
 out <- suppressWarnings(
-  match_td(transplant ~ age + surgery, data=heart, id="id",
+  match_time(transplant ~ age + surgery, data=heart, id="id",
                 match_method="nearest", if_no_match="warn",
                 replace_over_t=TRUE, replace_at_t=FALSE)
 )

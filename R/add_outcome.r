@@ -133,9 +133,9 @@ check_inputs_add_outcome <- function(x, id, time, data, censor_at_treat,
                                      censor_pairs, event_time_name,
                                      status_name) {
 
-  stopifnotm(inherits(x, "match_td"),
-             paste0("'x' must be a 'match_td' object created using the",
-                    " match_td() function."))
+  stopifnotm(inherits(x, "match_time"),
+             paste0("'x' must be a 'match_time' object created using the",
+                    " match_time() function."))
   stopifnotm(is_single_logical(censor_pairs),
              "'censor_pairs' must be either TRUE or FALSE.")
   stopifnotm(is_single_logical(censor_at_treat),

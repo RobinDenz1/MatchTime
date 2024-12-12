@@ -1,9 +1,9 @@
 
-match_td()
+match_time()
 	- add propensity score matching type methods
 	- allow function input to "match_method"
 	- fix bug with replace_at_t=TRUE & using matchit()
-	- fix estimand implementation (currently ignored in match_td())
+	- fix estimand implementation (currently ignored in match_time())
 	- add tests for estimand
 
 fast_exact_matching()
@@ -27,11 +27,11 @@ New features:
 
 General TODOs:
 	- finish vignette on start-stop data generation
-	- add vignette showcasing time-dependent matching with match_td()
+	- add vignette showcasing time-dependent matching with match_time()
 	- add usual package stuff
 		- pkgdown website
 		- sticker
 		- ...
 		
 Simulation:
-	- will currently fail because a lot has changed in match_td() and related functions
+	- will currently fail because a lot has changed in match_time() and related functions

@@ -14,7 +14,7 @@ d_multi$d_event[, .time := .time + 1]
 test_that("matching on nothing", {
 
   set.seed(1346)
-  out <- match_td(formula=vacc ~ 1,
+  out <- match_time(formula=vacc ~ 1,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
@@ -54,7 +54,7 @@ test_that("matching on nothing", {
            new=c("id", "beginning", "end", "incl"))
 
   set.seed(1346)
-  out2 <- match_td(formula=vacc ~ 1,
+  out2 <- match_time(formula=vacc ~ 1,
                    data=d_single,
                    id="id",
                    start="beginning",
@@ -72,7 +72,7 @@ test_that("matching on nothing", {
 test_that("matching on time-fixed variable", {
 
   set.seed(134)
-  out <- match_td(formula=vacc ~ mac,
+  out <- match_time(formula=vacc ~ mac,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion")$data
@@ -108,7 +108,7 @@ test_that("matching on time-fixed variable", {
 test_that("matching on time-dependent variable", {
 
   set.seed(13534)
-  out <- match_td(formula=vacc ~ meds,
+  out <- match_time(formula=vacc ~ meds,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion")$data
@@ -144,7 +144,7 @@ test_that("matching on time-dependent variable", {
 test_that("matching on time-fixed and time-dependent variable", {
 
   set.seed(134)
-  out <- match_td(formula=vacc ~ mac + meds,
+  out <- match_time(formula=vacc ~ mac + meds,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion")$data
@@ -180,7 +180,7 @@ test_that("matching on time-fixed and time-dependent variable", {
 test_that("using replace_at_t and replace_over_t", {
 
   set.seed(134)
-  out <- match_td(formula=vacc ~ mac,
+  out <- match_time(formula=vacc ~ mac,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
@@ -192,7 +192,7 @@ test_that("using replace_at_t and replace_over_t", {
 test_that("using 10 controls per case, replace_at_t=TRUE", {
 
   set.seed(134)
-  out <- match_td(formula=vacc ~ mac,
+  out <- match_time(formula=vacc ~ mac,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
@@ -215,7 +215,7 @@ test_that("using 10 controls per case, replace_at_t=TRUE", {
 test_that("using 10 controls per case, replace_over_t=TRUE", {
 
   set.seed(134)
-  out <- match_td(formula=vacc ~ mac,
+  out <- match_time(formula=vacc ~ mac,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
@@ -240,7 +240,7 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
   d_single2 <- as.data.frame(d_single)
 
   set.seed(134)
-  out <- match_td(formula=vacc ~ mac,
+  out <- match_time(formula=vacc ~ mac,
                   data=d_single2,
                   id=".id",
                   inclusion="inclusion",
@@ -255,11 +255,11 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
   expect_true(length(unique(out$.id_pair))==88)
 })
 
-test_that("output of match_td() and match_td.fit() is equal", {
+test_that("output of match_time() and match_time.fit() is equal", {
 
   ## when matching on time-fixed variables
   set.seed(134)
-  out1 <- match_td(formula=vacc ~ mac,
+  out1 <- match_time(formula=vacc ~ mac,
                    data=d_single,
                    id=".id",
                    inclusion="inclusion")$data
@@ -268,7 +268,7 @@ test_that("output of match_td() and match_td.fit() is equal", {
   d_multi2 <- copy(d_multi)
 
   set.seed(134)
-  out2 <- match_td.fit(id=".id",
+  out2 <- match_time.fit(id=".id",
                        time=".time",
                        d_treat=d_multi2$d_treat,
                        d_covars=d_multi2$d_covars,
@@ -278,7 +278,7 @@ test_that("output of match_td() and match_td.fit() is equal", {
 
   ## when matching on time-dependent variables as well
   set.seed(134)
-  out1 <- match_td(formula=vacc ~ mac + meds,
+  out1 <- match_time(formula=vacc ~ mac + meds,
                    data=d_single,
                    id=".id",
                    inclusion="inclusion")$data
@@ -287,7 +287,7 @@ test_that("output of match_td() and match_td.fit() is equal", {
   d_multi2 <- copy(d_multi)
 
   set.seed(134)
-  out2 <- match_td.fit(id=".id",
+  out2 <- match_time.fit(id=".id",
                        time=".time",
                        d_treat=d_multi2$d_treat,
                        d_covars=d_multi2$d_covars,
@@ -298,7 +298,7 @@ test_that("output of match_td() and match_td.fit() is equal", {
   ## when using id that is named "id"
   set.seed(134)
   setnames(d_single, old=".id", new="id")
-  out3 <- match_td(formula=vacc ~ mac + meds,
+  out3 <- match_time(formula=vacc ~ mac + meds,
                    data=d_single,
                    id="id",
                    inclusion="inclusion")$data
@@ -312,7 +312,7 @@ test_that("output of match_td() and match_td.fit() is equal", {
 test_that("using matchit", {
 
   set.seed(134)
-  out <- match_td(formula=vacc ~ mac + meds,
+  out <- match_time(formula=vacc ~ mac + meds,
                   data=d_single,
                   id=".id",
                   inclusion="inclusion",
@@ -355,7 +355,7 @@ test_that("using Date input", {
                                                  format="%d.%m.%Y"))]
 
   set.seed(13534)
-  out <- match_td(formula=vacc ~ meds,
+  out <- match_time(formula=vacc ~ meds,
                   data=d_dates,
                   id=".id",
                   inclusion="inclusion")$data
@@ -396,11 +396,11 @@ test_that("match_method='none' with less controls than cases", {
   # using matchit because age is continuous
   set.seed(12341432)
   m_obj <- suppressWarnings(
-    match_td(transplant ~ age + surgery, data=heart, id="id",
+    match_time(transplant ~ age + surgery, data=heart, id="id",
              match_method="none", replace_over_t=FALSE)
   )
 
-  expect_s3_class(m_obj, "match_td")
+  expect_s3_class(m_obj, "match_time")
 })
 
 test_that("works with actual continuous data", {
@@ -411,7 +411,7 @@ test_that("works with actual continuous data", {
   # using matchit because age is continuous
   set.seed(12341432)
   m_obj <- suppressWarnings(
-    match_td(transplant ~ age + surgery, data=heart, id="id",
+    match_time(transplant ~ age + surgery, data=heart, id="id",
              match_method="nearest", exact="surgery")
   )
   out <- match_data(m_obj)
@@ -446,7 +446,7 @@ test_that("works with actual continuous data", {
 
   set.seed(12341432)
   m_obj <- suppressWarnings(
-    match_td(transplant ~ age + surgery, data=heart, id="id",
+    match_time(transplant ~ age + surgery, data=heart, id="id",
              match_method="nearest")
   )
   out2 <- match_data(m_obj)
