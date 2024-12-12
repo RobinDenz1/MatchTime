@@ -7,8 +7,7 @@ match_td()
 	- add tests for estimand
 
 fast_exact_matching()
-	- add option to remove unmatched
-	- check if "replace" should be allowed to take the same id as controls > 1 time per case
+	- if "replace" is used, it should never take the same id as controls > 1 times per case
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)

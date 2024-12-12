@@ -15,10 +15,10 @@ match_data(object, remove_unmatched=TRUE, n_required=object$info$ratio)
 A \code{match_td} object created using the \code{\link{match_td}} function.
   }
   \item{remove_unmatched}{
-Either \code{TRUE} or \code{FALSE}, specifying whether to remove cases that received no or not enough matches during the matching process. The number of matches that each case should have received during matching can be set using the \code{n_required} argument.
+Either \code{TRUE} (default) or \code{FALSE}, specifying whether to remove pairs with no or not enough matches. The number of matches that each case should have received during matching can be set using the \code{n_required} argument.
   }
   \item{n_required}{
-A single integer, specifying the number of matched controls a case has to have to stay in the data. For example, if 1:1 matching was used and the user only wants to keep cases that actually did receive one control, it should be set to 1. If \code{ratio=3} was used and users want to keep all cases with 2 or more matched controls, it should be set to 2 etc. By default, the number of matches specified in the \code{ratio} argument of the original \code{\link{match_td}} call is used.
+A single positive integer, specifying the number of matched controls a pair needs to have to stay in the data. For example, if 1:1 matching was used and the user only wants to keep pairs where cases actually did receive one control, it should be set to 1. If \code{ratio=3} was used and users want to keep all pairs with 2 or more matched controls, it should be set to 2 etc. By default, the number of matches specified in the \code{ratio} argument of the original \code{\link{match_td}} call is used.
   }
 }
 \value{

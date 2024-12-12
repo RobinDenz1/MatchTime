@@ -22,11 +22,26 @@ match_data <- function(object, remove_unmatched=TRUE,
     data <- data[.fully_matched==TRUE]
     data[, .fully_matched := NULL]
   } else if (remove_unmatched) {
-    data[, .count_id_pair := .N, by=.id_pair]
-    data <- data[.count_id_pair >= n_required + 1]
-    data[, .count_id_pair := NULL]
+    data <- remove_unmatched(data=data, n_required=n_required)
     data[, .fully_matched := NULL]
   }
+
+  return(data)
+}
+
+## removes all pairs with less than n_required matched controls
+#' @importFrom data.table copy
+#' @importFrom data.table :=
+#' @importFrom data.table .N
+remove_unmatched <- function(data, n_required) {
+
+  .id_pair <- .count_id_pair <- NULL
+
+  data <- copy(data)
+
+  data[, .count_id_pair := .N, by=.id_pair]
+  data <- data[.count_id_pair >= n_required + 1]
+  data[, .count_id_pair := NULL]
 
   return(data)
 }

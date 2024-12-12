@@ -8,7 +8,8 @@
 #' @importFrom data.table .GRP
 #' @export
 fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
-                                estimand="ATT", if_no_match="warn") {
+                                estimand="ATT", remove_unmatched=TRUE,
+                                n_required=ratio, if_no_match="warn") {
   .strata <- .id_pair <- NULL
 
   # coerce to data.table
@@ -47,6 +48,11 @@ fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
 
   # clean up .id_pair
   out[, .id_pair := .GRP, by=".id_pair"]
+
+  # remove pairs that did not receive n_required matches
+  if (remove_unmatched) {
+    out <- remove_unmatched(data=out, n_required=n_required)
+  }
 
   return(out)
 }

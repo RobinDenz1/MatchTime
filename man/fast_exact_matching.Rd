@@ -10,6 +10,7 @@ This function matches one or multiple controls to cases that have exactly the sa
 \usage{
 fast_exact_matching(formula, data, replace=FALSE,
                     ratio=1, estimand="ATT",
+                    remove_unmatched=TRUE, n_required=ratio,
                     if_no_match="warn")
 }
 \arguments{
@@ -27,6 +28,12 @@ How many control units should be matched to each treated unit in k:1 matching. S
   }
   \item{estimand}{
 Which estimand to target. Can be either \code{"ATT"} (default) to get a dataset with which to estimate the average treatment effect on the treated, or to \code{"ATC"} which would target the average treatment effect for the untreated. When using \code{"ATC"}, the treatment labels are simply swapped internally before matching and swapped back afterwards.
+  }
+  \item{remove_unmatched}{
+Either \code{TRUE} (default) or \code{FALSE}, specifying whether to remove pairs with no or not enough matches. The number of matches that each case should have received during matching can be set using the \code{n_required} argument.
+  }
+  \item{n_required}{
+A single positive integer, specifying the number of matched controls a pair needs to have to stay in the data. For example, if 1:1 matching was used and the user only wants to keep pairs where cases actually did receive one control, it should be set to 1. If \code{ratio=3} was used and users want to keep all pairs with 2 or more matched controls, it should be set to 2 etc. By default, the number of matches specified in the \code{ratio} argument of the original \code{\link{match_td}} call is used.
   }
   \item{if_no_match}{
 Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases.
