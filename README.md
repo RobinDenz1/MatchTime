@@ -1,21 +1,21 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# MatchTD
+# MatchTime
 
 <!-- badges: start -->
 
 [![Project Status: Active - The project has reached a stable, usable
 state and is being actively
 developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![](https://www.r-pkg.org/badges/version/MatchTD?color=green)](https://cran.r-project.org/package=MatchTD)
-[![](http://cranlogs.r-pkg.org/badges/grand-total/MatchTD?color=blue)](https://cran.r-project.org/package=MatchTD)
-[![R-CMD-check](https://github.com/RobinDenz1/MatchTD/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RobinDenz1/MatchTD/actions/workflows/R-CMD-check.yaml)
+[![](https://www.r-pkg.org/badges/version/MatchTime?color=green)](https://cran.r-project.org/package=MatchTime)
+[![](http://cranlogs.r-pkg.org/badges/grand-total/MatchTime?color=blue)](https://cran.r-project.org/package=MatchTime)
+[![R-CMD-check](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
-coverage](https://codecov.io/gh/RobinDenz1/MatchTD/branch/main/graph/badge.svg)](https://app.codecov.io/gh/RobinDenz1/MatchTD?branch=main)
+coverage](https://codecov.io/gh/RobinDenz1/MatchTime/branch/main/graph/badge.svg)](https://app.codecov.io/gh/RobinDenz1/MatchTime?branch=main)
 <!-- badges: end -->
 
-`MatchTD` is an R-Package which can be used to perform different sorts
+`MatchTime` is an R-Package which can be used to perform different sorts
 of time-dependent matching, which is also known as *sequential trial
 emulation*. In this type of matching, the treatment, outcome, and
 confounders are allowed to change over time. At each point in time where
@@ -35,12 +35,12 @@ each separate point in time. It supports treatment and covariate changes
 in discrete and continuous time by requiring the user to input
 *start-stop* data. Because generating and dealing with start-stop data
 can be difficult, it also implements various functions to make this
-easier for the user. Large parts of `MatchTD` were originally developed
-for the purpose of analyzing data from a large German health-insurance
-provider. As such, the functions are designed to be very fast and RAM
-efficient, relying almost entirely on the `data.table` package
-internally. Input datasets with ~ 20 million rows can be used in any
-function on a regular computer without any issues.
+easier for the user. Large parts of `MatchTime` were originally
+developed for the purpose of analyzing data from a large German
+health-insurance provider. As such, the functions are designed to be
+very fast and RAM efficient, relying almost entirely on the `data.table`
+package internally. Input datasets with ~ 20 million rows can be used in
+any function on a regular computer without any issues.
 
 ## Installation
 
@@ -50,13 +50,13 @@ The developmental version may be installed from github using the
 ``` r
 library(remotes)
 
-remotes::install_github("RobinDenz1/MatchTD")
+remotes::install_github("RobinDenz1/MatchTime")
 ```
 
 ## Bug Reports and Feature Requests
 
 If you encounter any bugs or have any specific feature requests, please
-file an [Issue](https://github.com/RobinDenz1/MatchTD/issues).
+file an [Issue](https://github.com/RobinDenz1/MatchTime/issues).
 
 ## Example
 
@@ -66,7 +66,7 @@ package:
 
 ``` r
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 library(MatchIt)
 library(survival)
 
@@ -126,7 +126,7 @@ cases than controls.
 
 ## Citation
 
-Use `citation("MatchTD")` to get the relevant citation information.
+Use `citation("MatchTime")` to get the relevant citation information.
 
 ## License
 

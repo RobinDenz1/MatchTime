@@ -1,5 +1,5 @@
 
-## S3 summary method for MatchTD objects
+## S3 summary method for MatchTime objects
 #' @export
 summary.match_time <- function(object, standardize=TRUE, remove_unmatched=TRUE,
                              n_required=object$info$ratio, ...) {

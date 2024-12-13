@@ -46,7 +46,7 @@ Returns a \code{bal.tab} object.
 }
 \examples{
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 
 # only execute if packages are available
 if (requireNamespace("cobalt") & requireNamespace("survival")) {

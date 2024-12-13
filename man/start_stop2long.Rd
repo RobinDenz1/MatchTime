@@ -52,7 +52,7 @@ Robin Denz
 \code{\link{add_missing_intervals}}, \code{\link{long2start_stop}}
 }
 \examples{
-library(MatchTD)
+library(MatchTime)
 library(data.table)
 
 # define some example start-stop data

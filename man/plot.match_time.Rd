@@ -37,7 +37,7 @@ Returns a \code{ggplot2} object.
 }
 \examples{
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 
 # only execute if packages are available
 if (requireNamespace("survival") & requireNamespace("ggplot2")) {

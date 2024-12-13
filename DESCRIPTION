@@ -1,4 +1,4 @@
-Package: MatchTD
+Package: MatchTime
 Title: Perform Time-Dependent Matching for Time-To-Event Outcomes
 Version: 0.1.0
 Authors@R: 

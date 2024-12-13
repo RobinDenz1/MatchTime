@@ -45,7 +45,7 @@ Robin Denz
 \code{\link{merge_start_stop}}, \code{\link{add_missing_intervals}}, \code{\link{simplify_start_stop}}
 }
 \examples{
-library(MatchTD)
+library(MatchTime)
 library(data.table)
 
 # define some example start-stop data

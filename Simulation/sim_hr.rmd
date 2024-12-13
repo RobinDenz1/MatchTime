@@ -46,7 +46,7 @@ sim_comp <- function(dag, n_sim, n_repeats, max_t, n_cores, seed=runif(1),
   # parallel processing
   cl <- makeCluster(n_cores, outfile="")
   doSNOW::registerDoSNOW(cl)
-  pckgs <- c("data.table", "simDAG", "survival", "MatchTD", "adjustedCurves")
+  pckgs <- c("data.table", "simDAG", "survival", "MatchTime", "adjustedCurves")
   glob_funs <- ls(envir=.GlobalEnv)[sapply(ls(envir=.GlobalEnv), function(obj)
     "function"==class(eval(parse(text=obj)))[1])]
 
@@ -186,7 +186,7 @@ get_data_for_match_time <- function(sim, treat="vacc", event="influenza",
   d_baseline <- sim$data[, c(".id", baseline_vars), with=FALSE]
   
   # transform to start-stop format
-  data <- MatchTD:::list2start_stop(dlist, n=nrow(d_baseline), max_t=max_t,
+  data <- MatchTime:::list2start_stop(dlist, n=nrow(d_baseline), max_t=max_t,
                                    durations=durations)
   data[, inclusion := !inclusion]
   

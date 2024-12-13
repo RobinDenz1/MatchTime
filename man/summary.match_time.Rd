@@ -58,7 +58,7 @@ Silently returns a \code{list} containing the balance statistics and sample size
 }
 \examples{
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 
 # only execute if packages are available
 if (requireNamespace("MatchIt") & requireNamespace("survival")) {

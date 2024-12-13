@@ -1,7 +1,7 @@
 
 d_single <- readRDS(system.file("testdata",
                                 "single_n1000.Rds",
-                                package="MatchTD"))
+                                package="MatchTime"))
 d_single[, stop := stop + 1]
 
 set.seed(1346)

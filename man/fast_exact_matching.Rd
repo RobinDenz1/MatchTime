@@ -65,7 +65,7 @@ Robin Denz
 \code{\link{stratified_sample}}, \code{\link[MatchIt]{matchit}}
 }
 \examples{
-library(MatchTD)
+library(MatchTime)
 library(data.table)
 
 set.seed(12341)

@@ -5,7 +5,7 @@
 Perform Time-Dependent Matching in Discrete and Continuous Time
 }
 \description{
-This function utilizies the approach described in Li et al. (2001) and Thomas et al. (2020) to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as \emph{sequential trial emulation}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
+This function utilizies the approach described in Li et al. (2001) and Thomas et al. (2020) to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as \emph{sequential trial emulation} or \emph{balanced risk set matching}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
 }
 \usage{
 match_time(formula, data, id, inclusion=NA,
@@ -57,7 +57,7 @@ A single character string specifying which method should be used to perform matc
 Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{match_method="fast_exact"}.
   }
   \item{verbose}{
-Whether to print a summary of how many matches were made for each point in time or not (default).
+Whether to print a summary of how many matches were made for each point in time or not (default). This argument is \emph{not} passed to the \code{\link[MatchIt]{matchit}} function if used.
   }
   \item{save_matchit}{
 Whether to save the objects created by each \code{\link[MatchIt]{matchit}} call at different points in time when using a \code{match_method} that is used in \code{\link[MatchIt]{matchit}}. If set to \code{TRUE}, the \code{matchit_objects} list will include one entry per point in time at which matching was performed. Defaults to \code{FALSE} to save RAM space.
@@ -102,7 +102,25 @@ This function was designed to be work on very large datasets (~ 20 million rows)
 \value{
 Returns a \code{match_time} object containing the following objects:
 
-\item{data}{A \code{data.table} containing the matched data. Note that this dataset also contains unmatched cases. To obtain a dataset without unmatched individuals, please use the \code{\link{match_data}} function. The dataset here contains at least the following columns: \code{id} (the original \code{id} used in the supplied \code{data}), \code{.id_new} (a new case-specific id in which \code{id}s who occur multiple times are treated as distinct values), \code{.id_pair} (an id to distinguish the matched pairs, if applicable), \code{.treat} (the supplied treatment variable), \code{.treat_time} (the time at which the \code{id} was included in the matching process), \code{.next_treat_time} (for controls that later receive treatment, the time at which they received the treatment), \code{.fully_matched} (a logical variable that is \code{TRUE} if the corresponding \code{.id_pair} consists of one case and \code{ratio} matched controls and \code{FALSE} otherwise) and \code{.weights} (a column containing the matching weights, generated separately at each point in time). Potentially contains any number of additional covariates supplied in the original \code{data}, plus potential further variables added using \code{\link{add_outcome}}.}
+\item{data}{A \code{data.table} containing the matched data. Note that this dataset also contains unmatched cases. To obtain a dataset without unmatched individuals, please use the \code{\link{match_data}} function. The dataset here contains at least the following columns:
+
+\code{id}: the original \code{id} used in the supplied \code{data},
+
+\code{.id_new}: a new case-specific id in which \code{id}s who occur multiple times are treated as distinct values,
+
+\code{.id_pair}: an id to distinguish the matched pairs, if applicable,
+
+\code{.treat}: the supplied treatment variable,
+
+\code{.treat_time}: the time at which the \code{id} was included in the matching process,
+
+\code{.next_treat_time}: for controls that later receive treatment, the time at which they received the treatment,
+
+\code{.fully_matched}: a logical variable that is \code{TRUE} if the corresponding \code{.id_pair} consists of one case and \code{ratio} matched controls and \code{FALSE} otherwise,
+
+\code{.weights}: a column containing the matching weights, generated separately at each point in time.
+
+Potentially contains any number of additional covariates supplied in the original \code{data}, plus potential further variables added using \code{\link{add_outcome}}, \code{\link{add_next_time}} or similar functions.}
 \item{d_longest}{A \code{data.table} containing the last time under observation for each \code{id} in the supplied \code{data}.}
 \item{trace}{A \code{data.table} containing four columns: \code{time} (the time at which matching occurred), \code{new_cases} (the number of new cases at that point in time), \code{matched_controls} (the number of controls matched to the new cases at \code{time}) and \code{potential_controls} (the number of potential controls at \code{time}).}
 \item{id}{The value of the supplied \code{id} argument.}
@@ -130,7 +148,7 @@ Robin Denz
 }
 \examples{
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 
 if (requireNamespace("survival") & requireNamespace("MatchIt") &
     requireNamespace("ggplot2")) {

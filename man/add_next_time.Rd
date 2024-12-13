@@ -46,7 +46,7 @@ Robin Denz
 }
 \examples{
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 
 # only execute if packages are available
 if (requireNamespace("survival")) {

@@ -44,7 +44,7 @@ Robin Denz
 \code{\link{fast_exact_matching}}
 }
 \examples{
-library(MatchTD)
+library(MatchTime)
 library(data.table)
 library(fastmatch)
 

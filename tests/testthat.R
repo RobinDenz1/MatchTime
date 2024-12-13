@@ -1,7 +1,7 @@
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 library(testthat)
 library(ggplot2)
 library(survival)
 
-test_check("MatchTD")
+test_check("MatchTime")

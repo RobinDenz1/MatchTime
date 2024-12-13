@@ -140,7 +140,7 @@ Robin Denz
 \code{\link{match_time}}
 }
 \examples{
-library(MatchTD)
+library(MatchTime)
 library(data.table)
 library(fastmatch)
 

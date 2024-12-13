@@ -53,7 +53,10 @@ simplify_start_stop <- function(data, id, start="start", stop="stop", cols,
 
   if (remove_other_cols) {
     other_cols <- colnames(data)[!colnames(data) %in% c(id, start, stop, cols)]
-    data[, (other_cols) := NULL]
+
+    if (length(other_cols) > 0) {
+      data[, (other_cols) := NULL]
+    }
   }
 
   setkeyv(data, c(id, start))

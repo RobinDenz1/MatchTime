@@ -1,9 +1,9 @@
 {
   "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
   "@type": "SoftwareSourceCode",
-  "identifier": "MatchTD",
+  "identifier": "MatchTime",
   "description": "More about what it does (maybe more than one line) Use four spaces when indenting paragraphs within the Description.",
-  "name": "MatchTD: Perform Time-Dependent Matching for Time-To-Event Outcomes",
+  "name": "MatchTime: Perform Time-Dependent Matching for Time-To-Event Outcomes",
   "license": "https://spdx.org/licenses/GPL-3.0",
   "version": "0.1.0",
   "programmingLanguage": {
@@ -131,5 +131,5 @@
     "SystemRequirements": null
   },
   "fileSize": "173.365KB",
-  "codeRepository": "https://github.com/RobinDenz1/MatchTD"
+  "codeRepository": "https://github.com/RobinDenz1/MatchTime"
 }

@@ -1,5 +1,5 @@
 
-## S3 print method for MatchTD objects
+## S3 print method for MatchTime objects
 #' @export
 print.match_time <- function(x, ...) {
   cat("A match_time object\n")

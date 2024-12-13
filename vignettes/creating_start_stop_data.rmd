@@ -14,9 +14,9 @@ knitr::opts_chunk$set(echo=TRUE, fig.width=6.7, fig.height=4.6)
 
 # Introduction
 
-A very common task in survival analysis and other types of analyses that involve time-varying covariates is the creation of start-stop datasets. These datasets should include multiple intervals per subject or case, along with one or multiple covariate values that correspond to the value observed during the defined time-intervals. The `MatchTD` package offers a wide range of functions to create and transform such datasets from other data sources (mostly because they are also required as input in its main function, `match_time()`).
+A very common task in survival analysis and other types of analyses that involve time-varying covariates is the creation of start-stop datasets. These datasets should include multiple intervals per subject or case, along with one or multiple covariate values that correspond to the value observed during the defined time-intervals. The `MatchTime` package offers a wide range of functions to create and transform such datasets from other data sources (mostly because they are also required as input in its main function, `match_time()`).
 
-The goal of these functions is to make it easy to create valid start-stop datasets and to further process existing ones, even when there are millions of cases and/or a large amount of intervals. The current standard tool to create start-stop data is the `tmerge()` function from the `survival` package, which was not originally meant to handle large datasets. In contrast, the implementations offered here rely exclusively on code written using the `data.table` backend, making them faster and more RAM efficient. Additionally, the functions included in `MatchTD` work well with incomplete information, which often occurs in real data.
+The goal of these functions is to make it easy to create valid start-stop datasets and to further process existing ones, even when there are millions of cases and/or a large amount of intervals. The current standard tool to create start-stop data is the `tmerge()` function from the `survival` package, which was not originally meant to handle large datasets. In contrast, the implementations offered here rely exclusively on code written using the `data.table` back-end, making them faster and more RAM efficient. Additionally, the functions included in `MatchTime` work well with incomplete information, which often occurs in real data.
 
 # What is Start-Stop Data?
 
@@ -24,7 +24,7 @@ First, let's be a little more clear what exactly constitutes a start-stop datase
 
 ```{r}
 library(data.table)
-library(MatchTD)
+library(MatchTime)
 
 data <- data.table(id=c(1, 1, 1, 2, 2, 2, 2),
                    start=c(0, 10, 50, 0, 28, 120, 125),
@@ -36,13 +36,13 @@ print(data)
 
 The dataset shown above consists of two individuals (two distinct `id` values) with multiple recorded time-intervals each (defined by the `start` and `stop` columns). Additionally, it includes information on the `sex` and the `bmi` (Body-Mass-Index) of the individual. In this concrete example, individual 1 is considered male (`sex="m"`) and individual 2 is considered female (`sex="f"`) for the entire observed duration. In other words, `sex` is a **time-fixed** of **time-constant** variable. On the other hand, each of the two individuals have multiple different values in the `bmi` column, making it a **time-varying** or **time-dependent** variable.
 
-More specifically, we would say that the value of `bmi` for individual 1 was 32 from 0 up to and including t = 10. An infinitesimally amount of time later it changed to 34 and stayed on that value until t = 50. This type of coding is known as **right-open** or **left-closed** intervals (because the `start` value is considered to be in the interval, while the `stop` value is not). This is usually denoted as `[start, stop)` and is the usual way these intervals are coded for time-to-event purposes. Throughout this package we will rely exclusively on this type of intervals.
+More specifically, we would say that the value of `bmi` for individual 1 was 32 from t = 0 to t = 10. Afterwards it changed to 34 and stayed on that value until t = 50. Here, the `start` value is *included* in the interval, while the `stop` value is *excluded*. This type of coding is known as **right-open** or **left-closed** intervals (because the `start` value is considered to be in the interval, while the `stop` value is not). This is usually denoted as `[start, stop)` and is the usual way these intervals are coded for time-to-event purposes. Throughout this package we will rely exclusively on this type of intervals.
 
 Note that in reality the values of time-dependent variables does not necessarily change instantaneously. To allow a data representation it is however necessary to define some intervals in which the value stays constant. The width of these intervals is usually dependent on the type of data one has access to.
 
 # Overview of Included Functions
 
-The following functions of `MatchTD` may be used to deal with start-stop data:
+The following functions of `MatchTime` may be used to deal with start-stop data:
 
 * `merge_start_stop()`: Merges two or more start-stop datasets
 * `subset_start_stop()`: Takes a subset of intervals from a start-stop dataset
@@ -155,8 +155,9 @@ Note that there is no need to change the `d_demographics` dataset, because it do
 All that is left to do is call the `merge_start_stop()` function to, well, merge the time-intervals of `bmi` and `chemo`. The following function call may be used:
 
 ```{r}
-out <- merge_start_stop(d_chemo, d_bmi, by="id", defaults=list(chemo=FALSE),
-                constant_vars=d_demographics)
+out <- merge_start_stop(d_chemo, d_bmi, by="id",
+                        defaults=list(chemo=FALSE),
+                        constant_vars=d_demographics)
 print(out)
 ```
 

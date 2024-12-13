@@ -1,12 +1,12 @@
 
 d_single <- readRDS(system.file("testdata",
                                 "single_n1000.Rds",
-                                package="MatchTD"))
+                                package="MatchTime"))
 d_single[, stop := stop + 1]
 
 d_multi <- readRDS(system.file("testdata",
                                 "multi_n1000.Rds",
-                                package="MatchTD"))
+                                package="MatchTime"))
 d_multi$d_covars[, inclusion := NULL]
 d_multi$d_covars[, stop := stop + 1]
 d_multi$d_event[, .time := .time + 1]

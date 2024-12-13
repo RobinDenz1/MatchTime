@@ -46,7 +46,7 @@ Robin Denz
 \code{\link{merge_start_stop}}, \code{\link{add_missing_intervals}}, \code{\link{subset_start_stop}}
 }
 \examples{
-library(MatchTD)
+library(MatchTime)
 library(data.table)
 
 # get some fake example data
