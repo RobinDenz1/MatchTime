@@ -6,11 +6,12 @@
 #' @importFrom data.table copy
 #' @importFrom data.table setkeyv
 #' @importFrom data.table .SD
+#' @importFrom data.table .N
 #' @export
 simplify_start_stop <- function(data, id, start="start", stop="stop", cols,
                                 remove_other_cols=TRUE) {
 
-  .is_equal_to_next <- .temp_shift <- NULL
+  .is_equal_to_next <- .temp_shift <- .first <- .first_start <- NULL
 
   if (!is.data.table(data)) {
     data <- as.data.table(data)
@@ -31,6 +32,8 @@ simplify_start_stop <- function(data, id, start="start", stop="stop", cols,
   # sort by id, start
   setkeyv(data, c(id, start))
 
+  data[, .first_start := min(start), by=eval(id)]
+
   # remove rows that are equal to the next row
   data[, .is_equal_to_next := check_next_row_equal(.SD), .SDcols=cols,
        by=eval(id)]
@@ -42,10 +45,18 @@ simplify_start_stop <- function(data, id, start="start", stop="stop", cols,
   data[.temp_shift < eval(start), (start) := .temp_shift]
   data[, .temp_shift := NULL]
 
+  # also adjust first row per person, if needed
+  data[, .first := seq_len(.N)==1, by=eval(id)]
+  data[.first==TRUE, start := .first_start]
+  data[, .first := NULL]
+  data[, .first_start := NULL]
+
   if (remove_other_cols) {
     other_cols <- colnames(data)[!colnames(data) %in% c(id, start, stop, cols)]
     data[, (other_cols) := NULL]
   }
+
+  setkeyv(data, c(id, start))
 
   return(data)
 }
