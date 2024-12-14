@@ -40,10 +40,12 @@ library(data.table)
 library(MatchTime)
 
 # only execute if packages are available
-if (requireNamespace("survival") & requireNamespace("ggplot2")) {
+if (requireNamespace("survival") & requireNamespace("ggplot2") &
+    requireNamespace("MatchIt")) {
 
 library(survival)
 library(ggplot2)
+library(MatchIt)
 
 # set random seed to make the output replicably
 set.seed(1234)

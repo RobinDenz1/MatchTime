@@ -75,7 +75,7 @@ data("heart")
 set.seed(1234)
 
 m_obj <- match_time(transplant ~ age + surgery, data=heart, id="id",
-                  match_method="nearest")
+                    match_method="nearest")
 ```
 
 As in `MatchIt`, balance statistics (at “baseline”) can be calculated

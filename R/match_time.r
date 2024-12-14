@@ -277,7 +277,7 @@ match_time.fit <- function(id, time, d_treat, d_covars,
                              potential_controls=n_pot_controls_i)
 
     if (verbose) {
-      cat("Matched ", n_m_controls_i, " unique controls to ",
+      cat("Matched ", n_m_controls_i, " controls to ",
           n_cases_i, " cases (with ", n_pot_controls_i,
           " potential unique controls) at t = ", as.character(case_times[i]),
           ".\n", sep="")

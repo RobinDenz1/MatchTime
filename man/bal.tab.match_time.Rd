@@ -49,10 +49,12 @@ library(data.table)
 library(MatchTime)
 
 # only execute if packages are available
-if (requireNamespace("cobalt") & requireNamespace("survival")) {
+if (requireNamespace("cobalt") & requireNamespace("survival") &
+    requireNamespace("MatchIt")) {
 
 library(cobalt)
 library(survival)
+library(MatchIt)
 
 # set random seed to make the output replicably
 set.seed(1234)
