@@ -123,6 +123,10 @@ match_time.fit <- function(id, time, d_treat, d_covars,
   cnames <- colnames(d_covars)
   select_vars <- cnames[!cnames %fin% c(".start", ".stop")]
 
+  if (match_method %in% c("none", "fast_exact")) {
+    select_vars <- c(select_vars, ".strata")
+  }
+
   # get maximum follow-up time per person (used for adding events later)
   d_longest <- d_covars[, (.max_t = max(.stop)), by=".id"]
   colnames(d_longest) <- c(id, ".max_t")
@@ -148,6 +152,13 @@ match_time.fit <- function(id, time, d_treat, d_covars,
                                 last_time=d_covars$.time + min_t_passed,
                                 start=".start", stop=".stop")
   d_covars[, .time := NULL]
+
+  # set up .strata for fast_exact_matching(), if used
+  if (match_method=="none") {
+    d_covars[, .strata := TRUE]
+  } else {
+    d_covars[, .strata := do.call(paste0, .SD), .SDcols=match_vars]
+  }
 
   # initialize needed id collections
   used_as_controls <- c()
@@ -203,15 +214,12 @@ match_time.fit <- function(id, time, d_treat, d_covars,
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .weights := 1]
 
+      if (match_method %in% c("none", "fast_exact")) {
+        d_match_i[, .strata := NULL]
+      }
+
     # fast exact or no matching
     } else if (match_method=="fast_exact" || match_method=="none") {
-
-      # create strata variable
-      if (match_method=="none") {
-        d_all_i[, .strata := TRUE]
-      } else {
-        d_all_i[, .strata := do.call(paste0, .SD), .SDcols=match_vars]
-      }
 
       # perform exact matching
       d_match_i <- fast_exact_matching.fit(d_all_i,
