@@ -43,7 +43,7 @@ Returns a \code{data.table} containing the columns \code{id} (the unique person 
 Robin Denz
 }
 \examples{
-library(simDAG)
+library(MatchTime)
 library(data.table)
 
 # generate example data in long format

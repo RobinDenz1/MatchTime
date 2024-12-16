@@ -31,13 +31,13 @@ test_that("with include_same_t=FALSE", {
   # with a duration of 20
   out <- add_previous_event_count(x=obj, data=d_event, duration=20,
                                   include_same_t=FALSE)$data
-  expect_true(all.equal(out, expected, ignore.col.order=TRUE))
+  expect_equal(out, expected)
 
   # upping the duration to 400
   out2 <- add_previous_event_count(x=obj, data=d_event, duration=400,
                                    include_same_t=FALSE)$data
   expected[, .prev_event_count := c(4, 1, 1, 0, 1, 0)]
-  expect_true(all.equal(out2, expected, ignore.col.order=TRUE))
+  expect_equal(out2, expected)
 })
 
 test_that("with include_same_t=FALSE", {
@@ -55,11 +55,11 @@ test_that("with include_same_t=FALSE", {
   # with a duration of 20
   out <- add_previous_event_count(x=obj, data=d_event, duration=20,
                                   include_same_t=TRUE)$data
-  expect_true(all.equal(out, expected, ignore.col.order=TRUE))
+  expect_equal(out, expected)
 
   # upping the duration to 400
   out2 <- add_previous_event_count(x=obj, data=d_event, duration=400,
                                    include_same_t=TRUE)$data
   expected[, .prev_event_count := c(4, 1, 1, 0, 2, 0)]
-  expect_true(all.equal(out2, expected, ignore.col.order=TRUE))
+  expect_equal(out2, expected)
 })

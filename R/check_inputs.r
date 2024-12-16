@@ -98,8 +98,8 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
              "'verbose' must be either TRUE or FALSE.")
 
   # correct estimand
-  stopifnotm(is_single_character(estimand) && estimand %in% c("ATT", "ATC"),
-             paste0("'estimand' must be either 'ATT' or 'ATC'."))
+  stopifnotm(is_single_character(estimand) && estimand=="ATT",
+             paste0("'estimand' must be 'ATT'."))
 }
 
 ## check inputs for the fast_exact_matching() function

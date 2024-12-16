@@ -3,6 +3,7 @@
 #' @importFrom data.table :=
 #' @importFrom data.table merge.data.table
 #' @importFrom data.table setnames
+#' @importFrom data.table setcolorder
 #' @importFrom data.table copy
 #' @export
 add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
@@ -11,7 +12,11 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
 
   . <- .time <- .count <- .diff <- .treat_time <- NULL
 
+  stopifnotm(inherits(x, "match_time"),
+   "'x' must be a 'match_time' object created using the match_time() function.")
+
   x <- copy(x)
+  orig_col_order <- colnames(x$data)
 
   if (!is.data.table(data)) {
     data <- as.data.table(data)
@@ -34,7 +39,7 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
   data <- merge.data.table(x$data, data, by=x$id, all.x=TRUE, sort=FALSE)
 
   # calculate difference between event time and inclusion time
-  if (all(class(data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
+  if (is.Date(data$.treat_time)) {
     data[, .diff := as.numeric(difftime(.time, .treat_time, units=units))]
   } else {
     data[, .diff := .time - .treat_time]
@@ -54,6 +59,9 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
   x$data <- merge.data.table(x$data, out, by=".id_new", all.x=TRUE, sort=FALSE)
   setnames(x$data, old=".count", new=name)
   setkeyv(x$data, c(x$id))
+
+  # set column order back to original one
+  setcolorder(x$data, neworder=c(orig_col_order, name))
 
   return(x)
 }

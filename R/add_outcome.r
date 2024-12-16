@@ -46,7 +46,7 @@ add_outcome <- function(x, data, censor_at_treat=TRUE,
                                name=".next_event_time")
 
   # shift times according to start
-  if (all(class(x$data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
+  if (is.Date(x$data$.treat_time)) {
     x$data[, .time_to_next_treat := as.numeric(
       difftime(.next_treat_time, .treat_time, units=units))]
     x$data[, .time_to_next_event := as.numeric(
@@ -71,7 +71,7 @@ add_outcome <- function(x, data, censor_at_treat=TRUE,
   x$data <- merge.data.table(x$data, x$d_longest, by=x$id, all.x=TRUE)
 
   # time to max_t
-  if (all(class(x$data$.treat_time) %in% c("Date", "POSIXct", "POSIXlt"))) {
+  if (is.Date(x$data$.treat_time)) {
     x$data[, .time_to_max_t := as.numeric(difftime(.max_t,
                                                    .treat_time,
                                                    units=units))]
@@ -94,7 +94,7 @@ add_outcome <- function(x, data, censor_at_treat=TRUE,
   if (censor_pairs && censor_at_treat) {
 
     # needs to be the same type for older versions of data.table
-    if (all(class(x$data[[time]]) %in% c("Date", "POSIXct", "POSIXlt"))) {
+    if (is.Date(x$data[[time]])) {
       max_time <- as.Date(Inf)
     } else {
       max_time <- Inf

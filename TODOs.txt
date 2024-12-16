@@ -1,10 +1,7 @@
 
 match_time()
 	- add propensity score matching type methods
-	- allow function input to "match_method"
 	- fix bug with replace_at_t=TRUE & using matchit()
-	- fix estimand implementation (currently ignored in match_time())
-	- add tests for estimand
 
 fast_exact_matching()
 	- if "replace" is used, it should never take the same id as controls > 1 times per case
@@ -18,9 +15,6 @@ long2start_stop()
 add_outcome()
 	- maybe allow different types of outcomes (event counts, binary etc.)
 
-add_previous_event_count()
-	- fix column order to be the same as before (remove ignore.col.order argument in tests afterwards)
-
 New features:
 	- add_covariate(): similar to add_outcome() but for covariates of different types
 	- estimate_ipcw(): function to estimate inverse probability of censoring weights
@@ -32,6 +26,13 @@ General TODOs:
 		- pkgdown website
 		- sticker
 		- ...
-		
+
+Theoretical:
+	- what would other estimands look like?
+	- think about how I want "replaced" individuals (at t) to be incorporated in the data
+	  relevant for:
+		- the "replace at t bug" in match_time() when using matchit() + replace
+		- the output of fast_exact_matching() (weights + rows)
+	
 Simulation:
 	- will currently fail because a lot has changed in match_time() and related functions

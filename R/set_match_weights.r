@@ -11,7 +11,7 @@
 set_match_weights <- function(data, treat, estimand, keep_ps=FALSE,
                               stabilize=TRUE) {
 
-  .treat <- .id_pair <- .ps_score <- .weights <- NULL
+  .treat <- .id_pair <- .ps_score <- .weights <- .mean_w <- NULL
 
   setnames(data, old=treat, new=".treat")
 
