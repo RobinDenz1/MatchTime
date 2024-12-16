@@ -8,7 +8,8 @@
 #' @importFrom data.table :=
 #' @importFrom data.table .N
 #' @importFrom data.table setnames
-set_match_weights <- function(data, treat, estimand, keep_ps=FALSE) {
+set_match_weights <- function(data, treat, estimand, keep_ps=FALSE,
+                              stabilize=TRUE) {
 
   .treat <- .id_pair <- .ps_score <- .weights <- NULL
 
@@ -24,6 +25,15 @@ set_match_weights <- function(data, treat, estimand, keep_ps=FALSE) {
     data[, .weights := fifelse(.treat==TRUE, (1 - .ps_score)/.ps_score, 1)]
   } else {
     stop("Only 'ATT' and 'ATC' estimands are currently supported.")
+  }
+
+  # stabilize the weights to sum to the number of observations in each group
+  if (stabilize) {
+    mean_cases <- mean(data[.weights > 0 & .treat==TRUE]$.weights)
+    mean_controls <- mean(data[.weights > 0 & .treat==FALSE]$.weights)
+    data[, .mean_w := fifelse(.treat==TRUE, mean_cases, mean_controls)]
+    data[, .weights := .weights / .mean_w]
+    data[, .mean_w := NULL]
   }
 
   if (!keep_ps) {
