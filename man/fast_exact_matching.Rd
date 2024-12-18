@@ -21,7 +21,7 @@ A formula object with the binary treatment variable on the left-hand side and th
 A \code{data.table} like object containing the columns mentioned in \code{formula}. Additional columns are allowed and will be included in the output, although they will not be matched on if not mentioned on the right hand side of \code{formula}.
   }
   \item{replace}{
-Whether to sample controls with or without replacement.
+Whether to sample controls with or without replacement. As is usual in matching, when using \code{ratio > 1} each control can only occur once per case.
   }
   \item{ratio}{
 How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching.
@@ -51,6 +51,11 @@ The \code{.weights} column in the output is calculated using the same method tha
 Ideally, the treatment specified on the LHS of the \code{formula} argument is coded as a logical variable, where \code{TRUE} corresponds to the "treated" group and \code{FALSE} corresponds to the "control" group. If this is not the case, this function will coerce it to this type internally using the following rules:
 
 1.) if the variable only consists of the numbers \code{0} and \code{1} (coded as numeric), \code{0} will be considered the "control" group and \code{1} the "treated" group; 2.) otherwise, if the variable is a factor, \code{levels(treat)[1]} will be considered the "control" group and the other value the "treated" group; 3.) otherwise \code{sort(unique(treat))[1]} will be considered "control" and the other value the treated. It is safest to ensure that the treatment variable is a logical variable. In either case, the output will only contain the treatment as logical variable.
+
+\strong{\emph{Using \code{replace=TRUE}}}:
+
+If \code{replace=TRUE} is used, the output may contain multiple rows for some supplied rows. Namely, it will include one row for every time the control was choosen as a control. For example, if id = 3 was used as a control for id = 5, 6, 7, 8, it will occur in the dataset 4 times, each time with a different \code{.id_pair}. If the user wants to differentiate between these cases, all that needs to be done is to add a unique id column (of any name) to the data before the matching process. As with any other variable in \code{data}, this variable will be preserved after matching.
+
 }
 \value{
 Returns a single \code{data.table} containing the same columns as \code{data} plus two additional columns called \code{".id_pair"}, which identifies which rows belong to one matched control / case pair and \code{.weights} (a numeric column including the matching weights).

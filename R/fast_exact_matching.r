@@ -68,7 +68,7 @@ fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
                                     ratio=1, estimand="ATT",
                                     if_no_match="stop") {
 
-  .id_pair <- .temp_id <- N <- .treat <- .strata <- .weights <- NULL
+  .id_pair <- .temp_id <- N <- .treat <- .strata <- .weights <- ..id.. <- NULL
 
   # renaming columns to avoid get() issues
   setnames(data, old=c(treat, strata), new=c(".treat", ".strata"))
@@ -89,15 +89,28 @@ fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
   # count number of cases per strata
   d_count <- d_cases[, .N, by=".strata"]
 
+  # add temporary id to ensure that each case does not get the same id
+  # as control multiple times
+  if (replace && ratio > 1) {
+    d_controls[, ..id.. := seq_len(nrow(d_controls))]
+  }
+
   # use stratified sampling to get the right amount of controls for
   # each strata
   size <- d_count$N
   names(size) <- d_count[[".strata"]]
 
+  if (replace && ratio > 1) {
+    max_replace <- size
+  } else {
+    max_replace <- NULL
+  }
+
   d_samp <- stratified_sample(data=d_controls,
                               n=size * ratio,
                               strata=".strata",
                               replace=replace,
+                              max_replace=max_replace,
                               if_lt_n=if_no_match)
 
   # add pair id for cases
@@ -119,12 +132,28 @@ fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
   if (ratio==1) {
     d_samp[, .id_pair := paste0(.strata, "_", seq_len(.N)), by=".strata"]
   } else {
+
+    # sort by rowid to ensure that each control is only used once per case
+    if (replace) {
+      setkey(d_samp, ..id..)
+    }
+
+    # this essentially adds a count (1, 1, 1, 1, 1, 2, 2, ...)
+    # where the number of repeats is the number of cases per strata,
+    # which is a little complex here because we need to account for the case
+    # in which not all cases got ratio matches
     d_samp <- merge.data.table(d_samp, d_count, by=".strata", all.x=TRUE)
     d_samp[, .temp_id := ceiling(seq_len(.N) / N), by=".strata"]
     d_samp[, .id_pair := paste0(.strata, "_", seq_len(.N)),
            by=c(".strata", ".temp_id")]
     d_samp[, .temp_id := NULL]
     d_samp[, N := NULL]
+
+    # remove temporary id again
+    if (replace) {
+      setkey(d_samp, NULL)
+      d_samp[, ..id.. := NULL]
+    }
   }
 
   # put together

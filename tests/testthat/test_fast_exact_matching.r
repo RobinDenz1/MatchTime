@@ -118,8 +118,11 @@ test_that("2:1 matching with replacement", {
   expect_equal(tabA[1,], tabA[2,]*2)
   expect_equal(tabB[1,], tabB[2,]*2)
 
-  # no duplicate id
+  # duplicate ids are allowed in general
   expect_true(max(table(out$id))!=1)
+
+  # duplicate ids are not allowed inside .id_pair
+  expect_true(min(out[, .(count = uniqueN(id)), by=.id_pair]$count)==3)
 
   # .id_pair correctly assigned
   expect_true(all(table(out$.id_pair)==3))
@@ -138,8 +141,11 @@ test_that("4:1 matching with replacement", {
   expect_equal(tabA[1,], tabA[2,]*4)
   expect_equal(tabB[1,], tabB[2,]*4)
 
-  # no duplicate id
+  # duplicate ids are allowed in general
   expect_true(max(table(out$id))!=1)
+
+  # duplicate ids are not allowed inside .id_pair
+  expect_true(min(out[, .(count = uniqueN(id)), by=.id_pair]$count)==5)
 
   # .id_pair correctly assigned
   expect_true(all(table(out$.id_pair)==5))

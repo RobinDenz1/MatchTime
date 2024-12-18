@@ -9,7 +9,7 @@ This function may be used to draw a stratified random sample (with or without re
 }
 \usage{
 stratified_sample(data, n, strata, replace=FALSE,
-                  if_lt_n="stop")
+                  max_replace=NULL, if_lt_n="stop")
 }
 \arguments{
   \item{data}{
@@ -23,6 +23,9 @@ A single character string specifying the integer, character or factor variable r
   }
   \item{replace}{
 Either \code{TRUE} or \code{FALSE} (default). Specifies whether the sampling should be performed with or without replacement.
+  }
+  \item{max_replace}{
+Either \code{NULL} (default) or a named numeric vector containing values > 0, specifying the number of times that rows in each value of \code{strata} may be replace when using \code{replace=TRUE}. Ignored if \code{replace=FALSE}. Keeping this argument at \code{NULL} results in no upper limit on replacement of rows per \code{strata}.
   }
   \item{if_lt_n}{
 Must be either \code{"stop"}, \code{"warn"} or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when the number of rows in a stratum specified by \code{strata} is smaller than the number that should be sampled from it and \code{replace=FALSE} is used.

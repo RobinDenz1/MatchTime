@@ -52,3 +52,32 @@ test_that("n < nrow(data) with replace=FALSE", {
   out <- sample_dt(data, n=201, replace=TRUE, if_lt_n="nothing")
   expect_true(is.data.table(out) && nrow(out)==201)
 })
+
+test_that("n > nrow(data), using replace but also using max_replace", {
+
+  set.seed(21341432)
+  out <- sample_dt(data, n=300, replace=TRUE, if_lt_n="stop",
+                   max_replace=2)
+
+  expect_true(nrow(out)==300)
+  expect_true(max(as.vector(table(out$id)))==2)
+})
+
+test_that("n > nrow(data), using replace but also using max_replace, errors", {
+
+  set.seed(21341432)
+
+  # with if_lt_n = "stop"
+  expect_error(sample_dt(data, n=401, replace=TRUE, if_lt_n="stop",
+                         max_replace=2))
+
+  # with if_lt_n = "warn"
+  expect_warning(sample_dt(data, n=401, replace=TRUE, if_lt_n="warn",
+                           max_replace=2))
+
+  # with if_lt_n = "nothing"
+  out <- sample_dt(data, n=412, replace=TRUE, if_lt_n="nothing",
+                   max_replace=2)
+  expect_true(is.data.table(out) && nrow(out)==400)
+  expect_true(max(as.vector(table(out$id)))==2)
+})

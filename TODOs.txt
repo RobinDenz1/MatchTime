@@ -11,9 +11,6 @@ match_time() general
 	  this should be consistent, not sure which option is better
 	- maybe add a debug more or something similar to better understand when an error occured
 
-fast_exact_matching()
-	- if "replace" is used, it should never take the same id as controls > 1 times per case
-
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
 
