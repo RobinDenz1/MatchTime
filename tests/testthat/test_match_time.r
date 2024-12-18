@@ -15,10 +15,10 @@ test_that("matching on nothing", {
 
   set.seed(1346)
   out <- match_time(formula=vacc ~ 1,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion",
-                  match_method="none")$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    match_method="none")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -55,12 +55,12 @@ test_that("matching on nothing", {
 
   set.seed(1346)
   out2 <- match_time(formula=vacc ~ 1,
-                   data=d_single,
-                   id="id",
-                   start="beginning",
-                   stop="end",
-                   inclusion="incl",
-                   match_method="none")$data
+                     data=d_single,
+                     id="id",
+                     start="beginning",
+                     stop="end",
+                     inclusion="incl",
+                     match_method="none")$data
   setnames(out2, old="id", new=".id")
   expect_equal(out, out2)
 
@@ -73,9 +73,9 @@ test_that("matching on time-fixed variable", {
 
   set.seed(134)
   out <- match_time(formula=vacc ~ mac,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion")$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -109,9 +109,9 @@ test_that("matching on time-dependent variable", {
 
   set.seed(13534)
   out <- match_time(formula=vacc ~ meds,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion")$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -145,9 +145,9 @@ test_that("matching on time-fixed and time-dependent variable", {
 
   set.seed(134)
   out <- match_time(formula=vacc ~ mac + meds,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion")$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -181,11 +181,11 @@ test_that("using replace_at_t and replace_over_t", {
 
   set.seed(134)
   out <- match_time(formula=vacc ~ mac,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion",
-                  replace_at_t=TRUE,
-                  replace_over_t=TRUE)$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    replace_at_t=TRUE,
+                    replace_over_t=TRUE)$data
   expect_equal(max(table(out$.id)), 3)
 })
 
@@ -193,14 +193,14 @@ test_that("using 10 controls per case, replace_at_t=TRUE", {
 
   set.seed(134)
   out <- match_time(formula=vacc ~ mac,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion",
-                  replace_at_t=TRUE,
-                  replace_over_t=FALSE,
-                  ratio=10,
-                  keep_all_columns=TRUE,
-                  if_no_match="nothing")$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    replace_at_t=TRUE,
+                    replace_over_t=FALSE,
+                    ratio=10,
+                    keep_all_columns=TRUE,
+                    if_no_match="nothing")$data
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -216,14 +216,14 @@ test_that("using 10 controls per case, replace_over_t=TRUE", {
 
   set.seed(134)
   out <- match_time(formula=vacc ~ mac,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion",
-                  replace_at_t=FALSE,
-                  replace_over_t=TRUE,
-                  ratio=10,
-                  keep_all_columns=TRUE,
-                  if_no_match="nothing")$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    replace_at_t=FALSE,
+                    replace_over_t=TRUE,
+                    ratio=10,
+                    keep_all_columns=TRUE,
+                    if_no_match="nothing")$data
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -241,15 +241,15 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
 
   set.seed(134)
   out <- match_time(formula=vacc ~ mac,
-                  data=d_single2,
-                  id=".id",
-                  inclusion="inclusion",
-                  replace_at_t=FALSE,
-                  replace_over_t=FALSE,
-                  replace_cases=FALSE,
-                  ratio=10,
-                  keep_all_columns=TRUE,
-                  if_no_match="nothing")$data
+                    data=d_single2,
+                    id=".id",
+                    inclusion="inclusion",
+                    replace_at_t=FALSE,
+                    replace_over_t=FALSE,
+                    replace_cases=FALSE,
+                    ratio=10,
+                    keep_all_columns=TRUE,
+                    if_no_match="nothing")$data
 
   # a lot less cases than usual
   expect_true(length(unique(out$.id_pair))==88)
@@ -260,38 +260,38 @@ test_that("output of match_time() and match_time.fit() is equal", {
   ## when matching on time-fixed variables
   set.seed(134)
   out1 <- match_time(formula=vacc ~ mac,
-                   data=d_single,
-                   id=".id",
-                   inclusion="inclusion")$data
+                     data=d_single,
+                     id=".id",
+                     inclusion="inclusion")$data
   out1[, influenza := NULL]
 
   d_multi2 <- copy(d_multi)
 
   set.seed(134)
   out2 <- match_time.fit(id=".id",
-                       time=".time",
-                       d_treat=d_multi2$d_treat,
-                       d_covars=d_multi2$d_covars,
-                       match_vars="mac")$data
+                         time=".time",
+                         d_treat=d_multi2$d_treat,
+                         d_covars=d_multi2$d_covars,
+                         match_vars="mac")$data
 
   expect_equal(out1, out2)
 
   ## when matching on time-dependent variables as well
   set.seed(134)
   out1 <- match_time(formula=vacc ~ mac + meds,
-                   data=d_single,
-                   id=".id",
-                   inclusion="inclusion")$data
+                     data=d_single,
+                     id=".id",
+                     inclusion="inclusion")$data
   out1[, influenza := NULL]
 
   d_multi2 <- copy(d_multi)
 
   set.seed(134)
   out2 <- match_time.fit(id=".id",
-                       time=".time",
-                       d_treat=d_multi2$d_treat,
-                       d_covars=d_multi2$d_covars,
-                       match_vars=c("mac", "meds"))$data
+                         time=".time",
+                         d_treat=d_multi2$d_treat,
+                         d_covars=d_multi2$d_covars,
+                         match_vars=c("mac", "meds"))$data
 
   expect_equal(out1, out2)
 
@@ -299,9 +299,9 @@ test_that("output of match_time() and match_time.fit() is equal", {
   set.seed(134)
   setnames(d_single, old=".id", new="id")
   out3 <- match_time(formula=vacc ~ mac + meds,
-                   data=d_single,
-                   id="id",
-                   inclusion="inclusion")$data
+                     data=d_single,
+                     id="id",
+                     inclusion="inclusion")$data
   out3[, influenza := NULL]
   setnames(out3, old="id", new=".id")
   setnames(d_single, old="id", new=".id")
@@ -313,10 +313,10 @@ test_that("using matchit", {
 
   set.seed(134)
   out <- match_time(formula=vacc ~ mac + meds,
-                  data=d_single,
-                  id=".id",
-                  inclusion="inclusion",
-                  match_method="nearest")$data
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    match_method="nearest")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -356,9 +356,9 @@ test_that("using Date input", {
 
   set.seed(13534)
   out <- match_time(formula=vacc ~ meds,
-                  data=d_dates,
-                  id=".id",
-                  inclusion="inclusion")$data
+                    data=d_dates,
+                    id=".id",
+                    inclusion="inclusion")$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -397,7 +397,7 @@ test_that("match_method='none' with less controls than cases", {
   set.seed(12341432)
   m_obj <- suppressWarnings(
     match_time(transplant ~ age + surgery, data=heart, id="id",
-             match_method="none", replace_over_t=FALSE)
+               match_method="none", replace_over_t=FALSE)
   )
 
   expect_s3_class(m_obj, "match_time")
@@ -412,7 +412,7 @@ test_that("works with actual continuous data", {
   set.seed(12341432)
   m_obj <- suppressWarnings(
     match_time(transplant ~ age + surgery, data=heart, id="id",
-             match_method="nearest", exact="surgery")
+               match_method="nearest", exact="surgery")
   )
   out <- match_data(m_obj)
 
@@ -440,14 +440,13 @@ test_that("works with actual continuous data", {
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 34)
 
   # coerce to Date, do matching again and check if its the same output
-
   heart$start <- as.Date(heart$start, origin="1970-01-01")
   heart$stop <- as.Date(heart$stop, origin="1970-01-01")
 
   set.seed(12341432)
   m_obj <- suppressWarnings(
     match_time(transplant ~ age + surgery, data=heart, id="id",
-             match_method="nearest")
+               match_method="nearest")
   )
   out2 <- match_data(m_obj)
   out2[, .treat_time := as.numeric(.treat_time)]
@@ -455,4 +454,41 @@ test_that("works with actual continuous data", {
   out[, n_id := NULL]
 
   expect_equal(out2, out)
+})
+
+test_that("using replace_at_t=TRUE with MatchIt", {
+
+  data("heart", package="survival")
+  heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
+
+  # using matchit because age is continuous
+  set.seed(12341432)
+  m_obj <- suppressWarnings(
+    match_time(transplant ~ age + surgery, data=heart, id="id",
+               match_method="nearest", exact="surgery",
+               replace_at_t=TRUE, ratio=1)
+  )
+  out <- match_data(m_obj)
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(53, 53))
+
+  # surgery equally distributed in each level of .treat
+  tab <- table(out$.treat, out$surgery)
+  expect_true(tab[1,1] == tab[2,1])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$.id_pair)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id may occur more then twice
+  expect_true(max(table(out$id))==3)
+  out[, n_id := .N, by=id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(20, 18))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 37)
 })

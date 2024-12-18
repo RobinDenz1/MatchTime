@@ -1,7 +1,15 @@
 
-match_time()
+match_time() methods
 	- add propensity score matching type methods
-	- fix bug with replace_at_t=TRUE & using matchit()
+	- add methods using both propensity score and outcome hazard score
+	- add "all" method which would simply include all eligible controls at t
+
+match_time() general
+	- allow all methods in matchit(), even if they do not use "subclass"
+	- currently, when using matchit(), cases are discarded if no match is found,
+	  which is not what happens in match_method="none" or match_method="fast_exact"
+	  this should be consistent, not sure which option is better
+	- maybe add a debug more or something similar to better understand when an error occured
 
 fast_exact_matching()
 	- if "replace" is used, it should never take the same id as controls > 1 times per case
@@ -29,10 +37,6 @@ General TODOs:
 
 Theoretical:
 	- what would other estimands look like?
-	- think about how I want "replaced" individuals (at t) to be incorporated in the data
-	  relevant for:
-		- the "replace at t bug" in match_time() when using matchit() + replace
-		- the output of fast_exact_matching() (weights + rows)
-	
+
 Simulation:
 	- will currently fail because a lot has changed in match_time() and related functions

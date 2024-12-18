@@ -107,7 +107,7 @@ match_time.fit <- function(id, time, d_treat, d_covars,
 
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
-    .fully_matched <- .weights <- NULL
+    .fully_matched <- .weights <- ..id.. <- NULL
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c(".id", ".time"))
@@ -256,10 +256,13 @@ match_time.fit <- function(id, time, d_treat, d_covars,
         matchit_out[[i]] <- d_match_i
       }
 
-      d_match_i <- MatchIt::match.data(d_match_i,
-                                       weights=".weights",
-                                       subclass=".subclass",
-                                       distance=".distance")
+      d_match_i <- MatchIt::get_matches(d_match_i,
+                                        weights=".weights",
+                                        subclass=".subclass",
+                                        distance=".distance",
+                                        id="..id..")
+      d_match_i <- as.data.table(d_match_i)
+      d_match_i[, ..id.. := NULL]
 
       # assign .id_pair
       d_match_i <- copy(d_match_i)

@@ -24,6 +24,11 @@ A single positive integer, specifying the number of matched controls a pair need
 \value{
 Returns a single \code{data.table}.
 }
+\details{
+The resulting data may contain multiple rows per actual individual, depending on the arguments used in the original \code{\link{match_time}} call. This might be because individuals were included as controls \emph{and} cases at different points in time, or because they were included as controls at multiple points in time (\code{replace_over_t=TRUE}), or because they were included as controls multiple times at the same point in time (\code{replace_at_t=TRUE}), or due to a mix of these reasons.
+
+Contrary to the \pkg{MatchIt} package, there is no option to change this. "Replaced" individuals will always appear as often as they were selected during the matching process. The output will therefore also always contain an \code{".id_pair"} column, indicating in which "pair" the cases and controls are. The only instance where this column is not included is when \code{match_method} is set to some method in \code{\link[MatchIt]{matchit}} that does not create pairs internally.
+}
 \author{
 Robin Denz
 }
