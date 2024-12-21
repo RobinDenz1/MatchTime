@@ -18,11 +18,11 @@ A \code{match_time} object created using the \code{\link{match_time}} function.
 Either \code{TRUE} (default) or \code{FALSE}, specifying whether to remove pairs with no or not enough matches. The number of matches that each case should have received during matching can be set using the \code{n_required} argument.
   }
   \item{n_required}{
-A single positive integer, specifying the number of matched controls a pair needs to have to stay in the data. For example, if 1:1 matching was used and the user only wants to keep pairs where cases actually did receive one control, it should be set to 1. If \code{ratio=3} was used and users want to keep all pairs with 2 or more matched controls, it should be set to 2 etc. By default, the number of matches specified in the \code{ratio} argument of the original \code{\link{match_time}} call is used.
+A single positive integer, specifying the number of matched controls a pair needs to have to stay in the data. For example, if 1:1 matching was used and the user only wants to keep pairs where cases actually did receive one control, it should be set to 1. If \code{ratio=3} was used and users want to keep all pairs with 2 or more matched controls, it should be set to 2 etc. By default, the number of matches specified in the \code{ratio} argument of the original \code{\link{match_time}} call is used. A warning is produced if users try to use this method when \code{match_method} in the original \code{\link{match_time}} call was set to a method in \code{\link[MatchIt]{matchit}} that does not use pair matching.
   }
 }
 \value{
-Returns a single \code{data.table}.
+Returns a single \code{data.table}. This \code{data.table} will include the same columns as the \code{$data} object in the output of \code{\link{match_time}}, with the exception of the \code{".fully_matched"} column. Note that if no \code{".id_pair"} variable was created in \code{\link{match_time}}, it will also not be present in the output here.
 }
 \details{
 The resulting data may contain multiple rows per actual individual, depending on the arguments used in the original \code{\link{match_time}} call. This might be because individuals were included as controls \emph{and} cases at different points in time, or because they were included as controls at multiple points in time (\code{replace_over_t=TRUE}), or because they were included as controls multiple times at the same point in time (\code{replace_at_t=TRUE}), or due to a mix of these reasons.

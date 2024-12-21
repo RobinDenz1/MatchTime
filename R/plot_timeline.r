@@ -42,6 +42,13 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
  "'status_name' must specify an event-status added to 'x' using add_outcome().")
   }
 
+  # correct .id_pair
+  if (id_type==".id_pair" && !".id_pair" %in% colnames(x$data)) {
+    stop("Cannot use id_type='.id_pair' if a 'match_method' was used in",
+         " the original match_time() call that does not create an '.id_pair'",
+         " column.")
+  }
+
   # if no id is specified, just take all of them
   if (missing(include)) {
     plotdata <- x$data

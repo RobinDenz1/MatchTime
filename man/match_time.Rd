@@ -108,7 +108,7 @@ Returns a \code{match_time} object containing the following objects:
 
 \code{.id_new}: a new case-specific id in which \code{id}s who occur multiple times are treated as distinct values,
 
-\code{.id_pair}: an id to distinguish the matched pairs, if applicable,
+\code{.id_pair}: an id to distinguish the matched pairs, if applicable. This column is not created when \code{match_method} is set to a method in \code{\link[MatchIt]{matchit}} that does not allow usage of \code{\link[MatchIt]{get_matches}},
 
 \code{.treat}: the supplied treatment variable,
 

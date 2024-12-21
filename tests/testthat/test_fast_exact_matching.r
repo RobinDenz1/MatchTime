@@ -122,7 +122,8 @@ test_that("2:1 matching with replacement", {
   expect_true(max(table(out$id))!=1)
 
   # duplicate ids are not allowed inside .id_pair
-  expect_true(min(out[, .(count = uniqueN(id)), by=.id_pair]$count)==3)
+  expect_true(min(out[, .(count = data.table::uniqueN(id)),
+                      by=.id_pair]$count)==3)
 
   # .id_pair correctly assigned
   expect_true(all(table(out$.id_pair)==3))
@@ -145,7 +146,8 @@ test_that("4:1 matching with replacement", {
   expect_true(max(table(out$id))!=1)
 
   # duplicate ids are not allowed inside .id_pair
-  expect_true(min(out[, .(count = uniqueN(id)), by=.id_pair]$count)==5)
+  expect_true(min(out[, .(count = data.table::uniqueN(id)),
+                      by=.id_pair]$count)==5)
 
   # .id_pair correctly assigned
   expect_true(all(table(out$.id_pair)==5))

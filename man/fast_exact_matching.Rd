@@ -21,7 +21,7 @@ A formula object with the binary treatment variable on the left-hand side and th
 A \code{data.table} like object containing the columns mentioned in \code{formula}. Additional columns are allowed and will be included in the output, although they will not be matched on if not mentioned on the right hand side of \code{formula}.
   }
   \item{replace}{
-Whether to sample controls with or without replacement. As is usual in matching, when using \code{ratio > 1} each control can only occur once per case.
+Whether to sample controls with or without replacement. As is usual in matching, when using \code{ratio > 1} each control can only occur once per case. Note that using replacement makes this function significantly slower, because of the computational overhead in ensuring that each control is used only oncer per case.
   }
   \item{ratio}{
 How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching.

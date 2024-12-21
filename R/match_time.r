@@ -107,7 +107,7 @@ match_time.fit <- function(id, time, d_treat, d_covars,
 
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
-    .fully_matched <- .weights <- ..id.. <- NULL
+    .fully_matched <- .weights <- ..id.. <- .distance <- NULL
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c(".id", ".time"))
@@ -210,12 +210,16 @@ match_time.fit <- function(id, time, d_treat, d_covars,
     if (nrow(d_all_i)==length(ids_cases_i)) {
 
       d_match_i <- d_all_i
-      d_match_i[, .id_pair := paste0(i, "_", seq_len(.N))]
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .weights := 1]
 
       if (match_method %in% c("none", "fast_exact")) {
         d_match_i[, .strata := NULL]
+      }
+
+      if (match_method %in% c("none", "fast_exact", "nearest", "full",
+                              "genetic")) {
+        d_match_i[, .id_pair := paste0(i, "_", seq_len(.N))]
       }
 
     # fast exact or no matching
@@ -256,19 +260,37 @@ match_time.fit <- function(id, time, d_treat, d_covars,
         matchit_out[[i]] <- d_match_i
       }
 
-      d_match_i <- MatchIt::get_matches(d_match_i,
-                                        weights=".weights",
-                                        subclass=".subclass",
-                                        distance=".distance",
-                                        id="..id..")
+      # extract matched data, conditional on method used
+      if (!match_method %in% c("nearest", "full", "genetic")) {
+        d_match_i <- MatchIt::match.data(d_match_i,
+                                         weights=".weights",
+                                         subclass=".subclass",
+                                         distance=".distance")
+      } else {
+        d_match_i <- MatchIt::get_matches(d_match_i,
+                                          weights=".weights",
+                                          subclass=".subclass",
+                                          distance=".distance",
+                                          id="..id..")
+      }
       d_match_i <- as.data.table(d_match_i)
       d_match_i[, ..id.. := NULL]
 
-      # assign .id_pair
+      # clean up data
       d_match_i <- copy(d_match_i)
-      d_match_i[, .id_pair := paste0(i, "_", .subclass)]
+
+      if (match_method %in% c("nearest", "full", "genetic")) {
+        d_match_i[, .id_pair := paste0(i, "_", .subclass)]
+      }
+      if (".distance" %in% colnames(d_match_i)) {
+        d_match_i[, .distance := NULL]
+      }
+      if (".subclass" %in% colnames(d_match_i)) {
+        d_match_i[, .subclass := NULL]
+      }
+
+      # add matched time
       d_match_i[, .treat_time := case_times[i]]
-      d_match_i[, c(".distance", ".subclass") := NULL]
     }
 
     # update used_as_controls vector
@@ -301,7 +323,11 @@ match_time.fit <- function(id, time, d_treat, d_covars,
 
   # create new .id_new to differentiate between persons
   data[, .id_new := .I]
-  data[, .id_pair := .GRP, by=".id_pair"]
+
+  # clean up .id_pair, if it exists
+  if (".id_pair" %in% colnames(data)) {
+    data[, .id_pair := .GRP, by=".id_pair"]
+  }
 
   # for controls, add time of next treatment
   setnames(d_treat, old=".time", new=".next_treat_time")
@@ -309,13 +335,24 @@ match_time.fit <- function(id, time, d_treat, d_covars,
   data[.treat==TRUE, .next_treat_time := NA]
 
   # calculate number of actually matched individuals
-  data[, .fully_matched := .N == ratio + 1, by=.id_pair]
+  if (".id_pair" %in% colnames(data)) {
+    data[, .fully_matched := .N == ratio + 1, by=.id_pair]
+  } else {
+    data[, .fully_matched := TRUE]
+  }
+
   n_matched_cases <- nrow(data[.fully_matched==TRUE & .treat==TRUE])
   n_matched_controls <- nrow(data[.fully_matched==TRUE & .treat==FALSE])
 
   # change order of columns
-  first_cols <- c(".id", ".id_new", ".id_pair", ".treat", ".treat_time",
-                  ".next_treat_time", ".fully_matched", ".weights")
+  if (".id_pair" %in% colnames(data)) {
+    first_cols <- c(".id", ".id_new", ".id_pair", ".treat", ".treat_time",
+                    ".next_treat_time", ".fully_matched", ".weights")
+  } else {
+    first_cols <- c(".id", ".id_new", ".treat", ".treat_time",
+                    ".next_treat_time", ".fully_matched", ".weights")
+  }
+
   last_cols <- colnames(data)[!colnames(data) %fin% first_cols]
   setcolorder(data, c(first_cols, last_cols))
   setnames(data, old=".id", new=id)

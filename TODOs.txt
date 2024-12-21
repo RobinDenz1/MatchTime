@@ -5,7 +5,6 @@ match_time() methods
 	- add "all" method which would simply include all eligible controls at t
 
 match_time() general
-	- allow all methods in matchit(), even if they do not use "subclass"
 	- currently, when using matchit(), cases are discarded if no match is found,
 	  which is not what happens in match_method="none" or match_method="fast_exact"
 	  this should be consistent, not sure which option is better

@@ -17,9 +17,16 @@ match_data <- function(object, remove_unmatched=TRUE,
                n_required >= 1,
              "'n_required' should be a single integer.")
 
+  if (n_required != object$info$ratio && remove_unmatched &&
+      !".id_pair" %in% colnames(object$data)) {
+    warning("Argument 'n_required' ignored, because there are no pairs",
+            " to which this argument could be applied.")
+  }
+
   data <- copy(object$data)
 
-  if (remove_unmatched & n_required==object$info$ratio) {
+  if (remove_unmatched & (n_required==object$info$ratio ||
+                          !".id_pair" %in% colnames(data))) {
     data <- data[.fully_matched==TRUE]
     data[, .fully_matched := NULL]
   } else if (remove_unmatched) {
