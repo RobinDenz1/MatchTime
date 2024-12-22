@@ -18,3 +18,13 @@ test_that("general test case", {
 test_that("using only cum. no. controls and cases", {
   expect_snapshot_output(plot(out, include=c("controls", "cases")))
 })
+
+test_that("using some customizations", {
+  expect_snapshot_output(plot(out,
+                              linealpha=0.5,
+                              linewidth=2,
+                              linetype="dashed",
+                              xlab="X",
+                              ylab="Y",
+                              gg_theme=ggplot2::theme_classic()))
+})

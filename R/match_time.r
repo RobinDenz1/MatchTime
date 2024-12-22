@@ -25,15 +25,15 @@ match_time <- function(formula, data, id, inclusion=NA,
 
   # check inputs
   check_inputs_match_time(formula=formula, data=data, id=id,
-                        inclusion=inclusion,
-                        replace_over_t=replace_over_t,
-                        replace_at_t=replace_at_t,
-                        replace_cases=replace_cases,
-                        estimand=estimand, ratio=ratio,
-                        if_no_match=if_no_match,
-                        match_method=match_method,
-                        verbose=verbose,
-                        start=start, stop=stop)
+                          inclusion=inclusion,
+                          replace_over_t=replace_over_t,
+                          replace_at_t=replace_at_t,
+                          replace_cases=replace_cases,
+                          estimand=estimand, ratio=ratio,
+                          if_no_match=if_no_match,
+                          match_method=match_method,
+                          verbose=verbose,
+                          start=start, stop=stop)
 
   # extract needed things from formula
   vars <- all.vars(formula)

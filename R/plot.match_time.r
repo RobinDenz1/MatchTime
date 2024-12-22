@@ -1,9 +1,12 @@
 
 ## plot number of cases and number of controls over time
 #' @export
-plot.match_time <- function(x,
-                          include=c("cases", "controls", "potential_controls"),
-                          ...) {
+plot.match_time <- function(x, include=c("cases", "controls",
+                                         "potential_controls"),
+                            xlab="Time", ylab="Number",
+                            gg_theme=ggplot2::theme_bw(),
+                            linealpha=1, linetype="solid", linewidth=0.5,
+                            ...) {
 
   new_cases <- matched_controls <- variable <- time <- value <- NULL
 
@@ -37,9 +40,10 @@ plot.match_time <- function(x,
   # plot it
   p <- ggplot2::ggplot(plotdata, ggplot2::aes(x=time, y=value,
                                               color=variable)) +
-    ggplot2::geom_step() +
-    ggplot2::theme_bw() +
-    ggplot2::labs(x="Time", y="Number") +
+    ggplot2::geom_step(alpha=linealpha, linetype=linetype,
+                       linewidth=linewidth) +
+    gg_theme +
+    ggplot2::labs(x=xlab, y=ylab) +
     ggplot2::theme(legend.position="bottom",
                    legend.title=ggplot2::element_blank())
   return(p)

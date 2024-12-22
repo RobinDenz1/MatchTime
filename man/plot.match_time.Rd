@@ -10,6 +10,9 @@ Given a \code{match_time} object created using the \code{\link{match_time}} func
 \usage{
 \method{plot}{match_time}(x,
      include=c("cases", "controls", "potential_controls"),
+     xlab="Time", ylab="Number",
+     gg_theme=ggplot2::theme_bw(),
+     linealpha=1, linetype="solid", linewidth=0.5,
      ...)
 }
 \arguments{
@@ -19,6 +22,24 @@ A \code{match_time} object created using the \code{\link{match_time}} function.
   \item{include}{
 A character vector including one or more of \code{"cases"}, \code{"controls"} and \code{"potential_controls"}. Controls whether the plot should contain the cumulative number of cases, cumulative number of controls and number of potential controls at t respectively.
   }
+  \item{xlab}{
+A single character string specifying the label of the x-axis, defaults to \code{"Time"}.
+  }
+  \item{ylab}{
+A single character string specifying the label of the y-axis, defaults to \code{"Number"}.
+  }
+  \item{gg_theme}{
+A \code{ggplot2} theme that will be used for the plot.
+  }
+  \item{linealpha}{
+A single numeric value specifying the transparency level of the lines.
+  }
+  \item{linetype}{
+A single character string specifying the type of the drawn lines.
+  }
+  \item{linewidth}{
+A single numeric value specifying the width of the drawn lines.
+  }
   \item{...}{
 Currently not used.
   }
@@ -27,7 +48,9 @@ Currently not used.
 Robin Denz
 }
 \details{
-If \code{ratio=1} was used and the matching was successful for all cases, the cumulative number of cases and the cumulative number of events will be exactly the same for all points in time, meaning that the curves will be on top of each other. The plot method therefore offers a simple and fast way to check whether (and if so, when) issues with finding suitable controls ocurred. It uses only the \code{$trace} object included in the input \code{x} to create the plot. If users want to customize the plot, it is probably easiest to just use that object to create a personalized plot. This plot function is mostly used for data analysis purposes, not to be publication ready.
+If \code{ratio=1} was used and the matching was successful for all cases, the cumulative number of cases and the cumulative number of events will be exactly the same for all points in time, meaning that the curves will be on top of each other. The plot method therefore offers a simple and fast way to check whether (and if so, when) issues with finding suitable controls ocurred. It uses only the \code{$trace} object included in the input \code{x} to create the plot. Since it returns a standard \code{ggplot2} object, it can be easily customized by users.
+
+Note that the displayed number of cases is the \emph{actual} number of cases at t in the supplied data, which fufilled the inclusion criteria (if any) at that point in time, \emph{not} the number of cases that received any matches at that point in time.
 }
 \value{
 Returns a \code{ggplot2} object.
