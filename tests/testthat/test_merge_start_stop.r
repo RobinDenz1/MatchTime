@@ -303,6 +303,27 @@ test_that("adding event status", {
   expect_equal(output, expected)
 })
 
+test_that("adding event status with just one dataset", {
+
+  d1 <- data.table(id=c(1, 1, 2),
+                   start=c(0, 10, 18),
+                   stop=c(10, 22, 634),
+                   value1=c(32.1, 35, 23))
+
+  d3 <- data.table(id=c(1, 1, 1, 2, 3),
+                   time=c(2, 14, 21, 235, 99))
+
+  expected <- data.table(id=c(1, 1, 1, 1, 1, 2, 2),
+                         start=c(0, 2, 10, 14, 21, 18, 235),
+                         stop=c(2, 10, 14, 21, 22, 235, 634),
+                         value1=c(32.1, 32.1, 35.0, 35.0, 35.0, 23.0, 23.0),
+                         status=c(TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE))
+  setkey(expected, id)
+
+  output <- merge_start_stop(d1, event_times=d3, all=TRUE, by="id")
+  expect_equal(output, expected)
+})
+
 test_that("continuous start / stop", {
 
   d1 <- data.table(id=c(1, 1, 2),

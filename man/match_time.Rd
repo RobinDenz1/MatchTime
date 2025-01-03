@@ -5,11 +5,12 @@
 Perform Time-Dependent Matching in Discrete and Continuous Time
 }
 \description{
-This function utilizies the approach described in Li et al. (2001) and Thomas et al. (2020) to match untreated controls to treated individuals in a time-dependent fashion. This approach is also known as \emph{sequential trial emulation} or \emph{balanced risk set matching}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
+This function implements multiple methods to match untreated controls to treated individuals in a time-dependent fashion as described in Thomas et al. (2020). This approach is also known as \emph{sequential trial emulation} or \emph{balanced risk set matching}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
 }
 \usage{
 match_time(formula, data, id, inclusion=NA,
            start="start", stop="stop",
+           method=c("brsm", "psm"), ps_type=c("ps", "lp"),
            replace_over_t=FALSE, replace_at_t=FALSE,
            replace_cases=TRUE, estimand="ATT",
            ratio=1, match_method="fast_exact",
@@ -34,6 +35,12 @@ A single character string specifying a column in \code{data} specifying the begi
   }
   \item{stop}{
 A single character string specifying a column in \code{data} specifying the end of a time-interval. Defaults to \code{"stop"}.
+  }
+  \item{method}{
+A single character string, specifying which method should be used to perform the matching. Currently supports \code{"brsm"} for balanced risk set matching as originally described by Liu et al. (2001) and \code{"psm"} for time-dependent propensity score matching as originally proposed by Lu (2005). See details for more information.
+  }
+  \item{ps_type}{
+A single character string, specifying which type of "propensity score" to use when using \code{method="psm"}. Currently supports \code{"ps"}, which results in usage of the actual propensity score at time t and \code{"lp"}, which instead uses only the linear predictor of the model (disregarding the baseline hazard), as proposed by Hade et al. (2015). Using \code{"lp"} is faster because the baseline hazard does not need to be estimated and because there is no need to calculate the actual propensity score on each time where matching is done. There are, however, currently no studies showing that the \code{"lp"} method performs as well as the \code{"ps"} method, which is why it is recommended to keep this at \code{"ps"}.
   }
   \item{replace_over_t}{
 Whether to allow usage of the same individuals as controls at multiple points in time. If \code{TRUE}, the same person may be used as control at every point in time until it switches from being a control to being a case.
@@ -70,11 +77,15 @@ Further arguments passed to \code{\link[MatchIt]{matchit}} when \code{match_meth
 
 \strong{\emph{How it works}}:
 
-This function offers a very general implementation of time-dependent matching, also known as \emph{balanced risk set matching} or \emph{sequential trial emulation}. It works by first identifying all times in point at which the treatment status of an individual switches from "control" to "treated" and sorting them from the first to the last. The matching is then performed subsequently at each of these distinct points in time. All individuals whose treatment status changed from "control" to "treated" at \eqn{t} are included in the matched data as "cases". For each included individual, \code{ratio} controls are choosen from those individuals who did not yet receive the treatment at \eqn{t} and are also included in the matched data. The time of inclusion is then considered the "time-zero" for all individuals included in this way.
+This function offers a very general implementation of multiple methods for time-dependent matching, also known as  \emph{sequential trial emulation}. It works by first identifying all times in point at which the treatment status of an individual switches from "control" to "treated" and sorting them from the first to the last. The matching is then performed subsequently at each of these distinct points in time. All individuals whose treatment status changed from "control" to "treated" at \eqn{t} are included in the matched data as "cases". For each included individual, \code{ratio} controls are choosen from those individuals who did not yet receive the treatment at \eqn{t} and are also included in the matched data. The controls can be choosen based on direct matching on covariates (\code{method="brsm"} - \emph{balanced risk set matching}) or by matching on a time-dependent propensity score estimated using a Cox regression model (\code{method="psm"}). The time of inclusion is then considered the "time-zero" for all individuals included in this way.
 
 Individuals who were included as controls at some point will usually still be included as cases when they switch to "treated", unless \code{replace_cases=FALSE}. Controls may be picked as controls multiple times at the same \eqn{t} (argument \code{replace_at_t}) and / or over multiple points in time (argument \code{replace_over_t}). The argument \code{match_method} controls how exactly the controls are choosen. It is possible to just pick them at random (\code{match_method="none"}) or to pick them by classical matching methods (setting \code{match_method} to \code{"fast_exact"}, \code{"nearest"}, etc.).
 
 The result is a dataset that can be analyzed using standard time-to-event methods, without the need to use special methods, such as marginal structural models, to adjust for treatment-confounder feedback or other forms of time-dependent confounding. More details and examples are given in the cited literature and the vignettes of this package.
+
+\strong{\emph{Implemented methods}}:
+
+Currently, this function supports \emph{balanced risk set matching} (Liu et al. 2001) and \emph{time-dependent propensity score matching} (Lu 2005). Both are implemented in a sequential way and do not differ that much from each other. The only real difference is that the selection of controls at each point in time is done differently. When using \code{method="brsm"} the controls can be picked based on direct matching on the covariates (controlled using the \code{match_method} argument). In contrast, when using \code{method="psm"} a Cox model with the treatment variable as dependent variable is estimated in the first step. The hazard of receiving the treatment, e.g. the time-dependent propensity score, is then calculated for all individuals at each point where matching is performed. The matching is then done entirely using this propensity score, ignoring all other covariates. This may in some cases be a faster alternative than matching on many covariates at the same time. The model used to predict the propensity scores is included in the output object whenever \code{method="psm"} is used.
 
 \strong{\emph{Identifying the "treated" group}}:
 
@@ -127,6 +138,8 @@ Potentially contains any number of additional covariates supplied in the origina
 \item{time}{A character string used internally to identify the time in other datasets.}
 \item{info}{A \code{list} containing various information on the matching process.}
 \item{sizes}{A \code{list} containing various information on the overall sample sizes at each stage.}
+\item{matchit_objects}{A \code{list} of \code{matchit} objects created at each point in time where matching was performed. Only included if \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}} and \code{save_matchit=TRUE}.}
+\item{ps_model}{A \code{\link[survival]{coxph}} model fit to estimate the time-dependent propensity score. Only included when \code{method="ps"}.}
 \item{call}{The original function call.}
 
 }

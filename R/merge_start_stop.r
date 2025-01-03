@@ -22,7 +22,9 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
 
   . <- .id <- .first_time <- .event_time <- .last_per_id <- .dataset <- NULL
 
-  if (missing(dlist)) {
+  if (missing(dlist) & missing(y)) {
+    dlist <- list(x)
+  } else if (missing(dlist)) {
     dlist <- list(x, y, ...)
   }
 
@@ -82,23 +84,26 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
                      start=c(value_dat[[start]], value_dat[[stop]]))
 
   # apply all.x and all.y restrictions
-  if (!all.x | !all.y) {
-    ids_x_y <- get_unique_x_y_ids(dlist=dlist, id=by)
-  } else {
-    ids_x_y <- NULL
-  }
+  if (length(dlist) > 1) {
+    if (!all.x | !all.y) {
+      ids_x_y <- get_unique_x_y_ids(dlist=dlist, id=by)
+    } else {
+      ids_x_y <- NULL
+    }
 
-  if (!all.x && length(ids_x_y$only_in_x) > 0) {
-    data <- data[!.id %in% ids_x_y$only_in_x]
-  }
+    if (!all.x && length(ids_x_y$only_in_x) > 0) {
+      data <- data[!.id %in% ids_x_y$only_in_x]
+    }
 
-  if (!all.y && length(ids_x_y$only_in_y) > 0) {
-    data <- data[!.id %in% ids_x_y$only_in_y]
+    if (!all.y && length(ids_x_y$only_in_y) > 0) {
+      data <- data[!.id %in% ids_x_y$only_in_y]
+    }
   }
   unique_ids <- unique(data$.id)
 
   # add event times, if specified
   if (!is.null(event_times)) {
+    event_times <- copy(event_times)
     setnames(event_times, old=by, new=".id")
     setnames(event_times, old="time", new="start")
     data <- rbind(data, event_times)

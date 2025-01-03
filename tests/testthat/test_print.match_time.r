@@ -6,10 +6,10 @@ d_single[, stop := stop + 1]
 
 set.seed(1346)
 fake_obj <- match_time(formula=vacc ~ mac,
-                     data=d_single,
-                     id=".id",
-                     inclusion="inclusion",
-                     match_method="none")
+                       data=d_single,
+                       id=".id",
+                       inclusion="inclusion",
+                       match_method="none")
 
 test_that("print.match_time, defaults", {
   expect_snapshot_output(print(fake_obj))
@@ -58,5 +58,10 @@ test_that("print.match_time, one covariate", {
 
 test_that("print.match_time, multiple covariates", {
   fake_obj$info$match_vars <- c("mac", "A", "B", "C")
+  expect_snapshot_output(print(fake_obj))
+})
+
+test_that("print.match_time, method='psm'", {
+  fake_obj$info$method <- "psm"
   expect_snapshot_output(print(fake_obj))
 })

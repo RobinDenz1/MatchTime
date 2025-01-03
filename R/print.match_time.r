@@ -4,14 +4,20 @@
 print.match_time <- function(x, ...) {
   cat("A match_time object\n")
 
+  if (x$info$method=="brsm") {
+    cat(" - method: balanced risk set matching\n")
+  } else if (x$info$method=="psm") {
+    cat(" - method: time-dependent propensity score matching\n")
+  }
+
   # matching info
   if (x$info$match_method=="none") {
-    cat(" - method: 1:", x$info$ratio, " (exact) matching only on time\n",
+    cat(" - match-method: 1:", x$info$ratio, " (exact) matching only on time\n",
         sep="")
   } else if (x$info$match_method=="fast_exact") {
-    cat(" - method: 1:", x$info$ratio, " exact matching\n", sep="")
+    cat(" - match-method: 1:", x$info$ratio, " exact matching\n", sep="")
   } else {
-    cat(" - method: 1:", x$info$ratio, " ",
+    cat(" - match-method: 1:", x$info$ratio, " ",
         get_matchit_method_str(x$info$match_method),
         " (using matchit())\n", sep="")
   }

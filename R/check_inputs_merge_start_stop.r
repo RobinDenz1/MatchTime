@@ -19,8 +19,8 @@ check_inputs_merge_start_stop <- function(dlist, first_time, last_time,
                                           event_times, status) {
 
   # dlist
-  stopifnotm(length(dlist) > 1,
-             paste0("At least two datasets must be supplied through 'x', 'y'",
+  stopifnotm(length(dlist) > 0,
+             paste0("At least one dataset must be supplied through 'x', 'y'",
                     ", ... or 'dlist'."))
   stopifnotm(all(vapply(dlist, FUN=nrow, FUN.VALUE=numeric(1)) > 0),
              paste0("All datasets supplied through 'x', 'y', ... or ",

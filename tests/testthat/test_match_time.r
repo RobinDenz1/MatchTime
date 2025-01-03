@@ -3,6 +3,7 @@ d_single <- readRDS(system.file("testdata",
                                 "single_n1000.Rds",
                                 package="MatchTime"))
 d_single[, stop := stop + 1]
+d_single[, stop := as.integer(stop)]
 
 d_multi <- readRDS(system.file("testdata",
                                 "multi_n1000.Rds",
@@ -491,4 +492,81 @@ test_that("using replace_at_t=TRUE with MatchIt", {
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 37)
+})
+
+test_that("matching on fixed and time-dependent variable with psm method", {
+
+  set.seed(134)
+  out <- match_time(formula=vacc ~ mac + meds,
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    method="psm",
+                    match_method="nearest")$data
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(229, 229))
+
+  # mac equally distributed in each level of .treat
+  tab <- table(out$.treat, out$mac)
+  expect_equal(tab[1, ], tab[2, ])
+
+  # meds equally distributed in each level of .treat
+  tab <- table(out$.treat, out$meds)
+  expect_equal(tab[1,], tab[2, ])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$.id_pair)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id only occurs once or twice, if twice then once as control and once
+  # as a new case
+  expect_true(max(table(out$.id))==2)
+  out[, n_id := .N, by=.id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+})
+
+test_that("using lp in method='psm'", {
+
+  set.seed(134)
+  out <- match_time(formula=vacc ~ mac + meds,
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    method="psm",
+                    match_method="nearest",
+                    ps_type="lp")$data
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(229, 229))
+
+  # mac equally distributed in each level of .treat
+  tab <- table(out$.treat, out$mac)
+  expect_equal(tab[1, ], tab[2, ])
+
+  # meds equally distributed in each level of .treat
+  tab <- table(out$.treat, out$meds)
+  expect_equal(tab[1,], tab[2, ])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$.id_pair)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id only occurs once or twice, if twice then once as control and once
+  # as a new case
+  expect_true(max(table(out$.id))==2)
+  out[, n_id := .N, by=.id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
 })

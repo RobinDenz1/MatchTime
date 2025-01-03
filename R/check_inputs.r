@@ -25,10 +25,10 @@ stopifnotm <- function(assert, message) {
 ## input checks for the match_time() function
 #' @importFrom fastmatch %fin%
 check_inputs_match_time <- function(formula, data, id, inclusion,
-                                  replace_over_t, replace_at_t,
-                                  replace_cases, estimand, ratio,
-                                  if_no_match, match_method, verbose,
-                                  start, stop) {
+                                    replace_over_t, replace_at_t,
+                                    replace_cases, estimand, ratio,
+                                    if_no_match, match_method, verbose,
+                                    start, stop, method, ps_type) {
 
   # correct data
   stopifnotm(is_single_character(start) && start %in% colnames(data),
@@ -86,6 +86,20 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
                                    "exact", "cardinality", "subclass"),
              paste0("'match_method' must be either 'none', 'fast_exact' or ",
                     " a valid 'method' in MatchIt::matchit()."))
+
+  # correct method
+  stopifnotm(is.character(method[1]) &&
+               method[1] %in% c("brsm", "psm"),
+             "'method' must be either 'bsrm' or 'psm'.")
+  stopifnotm(!(method[1]=="psm" && match_method=="fast_exact"),
+             "Cannot use match_method='fast_exact' with method='psm'.")
+  stopifnotm(!(method[1]=="psm" && length(all.vars(formula))==1),
+             paste0("'formula' must contain at least one variable on the RHS",
+                    " if method='psm'."))
+
+  # correct ps_type
+  stopifnotm(is.character(ps_type[1]) && ps_type[1] %in% c("ps", "lp"),
+             "'ps_type' must be either 'ps' or 'lp'.")
 
   # correct logical variables
   stopifnotm(is_single_logical(replace_over_t),
