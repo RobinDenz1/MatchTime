@@ -9,11 +9,12 @@
 #' @export
 match_time <- function(formula, data, id, inclusion=NA,
                        start="start", stop="stop",
-                       method=c("brsm", "psm"), ps_type=c("ps", "lp"),
+                       method=c("brsm", "psm"),
                        replace_over_t=FALSE, replace_at_t=FALSE,
                        replace_cases=TRUE, estimand="ATT", ratio=1,
-                       match_method="fast_exact", if_no_match="warn",
-                       verbose=FALSE, save_matchit=FALSE, ...) {
+                       match_method="fast_exact", matchit_args=list(),
+                       if_no_match="warn", verbose=FALSE,
+                       save_matchit=FALSE, ...) {
 
   .inclusion <- .treat <- .time <- NULL
 
@@ -34,8 +35,7 @@ match_time <- function(formula, data, id, inclusion=NA,
                           if_no_match=if_no_match,
                           match_method=match_method,
                           verbose=verbose,
-                          start=start, stop=stop, method=method,
-                          ps_type=ps_type)
+                          start=start, stop=stop, method=method)
 
   # extract needed things from formula
   vars <- all.vars(formula)
@@ -79,7 +79,7 @@ match_time <- function(formula, data, id, inclusion=NA,
                         estimand=estimand, ratio=ratio, if_no_match=if_no_match,
                         match_method=match_method, verbose=verbose,
                         start=start, stop=stop, save_matchit=save_matchit,
-                        method=method, ps_type=ps_type)
+                        method=method, matchit_args=matchit_args, ...)
 
   # add stuff to output
   out$call <- match.call()
@@ -102,12 +102,14 @@ match_time <- function(formula, data, id, inclusion=NA,
 #' @importFrom data.table setcolorder
 match_time.fit <- function(id, time, d_treat, d_covars,
                            match_vars=NULL, method=c("brsm", "psm"),
-                           ps_type=c("ps", "lp"), replace_over_t=FALSE,
+                           replace_over_t=FALSE,
                            replace_at_t=FALSE, replace_cases=TRUE,
                            estimand="ATT", ratio=1,
                            if_no_match="warn", match_method="fast_exact",
                            verbose=FALSE, start="start", stop="stop",
-                           save_matchit=FALSE, ...) {
+                           save_matchit=FALSE, matchit_args=list(),
+                           ps_type=c("ps", "lp"), basehaz_interpol="constant",
+                           standardize_ps=FALSE) {
 
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
@@ -185,13 +187,16 @@ match_time.fit <- function(id, time, d_treat, d_covars,
     # Hade et al. (2020)
     if (ps_type[1]=="lp") {
       d_covars[, .ps_score := stats::predict(ps_model, newdata=d_covars)]
+      if (standardize_ps) {
+        d_all_i[, .ps_score := scale_0_1(.ps_score)]
+      }
     # or use actual propensity score as done in Lu (2005)
     } else if (ps_type[1]=="ps") {
       # calculate linear predictor & estimate baseline hazard
       d_covars[, .lp := stats::predict(ps_model, newdata=d_covars)]
       h0 <- survival::basehaz(ps_model)
-      h0 <- stats::approxfun(x=h0$time, y=h0$hazard, method="constant",
-                             yleft=0, yright=1)
+      h0 <- stats::approxfun(x=h0$time, y=h0$hazard, method=basehaz_interpol,
+                             rule=2)
     }
   }
 
@@ -244,6 +249,9 @@ match_time.fit <- function(id, time, d_treat, d_covars,
     # for propensity score matching, calculate .ps_score
     if (method[1]=="psm" & ps_type[1]=="ps") {
       d_all_i[, .ps_score := h0(case_times[i]) * exp(.lp)]
+      if (standardize_ps) {
+        d_all_i[, .ps_score := scale_0_1(.ps_score)]
+      }
     }
 
     # return only cases if no controls left
@@ -257,9 +265,19 @@ match_time.fit <- function(id, time, d_treat, d_covars,
         d_match_i[, .strata := NULL]
       }
 
+      # add .id_pair if needed
       if (match_method %in% c("none", "fast_exact", "nearest", "full",
                               "genetic")) {
         d_match_i[, .id_pair := paste0(i, "_", seq_len(.N))]
+      }
+
+      # remove .ps_score if needed to
+      if (method[1]=="psm") {
+        d_match_i[, .ps_score := NULL]
+
+        if (ps_type[1]=="ps") {
+          d_match_i[, .lp := NULL]
+        }
       }
 
     # fast exact or no matching
@@ -296,7 +314,7 @@ match_time.fit <- function(id, time, d_treat, d_covars,
                    estimand="ATT",
                    replace=replace_at_t,
                    ratio=ratio)
-      args <- c(args, list(...))
+      args <- c(args, matchit_args)
 
       d_match_i <- do.call(MatchIt::matchit, args=args)
 
@@ -489,10 +507,15 @@ fit_ps_model <- function(data, d_treat, match_vars) {
   setnames(d_treat, old="time", new=".time")
 
   # fit cox model
-  cox_form <- paste0("Surv(.start, .stop, .treat) ~ ",
+  cox_form <- paste0("survival::Surv(.start, .stop, .treat) ~ ",
                      paste0(match_vars, collapse=" + "))
   ps_model <- survival::coxph(formula=stats::as.formula(cox_form),
                               data=d_ps_mod)
 
   return(ps_model)
+}
+
+## transforms a numeric vector to the 0 / 1 range
+scale_0_1 <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
 }

@@ -200,7 +200,6 @@ test_that("using 10 controls per case, replace_at_t=TRUE", {
                     replace_at_t=TRUE,
                     replace_over_t=FALSE,
                     ratio=10,
-                    keep_all_columns=TRUE,
                     if_no_match="nothing")$data
 
   # replacement only took place at the same t
@@ -223,7 +222,6 @@ test_that("using 10 controls per case, replace_over_t=TRUE", {
                     replace_at_t=FALSE,
                     replace_over_t=TRUE,
                     ratio=10,
-                    keep_all_columns=TRUE,
                     if_no_match="nothing")$data
 
   # replacement only took place at the same t
@@ -249,7 +247,6 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
                     replace_over_t=FALSE,
                     replace_cases=FALSE,
                     ratio=10,
-                    keep_all_columns=TRUE,
                     if_no_match="nothing")$data
 
   # a lot less cases than usual
@@ -413,12 +410,13 @@ test_that("works with actual continuous data", {
   set.seed(12341432)
   m_obj <- suppressWarnings(
     match_time(transplant ~ age + surgery, data=heart, id="id",
-               match_method="nearest", exact="surgery")
+               match_method="nearest",
+               matchit_args=list(exact="surgery"))
   )
   out <- match_data(m_obj)
 
   # .treat equally distributed
-  expect_equal(as.vector(table(out$.treat)), c(51, 51))
+  expect_equal(as.vector(table(out$.treat)), c(52, 52))
 
   # surgery equally distributed in each level of .treat
   tab <- table(out$.treat, out$surgery)
@@ -434,7 +432,7 @@ test_that("works with actual continuous data", {
   # as a new case
   expect_true(max(table(out$id))==2)
   out[, n_id := .N, by=id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(16, 16))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(18, 18))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
@@ -447,7 +445,8 @@ test_that("works with actual continuous data", {
   set.seed(12341432)
   m_obj <- suppressWarnings(
     match_time(transplant ~ age + surgery, data=heart, id="id",
-               match_method="nearest")
+               match_method="nearest",
+               matchit_args=list(exact="surgery"))
   )
   out2 <- match_data(m_obj)
   out2[, .treat_time := as.numeric(.treat_time)]
@@ -466,13 +465,14 @@ test_that("using replace_at_t=TRUE with MatchIt", {
   set.seed(12341432)
   m_obj <- suppressWarnings(
     match_time(transplant ~ age + surgery, data=heart, id="id",
-               match_method="nearest", exact="surgery",
+               match_method="nearest",
+               matchit_args=list(exact="surgery"),
                replace_at_t=TRUE, ratio=1)
   )
   out <- match_data(m_obj)
 
   # .treat equally distributed
-  expect_equal(as.vector(table(out$.treat)), c(53, 53))
+  expect_equal(as.vector(table(out$.treat)), c(54, 54))
 
   # surgery equally distributed in each level of .treat
   tab <- table(out$.treat, out$surgery)
@@ -487,11 +487,11 @@ test_that("using replace_at_t=TRUE with MatchIt", {
   # .id may occur more then twice
   expect_true(max(table(out$id))==3)
   out[, n_id := .N, by=id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(20, 18))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(21, 19))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 37)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 35)
 })
 
 test_that("matching on fixed and time-dependent variable with psm method", {

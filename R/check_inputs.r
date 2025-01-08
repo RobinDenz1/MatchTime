@@ -28,7 +28,7 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
                                     replace_over_t, replace_at_t,
                                     replace_cases, estimand, ratio,
                                     if_no_match, match_method, verbose,
-                                    start, stop, method, ps_type) {
+                                    start, stop, method) {
 
   # correct data
   stopifnotm(is_single_character(start) && start %in% colnames(data),
@@ -96,10 +96,6 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
   stopifnotm(!(method[1]=="psm" && length(all.vars(formula))==1),
              paste0("'formula' must contain at least one variable on the RHS",
                     " if method='psm'."))
-
-  # correct ps_type
-  stopifnotm(is.character(ps_type[1]) && ps_type[1] %in% c("ps", "lp"),
-             "'ps_type' must be either 'ps' or 'lp'.")
 
   # correct logical variables
   stopifnotm(is_single_logical(replace_over_t),

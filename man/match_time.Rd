@@ -10,12 +10,12 @@ This function implements multiple methods to match untreated controls to treated
 \usage{
 match_time(formula, data, id, inclusion=NA,
            start="start", stop="stop",
-           method=c("brsm", "psm"), ps_type=c("ps", "lp"),
+           method=c("brsm", "psm"),
            replace_over_t=FALSE, replace_at_t=FALSE,
            replace_cases=TRUE, estimand="ATT",
            ratio=1, match_method="fast_exact",
-           if_no_match="warn", verbose=FALSE,
-           save_matchit=FALSE, ...)
+           matchit_args=list(), if_no_match="warn",
+           verbose=FALSE, save_matchit=FALSE, ...)
 }
 \arguments{
   \item{formula}{
@@ -37,10 +37,7 @@ A single character string specifying a column in \code{data} specifying the begi
 A single character string specifying a column in \code{data} specifying the end of a time-interval. Defaults to \code{"stop"}.
   }
   \item{method}{
-A single character string, specifying which method should be used to perform the matching. Currently supports \code{"brsm"} for balanced risk set matching as originally described by Liu et al. (2001) and \code{"psm"} for time-dependent propensity score matching as originally proposed by Lu (2005). See details for more information.
-  }
-  \item{ps_type}{
-A single character string, specifying which type of "propensity score" to use when using \code{method="psm"}. Currently supports \code{"ps"}, which results in usage of the actual propensity score at time t and \code{"lp"}, which instead uses only the linear predictor of the model (disregarding the baseline hazard), as proposed by Hade et al. (2015). Using \code{"lp"} is faster because the baseline hazard does not need to be estimated and because there is no need to calculate the actual propensity score on each time where matching is done. There are, however, currently no studies showing that the \code{"lp"} method performs as well as the \code{"ps"} method, which is why it is recommended to keep this at \code{"ps"}.
+A single character string, specifying which method should be used to perform the matching. Currently supports \code{\link[=method_brsm]{"brsm"}} for balanced risk set matching as originally described by Liu et al. (2001) and \code{\link[=method_brsm]{"psm"}} for time-dependent propensity score matching as originally proposed by Lu (2005). Depending on the method, further arguments may be allowed. These are explained on the method-specific documentation page. See details for more information.
   }
   \item{replace_over_t}{
 Whether to allow usage of the same individuals as controls at multiple points in time. If \code{TRUE}, the same person may be used as control at every point in time until it switches from being a control to being a case.
@@ -58,7 +55,10 @@ Currently only allows \code{"ATT"} to get a dataset with which to estimate the a
 How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching. If \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}, this argument will be passed to the argument of the same name in the \code{\link[MatchIt]{matchit}} function.
   }
   \item{match_method}{
-A single character string specifying which method should be used to perform matching at each point in time. Allowed values are \code{"none"} (to perform no matching on covariates), \code{"fast_exact"} (default, to use fast exact matching as implemented in the \code{\link{fast_exact_matching}} function of this package) or any valid method of the \code{\link[MatchIt]{matchit}} function. If the latter is used, this argument is passed to the \code{method} argument of the \code{\link[MatchIt]{matchit}} function directly. Further arguments may be passed to \code{\link[MatchIt]{matchit}} in this case using the three-dot syntax.
+A single character string specifying which method should be used to perform matching at each point in time. Allowed values are \code{"none"} (to perform no matching on covariates), \code{"fast_exact"} (default, to use fast exact matching as implemented in the \code{\link{fast_exact_matching}} function of this package) or any valid method of the \code{\link[MatchIt]{matchit}} function. If the latter is used, this argument is passed to the \code{method} argument of the \code{\link[MatchIt]{matchit}} function directly. Further arguments may be passed to \code{\link[MatchIt]{matchit}} in this case using the \code{matchit_args} argument.
+  }
+  \item{matchit_args}{
+A named list of further arguments that should be passed to \code{\link[MatchIt]{matchit}} when \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}.
   }
   \item{if_no_match}{
 Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{match_method="fast_exact"}.
@@ -70,7 +70,7 @@ Whether to print a summary of how many matches were made for each point in time 
 Whether to save the objects created by each \code{\link[MatchIt]{matchit}} call at different points in time when using a \code{match_method} that is used in \code{\link[MatchIt]{matchit}}. If set to \code{TRUE}, the \code{matchit_objects} list will include one entry per point in time at which matching was performed. Defaults to \code{FALSE} to save RAM space.
   }
   \item{...}{
-Further arguments passed to \code{\link[MatchIt]{matchit}} when \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}.
+Further \code{method} specific arguments that may be specified. For more information on which method specific arguments are allowed per method, please consult the documentation page of the respective method. Those can be accessed using \code{?method_brsm} or \code{?method_psm}.
   }
 }
 \details{
@@ -85,7 +85,14 @@ The result is a dataset that can be analyzed using standard time-to-event method
 
 \strong{\emph{Implemented methods}}:
 
-Currently, this function supports \emph{balanced risk set matching} (Liu et al. 2001) and \emph{time-dependent propensity score matching} (Lu 2005). Both are implemented in a sequential way and do not differ that much from each other. The only real difference is that the selection of controls at each point in time is done differently. When using \code{method="brsm"} the controls can be picked based on direct matching on the covariates (controlled using the \code{match_method} argument). In contrast, when using \code{method="psm"} a Cox model with the treatment variable as dependent variable is estimated in the first step. The hazard of receiving the treatment, e.g. the time-dependent propensity score, is then calculated for all individuals at each point where matching is performed. The matching is then done entirely using this propensity score, ignoring all other covariates. This may in some cases be a faster alternative than matching on many covariates at the same time. The model used to predict the propensity scores is included in the output object whenever \code{method="psm"} is used.
+Currently, this function supports the following \code{method}s:
+
+\itemize{
+  \item{"\link[=method_brsm]{brsm}": balanced risk set matching}
+  \item{"\link[=method_psm]{psm}": time-dependent propensity score matching}
+}
+
+Both are implemented in a sequential way and do not differ that much from each other. The main difference is that the selection of controls at each point in time is done differently. When using \code{method="brsm"} the controls can be picked based on direct matching on the covariates (controlled using the \code{match_method} argument). In contrast, when using \code{method="psm"}, the matching is done exclusively on the time-dependent propensity score.
 
 \strong{\emph{Identifying the "treated" group}}:
 
@@ -144,11 +151,11 @@ Potentially contains any number of additional covariates supplied in the origina
 
 }
 \references{
-Thomas, L. E., Yang, S., Wojdyla, D., and Schaubel, D. E. (2020). Matching with time-dependent treatments: A review and look forward. Statistics in Medicine 39, 2350-2370
+Thomas, Laine E., Siyun Yang, Daniel Wojdyla, and Douglas E. Schaubel (2020). "Matching with Time-Dependent Treatments: A Review and Look Forward". In: Statistics in Medicine 39, pp. 2350-2370.
 
-Li, Y. P., Propert, K. J., Rosenbaum, P. R. (2001). Balanced Risk Set Matching. Journal of the American Statistical Association 96 (455), 870-882.
+Li, Yunfei Pail, Kathleen J. Propert, and Paul R. Rosenbaum (2001). "Balanced Risk Set Matching". In: Journal of the American Statistical Association 96.455, pp. 870-882.
 
-Dagan, N., Barda, N., Kepten, E., Miron, O., Perchik, S., Katz, M. A., et al. (2021). Bnt162b2 MRNA Covid-19 vaccine in a nationwide mass vaccination setting. The New England Journal of Medicine 384, 1412-1423
+Lu, Bo (2005). "Propensity Score Matching with Time-Dependent Covariates". In: Biometrics 61.3, pp. 721-728.
 }
 \note{
 Column names starting with a single point (e.g. names like \code{".variable"} or \code{".id"}) cannot be used in \code{data}, because they are used internally, which could lead to weird errors.
