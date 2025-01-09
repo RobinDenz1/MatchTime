@@ -1,6 +1,5 @@
 
 match_time() methods
-	- add "all" method which would simply include all eligible controls at t
 	- add tests for new methods
 
 match_time() general

@@ -84,26 +84,25 @@ scale_0_1 <- function(x) {
 ## removing some cols that are used internally with different methods,
 ## if specified
 #' @importFrom data.table :=
-set_remove_cols <- function(data, method, ps_type, prog_type) {
+set_remove_cols <- function(data, method, ps_type, prog_type,
+                            remove_ps, remove_prog) {
 
   .ps_score <- .lp_ps <- .prog_score <- .lp_prog <- NULL
 
   # method = "psm"
-  if (method[1]=="psm") {
+  if ((method[1]=="psm" | method[1]=="dsm") & remove_ps) {
     data[, .ps_score := NULL]
-
-    if (ps_type[1]=="ps") {
-      data[, .lp_ps := NULL]
-    }
+  }
+  if ((method[1]=="psm" | method[1]=="dsm") & ps_type[1]=="ps") {
+    data[, .lp_ps := NULL]
   }
 
   # method = "pgm"
-  if (method[1]=="pgm") {
+  if ((method[1]=="pgm" | method[1]=="dsm") & remove_prog) {
     data[, .prog_score := NULL]
-
-    if (prog_type[1]=="p") {
-      data[, .lp_prog := NULL]
-    }
+  }
+  if ((method[1]=="pgm" | method[1]=="dsm") & prog_type[1]=="p") {
+    data[, .lp_prog := NULL]
   }
 }
 

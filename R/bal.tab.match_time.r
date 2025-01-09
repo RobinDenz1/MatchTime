@@ -6,10 +6,7 @@ bal.tab.match_time <- function(x, s.d.denom, remove_unmatched=TRUE,
                              n_required=x$info$ratio, ...) {
 
   # use only relevant covariates
-  not_rel_cols <- c(x$id, ".id_new", ".id_pair", ".treat", ".treat_time",
-                    ".next_treat_time", ".fully_matched", ".weights",
-                    x$info$added_event_times, x$info$added_status)
-  covariates <- colnames(x$data)[!colnames(x$data) %in% not_rel_cols]
+  covariates <- covariates <- covariates_from_match_time(object=x)
 
   if (missing(s.d.denom)) {
     s.d.denom <- ifelse(x$info$estimand=="ATT", "treated",

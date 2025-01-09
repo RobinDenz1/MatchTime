@@ -111,7 +111,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                            ps_type=c("ps", "lp"), basehaz_interpol="constant",
                            standardize_ps=FALSE, prog_type=c("p", "lp"),
                            standardize_prog=FALSE, event=NA,
-                           formula_ps=NULL, formula_prog=NULL) {
+                           formula_ps=NULL, formula_prog=NULL,
+                           remove_ps=FALSE, remove_prog=FALSE) {
 
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
@@ -302,6 +303,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       d_match_i <- d_all_i
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .weights := NA]
+      d_match_i[, .strata := NULL]
     # return only cases if no controls left
     } else if (nrow(d_all_i)==length(ids_cases_i)) {
 
@@ -320,7 +322,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       }
 
       set_remove_cols(data=d_match_i, method=method, ps_type=ps_type,
-                      prog_type=prog_type)
+                      prog_type=prog_type, remove_ps=remove_ps,
+                      remove_prog=remove_prog)
 
     # fast exact or no matching
     } else if (match_method=="fast_exact" || match_method=="none") {
@@ -398,7 +401,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       }
 
       set_remove_cols(data=d_match_i, method=method, ps_type=ps_type,
-                      prog_type=prog_type)
+                      prog_type=prog_type, remove_ps=remove_ps,
+                      remove_prog=remove_prog)
 
       # add matched time
       d_match_i[, .treat_time := case_times[i]]

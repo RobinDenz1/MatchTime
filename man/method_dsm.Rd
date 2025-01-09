@@ -32,6 +32,12 @@ Either \code{TRUE} or \code{FALSE} (default), specifying whether to standardize 
   \item{basehaz_interpol}{
 A single character string controlling how the estimated baseline hazard should be interpolated. This is only used when \code{type_ps="ps"} and / or \code{type_prog="p"}, in which case the baseline hazard is estimated from the fitted Cox model(s) using the \code{\link{basehaz}} function from the \pkg{survival} package. Allowed values are \code{"constant"} (default) for step function interpolation (as usual for survival curves) or \code{"linear"} for linear interpolation. Should usually be kept at \code{"constant"}. Interpolation is performed internally using the \code{\link[stats]{approxfun}} function with \code{rule=2}.
   }
+  \item{remove_ps}{
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the estimated propensity score should be removed from \code{data}. If \code{FALSE}, the propensity score at \code{.treat_time} is included in the \code{.ps_score} column.
+  }
+  \item{remove_prog}{
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the estimated prognostic score should be removed from \code{data}. If \code{FALSE}, the prognostic score at \code{.treat_time} is included in the \code{.ps_score} column.
+  }
 }
 \details{
 All arguments of the \code{\link{match_time}} function may be used when using \code{method="dsm"}, because of the general sequential nature of the matching. The only difference in the matching process is that matching is not performed directly on the covariates in \code{formula}, but instead is done only on an estimated time-dependent prognostic score \emph{and} on the time-dependent propensity score at each point in time.

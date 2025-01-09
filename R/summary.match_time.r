@@ -2,16 +2,12 @@
 ## S3 summary method for MatchTime objects
 #' @export
 summary.match_time <- function(object, standardize=TRUE, remove_unmatched=TRUE,
-                             n_required=object$info$ratio, ...) {
+                               n_required=object$info$ratio, ...) {
 
   requireNamespace("MatchIt")
 
   # get relevant columns
-  # TODO: put this in a function and call it in bal.tab() and here
-  not_rel_cols <- c(object$id, ".id_new", ".id_pair", ".treat", ".treat_time",
-                    ".next_treat_time", ".fully_matched", ".weights",
-                    object$info$added_event_times, object$info$added_status)
-  covariates <- colnames(object$data)[!colnames(object$data) %in% not_rel_cols]
+  covariates <- covariates_from_match_time(object)
 
   # get model matrix
   form <- stats::as.formula(paste0("~ ", paste0(covariates, collapse=" + ")))
@@ -78,4 +74,15 @@ summary.match_time <- function(object, standardize=TRUE, remove_unmatched=TRUE,
 
   return(invisible(list(balance=d_bal_stats,
                         sample_size=d_samp)))
+}
+
+## extracts all relevant covariates from a match_time object
+covariates_from_match_time <- function(object) {
+
+  not_rel_cols <- c(object$id, ".id_new", ".id_pair", ".treat", ".treat_time",
+                    ".next_treat_time", ".fully_matched", ".weights",
+                    ".ps_score", ".prog_score",
+                    object$info$added_event_times, object$info$added_status)
+  covariates <- colnames(object$data)[!colnames(object$data) %in% not_rel_cols]
+  return(covariates)
 }

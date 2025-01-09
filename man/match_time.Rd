@@ -144,6 +144,10 @@ Returns a \code{match_time} object containing the following objects:
 
 \code{.weights}: a column containing the matching weights, generated separately at each point in time.
 
+\code{.ps_score}: Only included if \code{method="psm"} or \code{method="dsm"} and \code{remove_ps=FALSE}. Contains the estimates "propensity score" at \code{.treat_time}.
+
+\code{.prog_score}: Only included if \code{method="pgm"} or \code{method="dsm"} and \code{remove_prog=FALSE}. Contains the estimates "prognostic score" at \code{.treat_time}.
+
 Potentially contains any number of additional covariates supplied in the original \code{data}, plus potential further variables added using \code{\link{add_outcome}}, \code{\link{add_next_time}} or similar functions.}
 \item{d_longest}{A \code{data.table} containing the last time under observation for each \code{id} in the supplied \code{data}.}
 \item{trace}{A \code{data.table} containing four columns: \code{time} (the time at which matching occurred), \code{new_cases} (the number of new cases at that point in time), \code{matched_controls} (the number of controls matched to the new cases at \code{time}) and \code{potential_controls} (the number of potential controls at \code{time}).}

@@ -570,3 +570,106 @@ test_that("using lp in method='psm'", {
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
 })
+
+test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
+
+  set.seed(134)
+  out <- match_time(formula=vacc ~ mac + meds,
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    method="pgm",
+                    event="influenza",
+                    match_method="nearest")$data
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(229, 229))
+
+  # mac equally distributed in each level of .treat
+  tab <- table(out$.treat, out$mac)
+  expect_equal(tab[1, ], tab[2, ])
+
+  # meds equally distributed in each level of .treat
+  tab <- table(out$.treat, out$meds)
+  expect_equal(tab[1,], tab[2, ])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$.id_pair)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id only occurs once or twice, if twice then once as control and once
+  # as a new case
+  expect_true(max(table(out$.id))==2)
+  out[, n_id := .N, by=.id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+
+  expect_true(all(!is.na(out$.prog_score)) & is.numeric(out$.prog_score))
+})
+
+test_that("matching on time-fixed and time-dependent variable, method='dsm'", {
+
+  set.seed(134)
+  out <- match_time(formula=vacc ~ mac + meds,
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    method="dsm",
+                    event="influenza",
+                    match_method="nearest")$data
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(229, 229))
+
+  # mac equally distributed in each level of .treat
+  tab <- table(out$.treat, out$mac)
+  expect_equal(tab[1, ], tab[2, ])
+
+  # meds equally distributed in each level of .treat
+  tab <- table(out$.treat, out$meds)
+  expect_equal(tab[1,], tab[2, ])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$.id_pair)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id only occurs once or twice, if twice then once as control and once
+  # as a new case
+  expect_true(max(table(out$.id))==2)
+  out[, n_id := .N, by=.id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+
+  expect_true(all(!is.na(out$.ps_score)) & is.numeric(out$.ps_score))
+  expect_true(all(!is.na(out$.prog_score)) & is.numeric(out$.prog_score))
+})
+
+test_that("matching using method='greedy'", {
+
+  set.seed(134)
+  out <- match_time(formula=vacc ~ mac + meds,
+                    data=d_single,
+                    id=".id",
+                    inclusion="inclusion",
+                    method="greedy")$data
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(144688, 229))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 18950)
+})
