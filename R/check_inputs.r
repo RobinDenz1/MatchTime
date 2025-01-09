@@ -89,13 +89,29 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
 
   # correct method
   stopifnotm(is.character(method[1]) &&
-               method[1] %in% c("brsm", "psm"),
-             "'method' must be either 'bsrm' or 'psm'.")
+               method[1] %in% c("brsm", "psm", "pgm", "dsm", "greedy"),
+             "'method' must be either 'brsm', 'psm', 'pgm', 'dsm' or 'greedy'.")
+
+  # with method="psm"
   stopifnotm(!(method[1]=="psm" && match_method=="fast_exact"),
              "Cannot use match_method='fast_exact' with method='psm'.")
   stopifnotm(!(method[1]=="psm" && length(all.vars(formula))==1),
              paste0("'formula' must contain at least one variable on the RHS",
                     " if method='psm'."))
+
+  # with method="pgm"
+  stopifnotm(!(method[1]=="pgm" && match_method=="fast_exact"),
+             "Cannot use match_method='fast_exact' with method='pgm'.")
+  stopifnotm(!(method[1]=="pgm" && length(all.vars(formula))==1),
+             paste0("'formula' must contain at least one variable on the RHS",
+                    " if method='pgm'."))
+
+  # with method="dsm"
+  stopifnotm(!(method[1]=="dsm" && match_method=="fast_exact"),
+             "Cannot use match_method='fast_exact' with method='dsm'.")
+  stopifnotm(!(method[1]=="dsm" && length(all.vars(formula))==1),
+             paste0("'formula' must contain at least one variable on the RHS",
+                    " if method='dsm'."))
 
   # correct logical variables
   stopifnotm(is_single_logical(replace_over_t),

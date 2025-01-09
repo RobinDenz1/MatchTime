@@ -9,7 +9,7 @@
 #' @export
 match_time <- function(formula, data, id, inclusion=NA,
                        start="start", stop="stop",
-                       method=c("brsm", "psm"),
+                       method=c("brsm", "psm", "pgm", "dsm", "greedy"),
                        replace_over_t=FALSE, replace_at_t=FALSE,
                        replace_cases=TRUE, estimand="ATT", ratio=1,
                        match_method="fast_exact", matchit_args=list(),
@@ -100,8 +100,8 @@ match_time <- function(formula, data, id, inclusion=NA,
 #' @importFrom data.table .GRP
 #' @importFrom data.table rbindlist
 #' @importFrom data.table setcolorder
-match_time.fit <- function(id, time, d_treat, d_covars,
-                           match_vars=NULL, method=c("brsm", "psm"),
+match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
+                           method=c("brsm", "psm", "pgm", "dsm", "greedy"),
                            replace_over_t=FALSE,
                            replace_at_t=FALSE, replace_cases=TRUE,
                            estimand="ATT", ratio=1,
@@ -109,12 +109,18 @@ match_time.fit <- function(id, time, d_treat, d_covars,
                            verbose=FALSE, start="start", stop="stop",
                            save_matchit=FALSE, matchit_args=list(),
                            ps_type=c("ps", "lp"), basehaz_interpol="constant",
-                           standardize_ps=FALSE) {
+                           standardize_ps=FALSE, prog_type=c("p", "lp"),
+                           standardize_prog=FALSE, event=NA,
+                           formula_ps=NULL, formula_prog=NULL) {
 
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
     .fully_matched <- .weights <- ..id.. <- .distance <- .ps_score <-
-    .lp <- NULL
+    .lp_ps <- .prog_score <- .lp_prog <- NULL
+
+  if (method[1]=="greedy") {
+    replace_over_t <- TRUE
+  }
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c(".id", ".time"))
@@ -135,10 +141,17 @@ match_time.fit <- function(id, time, d_treat, d_covars,
   }
 
   # add propensity score variables to vector of names that will be included
-  if (method[1]=="psm" & ps_type[1]=="ps") {
-    select_vars <- c(select_vars, ".lp")
-  } else if (method[1]=="psm") {
+  if ((method[1]=="psm" | method[1]=="dsm") & ps_type[1]=="ps") {
+    select_vars <- c(select_vars, ".lp_ps")
+  } else if (method[1]=="psm" | method[1]=="dsm") {
     select_vars <- c(select_vars, ".ps_score")
+  }
+
+  # add prognostic score variables to vector of names that will be included
+  if ((method[1]=="pgm" | method[1]=="dsm") & prog_type[1]=="p") {
+    select_vars <- c(select_vars, ".lp_prog")
+  } else if (method[1]=="pgm" | method[1]=="dsm") {
+    select_vars <- c(select_vars, ".prog_score")
   }
 
   # get maximum follow-up time per person (used for adding events later)
@@ -146,9 +159,16 @@ match_time.fit <- function(id, time, d_treat, d_covars,
   colnames(d_longest) <- c(id, ".max_t")
 
   # estimate propensity score model, if specified
-  if (method[1]=="psm") {
+  if (method[1]=="psm" | method[1]=="dsm") {
     ps_model <- fit_ps_model(data=d_covars, d_treat=d_treat,
-                             match_vars=match_vars)
+                             match_vars=match_vars, formula=formula_ps)
+  }
+
+  # estimate prognostic score model, if specified
+  if (method[1]=="pgm" | method[1]=="dsm") {
+    prog_model <- fit_prog_model(data=d_covars, d_treat=d_treat,
+                                 match_vars=match_vars, event=event,
+                                 formula=formula_prog)
   }
 
   # keep only cases that meet inclusion criteria at treatment time
@@ -181,7 +201,7 @@ match_time.fit <- function(id, time, d_treat, d_covars,
   }
 
   # set up propensity score, if specified
-  if (method[1]=="psm") {
+  if (method[1]=="psm" | method[1]=="dsm") {
 
     # directly use linear predictor as propensity score, as done in
     # Hade et al. (2020)
@@ -193,10 +213,29 @@ match_time.fit <- function(id, time, d_treat, d_covars,
     # or use actual propensity score as done in Lu (2005)
     } else if (ps_type[1]=="ps") {
       # calculate linear predictor & estimate baseline hazard
-      d_covars[, .lp := stats::predict(ps_model, newdata=d_covars)]
-      h0 <- survival::basehaz(ps_model)
-      h0 <- stats::approxfun(x=h0$time, y=h0$hazard, method=basehaz_interpol,
-                             rule=2)
+      d_covars[, .lp_ps := stats::predict(ps_model, newdata=d_covars)]
+      h0_ps <- survival::basehaz(ps_model)
+      h0_ps <- stats::approxfun(x=h0_ps$time, y=h0_ps$hazard,
+                                method=basehaz_interpol, rule=2)
+    }
+  }
+
+  # set up prognostic score, if specified
+  if (method[1]=="pgm" | method[1]=="dsm") {
+
+    # directly use linear predictor as prognostic score
+    if (prog_type[1]=="lp") {
+      d_covars[, .prog_score := stats::predict(prog_model, newdata=d_covars)]
+      if (standardize_prog) {
+        d_all_i[, .prog_score := scale_0_1(.prog_score)]
+      }
+    # or use actual probability
+    } else if (prog_type[1]=="p") {
+      # calculate linear predictor & estimate baseline hazard
+      d_covars[, .lp_prog := stats::predict(prog_model, newdata=d_covars)]
+      h0_prog <- survival::basehaz(prog_model)
+      h0_prog <- stats::approxfun(x=h0_prog$time, y=h0_prog$hazard,
+                                  method=basehaz_interpol, rule=2)
     }
   }
 
@@ -247,15 +286,24 @@ match_time.fit <- function(id, time, d_treat, d_covars,
     d_all_i[, .treat := .id %fin% ids_cases_i]
 
     # for propensity score matching, calculate .ps_score
-    if (method[1]=="psm" & ps_type[1]=="ps") {
-      d_all_i[, .ps_score := h0(case_times[i]) * exp(.lp)]
-      if (standardize_ps) {
-        d_all_i[, .ps_score := scale_0_1(.ps_score)]
-      }
+    if ((method[1]=="psm" | method[1]=="dsm") & ps_type[1]=="ps") {
+      set_score_at_t(data=d_all_i, t=case_times[i], h0=h0_ps,
+                     name_score=".ps_score", name_lp=".lp_ps",
+                     standardize=standardize_ps)
+    }
+    if ((method[1]=="pgm" | method[1]=="dsm") & prog_type[1]=="p") {
+      set_score_at_t(data=d_all_i, t=case_times[i], h0=h0_prog,
+                     name_score=".prog_score", name_lp=".lp_prog",
+                     standardize=standardize_prog)
     }
 
+    # simply take the entire dataset for method="greedy"
+    if (method[1]=="greedy") {
+      d_match_i <- d_all_i
+      d_match_i[, .treat_time := case_times[i]]
+      d_match_i[, .weights := NA]
     # return only cases if no controls left
-    if (nrow(d_all_i)==length(ids_cases_i)) {
+    } else if (nrow(d_all_i)==length(ids_cases_i)) {
 
       d_match_i <- d_all_i
       d_match_i[, .treat_time := case_times[i]]
@@ -271,14 +319,8 @@ match_time.fit <- function(id, time, d_treat, d_covars,
         d_match_i[, .id_pair := paste0(i, "_", seq_len(.N))]
       }
 
-      # remove .ps_score if needed to
-      if (method[1]=="psm") {
-        d_match_i[, .ps_score := NULL]
-
-        if (ps_type[1]=="ps") {
-          d_match_i[, .lp := NULL]
-        }
-      }
+      set_remove_cols(data=d_match_i, method=method, ps_type=ps_type,
+                      prog_type=prog_type)
 
     # fast exact or no matching
     } else if (match_method=="fast_exact" || match_method=="none") {
@@ -305,6 +347,10 @@ match_time.fit <- function(id, time, d_treat, d_covars,
         main_formula <- paste0(".treat ~ ", paste0(match_vars, collapse=" + "))
       } else if (method[1]=="psm") {
         main_formula <- ".treat ~ .ps_score"
+      } else if (method[1]=="pgm") {
+        main_formula <- ".treat ~ .prog_score"
+      } else if (method[1]=="dsm") {
+        main_formula <- ".treat ~ .ps_score + .prog_score"
       }
 
       # perform matching on baseline covariates
@@ -351,13 +397,8 @@ match_time.fit <- function(id, time, d_treat, d_covars,
         d_match_i[, .subclass := NULL]
       }
 
-      if (method[1]=="psm") {
-        d_match_i[, .ps_score := NULL]
-
-        if (ps_type[1]=="ps") {
-          d_match_i[, .lp := NULL]
-        }
-      }
+      set_remove_cols(data=d_match_i, method=method, ps_type=ps_type,
+                      prog_type=prog_type)
 
       # add matched time
       d_match_i[, .treat_time := case_times[i]]
@@ -455,7 +496,8 @@ match_time.fit <- function(id, time, d_treat, d_covars,
                          n_incl_controls=n_incl_controls),
               trace=rbindlist(trace),
               matchit_objects=NULL,
-              ps_model=NULL)
+              ps_model=NULL,
+              prog_model=NULL)
   class(out) <- "match_time"
 
   if (save_matchit) {
@@ -463,59 +505,12 @@ match_time.fit <- function(id, time, d_treat, d_covars,
     out$matchit_objects <- matchit_out
   }
 
-  if (method[1]=="psm") {
+  if (method[1]=="psm" | method[1]=="dsm") {
     out$ps_model <- ps_model
+  }
+  if (method[1]=="pgm" | method[1]=="dsm") {
+    out$prog_model <- prog_model
   }
 
   return(out)
-}
-
-## re-code integers, factors or characters to TRUE / FALSE treatment
-# NOTE: assumes that it has already been checked that treat only contains
-#       two values
-#' @importFrom data.table fifelse
-preprocess_treat <- function(treat) {
-
-  if (is.numeric(treat) && all(treat %in% c(0, 1))) {
-    treat <- fifelse(treat==0, FALSE, TRUE)
-  } else if (is.factor(treat)) {
-    treat <- fifelse(treat==levels(treat)[1], FALSE, TRUE)
-  } else if (is.character(treat)) {
-    treat <- fifelse(treat==sort(unique(treat))[1], FALSE, TRUE)
-  } else {
-    stop("The treatment variable specified by the LHS of 'formula'",
-         " needs to specify a variable coded as one of:\n ",
-         "(1) a logical vector, (2) an integer with only 0/1 values",
-         ", (3) a binary factor or (4) a binary character variable.")
-  }
-  return(treat)
-}
-
-## fit a cox model to predict the treatment probability at t, which is
-## the time-dependent propensity score as defined in Lu (2005)
-fit_ps_model <- function(data, d_treat, match_vars) {
-
-  requireNamespace("survival")
-
-  setnames(d_treat, old=".time", new="time")
-
-  # create a new start-stop dataset with A as terminal outcome event
-  d_ps_mod <- merge_start_stop(data, event_times=d_treat, by=".id",
-                               all=TRUE, time_to_first_event=TRUE,
-                               status=".treat", start=".start",
-                               stop=".stop")
-  setnames(d_treat, old="time", new=".time")
-
-  # fit cox model
-  cox_form <- paste0("survival::Surv(.start, .stop, .treat) ~ ",
-                     paste0(match_vars, collapse=" + "))
-  ps_model <- survival::coxph(formula=stats::as.formula(cox_form),
-                              data=d_ps_mod)
-
-  return(ps_model)
-}
-
-## transforms a numeric vector to the 0 / 1 range
-scale_0_1 <- function(x) {
-  return((x - min(x)) / (max(x) - min(x)))
 }

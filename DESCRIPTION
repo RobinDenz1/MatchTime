@@ -1,11 +1,13 @@
 Package: MatchTime
-Title: Perform Time-Dependent Matching for Time-To-Event Outcomes
+Title: Matching for Causal Inference with Time-Dependent Treatments
 Version: 0.1.0
 Authors@R: 
     person("Robin", "Denz", , "robin.denz@rub.de", role = c("aut", "cre"))
 Maintainer: Robin Denz <robin.denz@rub.de>
 Description: Includes multiple methods to perform time-dependent matching with discrete and continuous time,
-    allowing treatment and covariate changes at arbitrary case-specific timings. Additionally includes various
+    allowing treatment and covariate changes at arbitrary case-specific timings.
+	Among the included methods are balanced risk set matching, time-dependent propensity score matching,
+	time-dependent prognostic score matching and time-dependent double score matching. Additionally includes various
 	functions to create and transform start-stop data, because that is the required input for the matching.
 	The package is designed specifically to handle very large datasets.
 License: GPL (>= 3)

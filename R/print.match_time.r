@@ -8,6 +8,12 @@ print.match_time <- function(x, ...) {
     cat(" - method: balanced risk set matching\n")
   } else if (x$info$method=="psm") {
     cat(" - method: time-dependent propensity score matching\n")
+  } else if (x$info$method=="pgm") {
+    cat(" - method: time-dependent prognostic score matching\n")
+  } else if (x$info$method=="dsm") {
+    cat(" - method: time-dependent double score matching\n")
+  } else if (x$info$method=="greedy") {
+    cat(" - method: always selecting all possible controls\n")
   }
 
   # matching info

@@ -5,9 +5,9 @@
 
 <!-- badges: start -->
 
-[![Project Status: Active - The project has reached a stable, usable
-state and is being actively
-developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Project Status: WIP - Initial development is in progress, but there
+has not yet been a stable, usable release suitable for the
+public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 [![](https://www.r-pkg.org/badges/version/MatchTime?color=green)](https://cran.r-project.org/package=MatchTime)
 [![](http://cranlogs.r-pkg.org/badges/grand-total/MatchTime?color=blue)](https://cran.r-project.org/package=MatchTime)
 [![R-CMD-check](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml)
@@ -41,6 +41,9 @@ health-insurance provider. As such, the functions are designed to be
 very fast and RAM efficient, relying almost entirely on the `data.table`
 package internally. Input datasets with ~ 20 million rows can be used in
 any function on a regular computer without any issues.
+
+Note that this package is still in early phases of development. Large
+breaking changes may therefore occur without any warnings.
 
 ## Installation
 

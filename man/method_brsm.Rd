@@ -15,7 +15,7 @@ All other methods implemented in this package use essentially the same methodolo
 \references{
 Li, Yunfei Pail, Kathleen J. Propert, and Paul R. Rosenbaum (2001). "Balanced Risk Set Matching". In: Journal of the American Statistical Association 96.455, pp. 870-882.
 
-Schaubel, Douglas E., Robert A. Wolfe, and Friedrich K. Port (2006). "A Sequential Stratification Method for Estimating the Effect of a Time-Dependent Experimental Treatment in Observational Studies". In: Biometrics 62, pp. 910–917.
+Schaubel, Douglas E., Robert A. Wolfe, and Friedrich K. Port (2006). "A Sequential Stratification Method for Estimating the Effect of a Time-Dependent Experimental Treatment in Observational Studies". In: Biometrics 62, pp. 910-917.
 
 Thomas, Laine E., Siyun Yang, Daniel Wojdyla, and Douglas E. Schaubel (2020). "Matching with Time-Dependent Treatments: A Review and Look Forward". In: Statistics in Medicine 39, pp. 2350-2370.
 }
