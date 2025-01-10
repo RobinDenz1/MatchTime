@@ -73,7 +73,7 @@ library(ggplot2)
 # load some example data from the survival package
 data("heart", package="survival")
 
-## time-dependent propensity score matching, using "transplant" as treatment
+## time-dependent prognostic score matching, using "transplant" as treatment
 ## and surgery + age as variables to match on
 m.obj <- match_time(transplant ~ surgery + age, data=heart, id="id",
                     method="pgm", event="event", match_method="nearest",

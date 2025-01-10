@@ -1,6 +1,6 @@
 
 match_time() methods
-	- add tests for new methods
+	- currently uses the data after exclusion of time-periods, which is not ideal
 
 match_time() general
 	- currently, when using matchit(), cases are discarded if no match is found,

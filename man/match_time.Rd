@@ -5,15 +5,15 @@
 Matching for Causal Inference with Time-Dependent Treatments
 }
 \description{
-This function implements multiple methods to match untreated controls to treated individuals in a time-dependent fashion as described in Thomas et al. (2020). This approach is also known as \emph{sequential trial emulation}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \code{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
+This function implements multiple methods to match untreated controls to treated individuals in a time-dependent fashion as described in Thomas et al. (2020). This approach is also known as \emph{sequential trial emulation}. In contrast to other implementations, this function supports continuous and datetime input and allows matching directly on time-fixed and time-dependent covariates at the same time. It internally uses the \pkg{data.table} package to keep the function fast and allows users to use the \code{\link[MatchIt]{matchit}} function from the excellent \pkg{MatchIt} package to perform the actual matching at each point in time for more flexibility.
 
 Similar to \code{\link[MatchIt]{matchit}}, this page only documents the overall use of \code{match_time()}. Specifics on how \code{match_time()} works with individual methods the individual pages linked in the Detail section should be consulted.
 }
 \usage{
 match_time(formula, data, id, inclusion=NA,
            start="start", stop="stop",
-           method=c("brsm", "psm", "pgm", "dsm",
-                    "greedy"),
+           method=c("brsm", "psm", "pgm",
+                    "dsm", "greedy"),
            replace_over_t=FALSE, replace_at_t=FALSE,
            replace_cases=TRUE, estimand="ATT",
            ratio=1, match_method="fast_exact",
@@ -49,7 +49,7 @@ Whether to allow usage of the same individuals as controls at multiple points in
 Whether to allow usage of the same individuals as controls at the same point in time. If \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}} this argument will be passed to the \code{replace} argument of the \code{\link[MatchIt]{matchit}} function.
   }
   \item{replace_cases}{
-Whether to include individuals that have already been used as controls as cases if they also get the treatment later. This should usually stay at its default value of \code{TRUE}, unless there are some good reasons to change it.
+Whether to include individuals that have already been used as controls as cases if they also get the treatment later. This is purely experimental and should usually stay at its default value of \code{TRUE} regardless of \code{method} and other arguments, unless there are some good reasons to change it.
   }
   \item{estimand}{
 Currently only allows \code{"ATT"} to get a dataset with which to estimate the average treatment effect on the treated (because controls are choosen to be similar to treated individuals). Other values are currently not supported. Note that this argument is \emph{not} passed to \code{\link[MatchIt]{matchit}} when \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}. It would simply not make sense to use anything but "ATT" here.

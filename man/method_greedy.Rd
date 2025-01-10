@@ -8,7 +8,7 @@ Time-Dependent Greedy Selection of Controls
 This documentation page describes the matching process used when setting \code{method="greedy"} in the \code{\link{match_time}} function and gives a explanation on which arguments may still be used in this case. No additional arguments are currently supported when using this method.
 }
 \details{
-Due to the nature of this approach, almost none of the arguments of the \code{\link{match_time}} function may be used when using \code{method="greedy"}, because they do not make sense in the context of greedy selection of controls. More specifically, only the arguments \code{formula}, \code{data}, \code{id}, \code{inclusion}, \code{start}, \code{stop}, \code{method} and \code{verbose} can be used with this method.
+Due to the nature of this approach, almost none of the arguments of the \code{\link{match_time}} function may be used when using \code{method="greedy"}, because they do not make sense in the context of greedy selection of controls. More specifically, only the arguments \code{formula}, \code{data}, \code{id}, \code{inclusion}, \code{start}, \code{stop}, \code{method}, \code{replace_cases} and \code{verbose} can be used with this method.
 
 \strong{\emph{How it works}}:
 
@@ -19,7 +19,7 @@ This process is repeated at each point in time at which at least one individual 
 This method might seem odd at first, but as Gran et al. (2010) have shown, it does work quite well for some estimands of interest if the analysis is done in an appropriate manner. These authors propose the following three step analysis: (1) censoring the controls whenever they later receive treatment (as implemented in the argument \code{censor_at_treat} of the \code{\link{add_outcome}} function), (2) calculating inverse probability of censoring weights for each "trial" (each \code{.treat_time}), and (3) using a stratified weighted Cox model to perform the actual confounder adjustment.
 }
 \references{
-Gran, Jon Michael, Kjetil Røysland, MarcelWolbers, Vanessa Didelez, Jonathan A. C. Sterne, Bruno Ledergerber, Hansjakob Furrer, Viktor von Wyl, and Odd O. Aalen (2010). "A Sequential Cox Approach for Estimating the Causal Effect of Treatment in the Presence of Time-Dependent Confounding Applied to Data from the Swiss HIV Cohort Study". In: Statistics in Medicine 29, pp. 2757-2768.
+Gran, Jon Michael, Kjetil Røysland, Marcel Wolbers, Vanessa Didelez, Jonathan A. C. Sterne, Bruno Ledergerber, Hansjakob Furrer, Viktor von Wyl, and Odd O. Aalen (2010). "A Sequential Cox Approach for Estimating the Causal Effect of Treatment in the Presence of Time-Dependent Confounding Applied to Data from the Swiss HIV Cohort Study". In: Statistics in Medicine 29, pp. 2757-2768.
 
 Karim, Mohammad Ehsanul, John Petkau, Paul Gustafson, Robert W. Platt, and Helen Tremlett (2018). "Comparison of Statistical Approaches Dealing with Time-Dependent Confounding in Drug Effectiveness Studies". In: Statistical Methods in Medical Research 27.6, pp. 1709-1722.
 }
@@ -37,9 +37,10 @@ library(survival)
 # load some example data from the survival package
 data("heart", package="survival")
 
-## time-dependent propensity score matching, using "transplant" as treatment
-## and surgery + age as variables to match on
-m.obj <- match_time(transplant ~ surgery + age, data=heart, id="id",
+## time-dependent greedy matching
+## there does not have to be anything on the RHS of formula, because no
+## actual matching is performed
+m.obj <- match_time(transplant ~ 1, data=heart, id="id",
                     method="greedy")
 }
 }

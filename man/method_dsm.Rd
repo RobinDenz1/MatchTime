@@ -46,7 +46,7 @@ All arguments of the \code{\link{match_time}} function may be used when using \c
 
 This method combines time-dependent propensity score matching (see \code{\link{method_psm}}) and time-dependent prognostic score matching (see \code{\link{method_pgm}}) into a single doubly-robust method by estimating both scores and matching on both of them. Doubly-robust in this case means that only one of the two models has to be correctly specified to obtain unbiased estimates after matching. This property has been studied quite well for regular double risk score matching (see Antonelli et al. 2018 or Leacy et al. 2014), but there is not a lot of literature for the time-dependent case. A notable exception is Li et al (2013).
 
-Because \code{\link{match_time}} allows users to use the \code{\link[MatchIt]{matchit}} function internally, there are many possible options on how exactly the matching should be performed. User could, for example, use caliper based matching for both scores or simply combine them using the mahalanobis distance, as has been described by
+Because \code{\link{match_time}} allows users to use the \code{\link[MatchIt]{matchit}} function internally, there are many possible options on how exactly the matching should be performed. Users could, for example, use caliper based matching for both scores or simply combine them using the mahalanobis distance, as has been described by
 
 \strong{\emph{Estimation of the propensity and prognostic score}}:
 
@@ -79,7 +79,7 @@ library(ggplot2)
 # load some example data from the survival package
 data("heart", package="survival")
 
-## time-dependent propensity score matching, using "transplant" as treatment
+## time-dependent double score matching, using "transplant" as treatment
 ## and surgery + age as variables to match on
 m.obj <- match_time(transplant ~ surgery + age, data=heart, id="id",
                     method="dsm", event="event", match_method="nearest",

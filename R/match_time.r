@@ -209,7 +209,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
     if (ps_type[1]=="lp") {
       d_covars[, .ps_score := stats::predict(ps_model, newdata=d_covars)]
       if (standardize_ps) {
-        d_all_i[, .ps_score := scale_0_1(.ps_score)]
+        d_covars[, .ps_score := scale_0_1(.ps_score)]
       }
     # or use actual propensity score as done in Lu (2005)
     } else if (ps_type[1]=="ps") {
@@ -228,7 +228,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
     if (prog_type[1]=="lp") {
       d_covars[, .prog_score := stats::predict(prog_model, newdata=d_covars)]
       if (standardize_prog) {
-        d_all_i[, .prog_score := scale_0_1(.prog_score)]
+        d_covars[, .prog_score := scale_0_1(.prog_score)]
       }
     # or use actual probability
     } else if (prog_type[1]=="p") {
@@ -303,7 +303,10 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       d_match_i <- d_all_i
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .weights := NA]
-      d_match_i[, .strata := NULL]
+
+      if (".strata" %in% colnames(d_match_i)) {
+        d_match_i[, .strata := NULL]
+      }
     # return only cases if no controls left
     } else if (nrow(d_all_i)==length(ids_cases_i)) {
 
@@ -504,7 +507,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
               prog_model=NULL)
   class(out) <- "match_time"
 
-  if (save_matchit) {
+  if (save_matchit & !match_method %in% c("none", "fast_exact") &
+      method[1] != "greedy") {
     names(matchit_out) <- as.character(case_times)
     out$matchit_objects <- matchit_out
   }
