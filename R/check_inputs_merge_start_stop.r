@@ -136,8 +136,17 @@ check_inputs_merge_start_stop <- function(dlist, first_time, last_time,
                       " same type as 'start' and 'stop'."))
   }
 
-  # no intervals of length 0 in dlist
   for (i in seq_len(length(dlist))) {
+
+    # no missing values in start / stop / id
+    stopifnotm(!anyNA(dlist[[i]][[by]]),
+               "Missing values in 'by' column are not allowed.")
+    stopifnotm(!anyNA(dlist[[i]][[start]]),
+               "Missing values in 'start' column are not allowed.")
+    stopifnotm(!anyNA(dlist[[i]][[stop]]),
+               "Missing values in 'stop' column are not allowed.")
+
+    # no intervals of length 0 in dlist
     diff <- dlist[[i]][[stop]] - dlist[[i]][[start]]
     if (any(diff==0)) {
       stop("Intervals of length zero are not supported in 'x', 'y', ..., or ",

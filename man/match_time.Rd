@@ -108,7 +108,7 @@ Ideally, the treatment specified on the LHS of the \code{formula} argument is co
 
 \strong{\emph{Interval Coding}}:
 
-The intervals supplied to the \code{data} argument are required to be \emph{right-open} intervals \code{[start, stop)}, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message. Although events should be coded differently, this does not matter for this function itself because \code{data} should not contain events.
+The intervals supplied to the \code{data} argument are required to be \emph{right-open} intervals \code{[start, stop)}, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message. Note that events should be coded differently, as described in the \code{\link{merge_start_stop}} function. This is only relevant when using \code{method="pgm"} or \code{method="dsm"}.
 
 \strong{\emph{Adding more Variables}}
 

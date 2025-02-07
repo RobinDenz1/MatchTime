@@ -22,7 +22,6 @@ New features:
 	- estimate_ipcw(): function to estimate inverse probability of censoring weights
 
 General TODOs:
-	- finish vignette on start-stop data generation
 	- add vignette showcasing time-dependent matching with match_time()
 	- add usual package stuff
 		- pkgdown website
