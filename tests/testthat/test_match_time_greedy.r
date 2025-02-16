@@ -20,7 +20,6 @@ test_that("most arguments of match_time() are ignored", {
   m.obj2 <- match_time(transplant ~ 1, data=heart, id="id",
                        method="greedy", replace_at_t=TRUE, replace_over_t=TRUE,
                        ratio=10, match_method="nearest",
-                       if_no_match="stop",
                        matchit_args=list(distance="mahalanobis"),
                        save_matchit=TRUE)
 

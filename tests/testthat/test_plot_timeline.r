@@ -8,7 +8,7 @@ set.seed(41231)
 
 out <- suppressWarnings(
   match_time(transplant ~ age + surgery, data=heart, id="id",
-                match_method="nearest", if_no_match="warn",
+                match_method="nearest",
                 replace_over_t=TRUE, replace_at_t=FALSE)
 )
 

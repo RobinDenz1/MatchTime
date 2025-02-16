@@ -12,7 +12,7 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
                           legend.position="right",
                           gg_theme=ggplot2::theme_bw(), warn=TRUE) {
 
-  .id_new <- .id_pair <- .next_treat_time <- .treat <- NULL
+  .id_new <- .id_pair <- .next_treat_time <- .treat <- .data <- NULL
 
   requireNamespace("ggplot2")
 

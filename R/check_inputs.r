@@ -16,9 +16,9 @@ is.Date <- function(x) {
 
 ## works similar to stopifnot() but allows a custom message in
 ## a more convenient fashion
-stopifnotm <- function(assert, message) {
+stopifnotm <- function(assert, ...) {
   if (!assert) {
-    stop(message, call.=FALSE)
+    stop(paste(..., collapse=""), call.=FALSE)
   }
 }
 
@@ -27,7 +27,7 @@ stopifnotm <- function(assert, message) {
 check_inputs_match_time <- function(formula, data, id, inclusion,
                                     replace_over_t, replace_at_t,
                                     replace_cases, estimand, ratio,
-                                    if_no_match, match_method, verbose,
+                                    match_method, verbose,
                                     start, stop, method) {
 
   # correct data
@@ -73,11 +73,6 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
   stopifnotm(length(ratio)==1 && is.numeric(ratio) && ratio >= 1 &&
                round(ratio)==ratio,
              "'ratio' must be a single integer >= 1.")
-
-  # correct if_no_match
-  stopifnotm(is_single_character(if_no_match) &&
-              if_no_match %fin% c("stop", "warn", "nothing"),
-             "'if_no_match' must be either 'stop', 'warn' or 'nothing'.")
 
   # correct match_method
   stopifnotm(is_single_character(match_method) &&

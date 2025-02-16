@@ -13,8 +13,7 @@ match_time <- function(formula, data, id, inclusion=NA,
                        replace_over_t=FALSE, replace_at_t=FALSE,
                        replace_cases=TRUE, estimand="ATT", ratio=1,
                        match_method="fast_exact", matchit_args=list(),
-                       if_no_match="warn", verbose=FALSE,
-                       save_matchit=FALSE, ...) {
+                       save_matchit=FALSE, verbose=FALSE, ...) {
 
   .inclusion <- .treat <- .time <- NULL
 
@@ -32,7 +31,6 @@ match_time <- function(formula, data, id, inclusion=NA,
                           replace_at_t=replace_at_t,
                           replace_cases=replace_cases,
                           estimand=estimand, ratio=ratio,
-                          if_no_match=if_no_match,
                           match_method=match_method,
                           verbose=verbose,
                           start=start, stop=stop, method=method)
@@ -76,7 +74,7 @@ match_time <- function(formula, data, id, inclusion=NA,
                         d_covars=data, match_vars=match_vars,
                         replace_over_t=replace_over_t,
                         replace_at_t=replace_at_t, replace_cases=replace_cases,
-                        estimand=estimand, ratio=ratio, if_no_match=if_no_match,
+                        estimand=estimand, ratio=ratio,
                         match_method=match_method, verbose=verbose,
                         start=start, stop=stop, save_matchit=save_matchit,
                         method=method, matchit_args=matchit_args, ...)
@@ -105,7 +103,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                            replace_over_t=FALSE,
                            replace_at_t=FALSE, replace_cases=TRUE,
                            estimand="ATT", ratio=1,
-                           if_no_match="warn", match_method="fast_exact",
+                           match_method="fast_exact",
                            verbose=FALSE, start="start", stop="stop",
                            save_matchit=FALSE, matchit_args=list(),
                            ps_type=c("ps", "lp"), basehaz_interpol="constant",
@@ -337,7 +335,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                                            strata=".strata",
                                            estimand="ATT",
                                            replace=replace_at_t,
-                                           if_no_match=if_no_match,
+                                           if_no_match="nothing",
                                            ratio=ratio)
 
       d_match_i[, .id_pair := paste0(i, "_", .id_pair)]

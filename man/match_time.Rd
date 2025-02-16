@@ -17,8 +17,8 @@ match_time(formula, data, id, inclusion=NA,
            replace_over_t=FALSE, replace_at_t=FALSE,
            replace_cases=TRUE, estimand="ATT",
            ratio=1, match_method="fast_exact",
-           matchit_args=list(), if_no_match="warn",
-           verbose=FALSE, save_matchit=FALSE, ...)
+           matchit_args=list(), save_matchit=FALSE,
+           verbose=FALSE, ...)
 }
 \arguments{
   \item{formula}{
@@ -63,14 +63,11 @@ A single character string specifying which method should be used to perform matc
   \item{matchit_args}{
 A named list of further arguments that should be passed to \code{\link[MatchIt]{matchit}} when \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}.
   }
-  \item{if_no_match}{
-Must be either \code{"stop"}, \code{"warn"} (default) or \code{"nothing"}. Controls whether to throw an error, a warning or silently accept when not enough controls could be matched to one or more cases. Only works when \code{match_method="fast_exact"}.
+  \item{save_matchit}{
+Whether to save the objects created by each \code{\link[MatchIt]{matchit}} call at different points in time when using a \code{match_method} that is used in \code{\link[MatchIt]{matchit}}. If set to \code{TRUE}, the \code{matchit_objects} list will include one entry per point in time at which matching was performed. Defaults to \code{FALSE} to save RAM space.
   }
   \item{verbose}{
 Whether to print a summary of how many matches were made for each point in time or not (default). This argument is \emph{not} passed to the \code{\link[MatchIt]{matchit}} function if used.
-  }
-  \item{save_matchit}{
-Whether to save the objects created by each \code{\link[MatchIt]{matchit}} call at different points in time when using a \code{match_method} that is used in \code{\link[MatchIt]{matchit}}. If set to \code{TRUE}, the \code{matchit_objects} list will include one entry per point in time at which matching was performed. Defaults to \code{FALSE} to save RAM space.
   }
   \item{...}{
 Further \code{method} specific arguments that may be specified. For more information on which method specific arguments are allowed per method, please consult the documentation page of the respective method. Those can be accessed using, for example, \code{?method_brsm} or \code{?method_psm}.

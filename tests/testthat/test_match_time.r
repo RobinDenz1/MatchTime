@@ -199,8 +199,7 @@ test_that("using 10 controls per case, replace_at_t=TRUE", {
                     inclusion="inclusion",
                     replace_at_t=TRUE,
                     replace_over_t=FALSE,
-                    ratio=10,
-                    if_no_match="nothing")$data
+                    ratio=10)$data
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -221,8 +220,7 @@ test_that("using 10 controls per case, replace_over_t=TRUE", {
                     inclusion="inclusion",
                     replace_at_t=FALSE,
                     replace_over_t=TRUE,
-                    ratio=10,
-                    if_no_match="nothing")$data
+                    ratio=10)$data
 
   # replacement only took place at the same t
   out_untreated <- subset(out, !.treat)
@@ -246,8 +244,7 @@ test_that("using 10 controls per case, replace_cases=FALSE", {
                     replace_at_t=FALSE,
                     replace_over_t=FALSE,
                     replace_cases=FALSE,
-                    ratio=10,
-                    if_no_match="nothing")$data
+                    ratio=10)$data
 
   # a lot less cases than usual
   expect_true(length(unique(out$.id_pair))==88)
