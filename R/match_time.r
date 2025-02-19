@@ -36,26 +36,20 @@ match_time <- function(formula, data, id, inclusion=NA,
                           start=start, stop=stop, method=method)
 
   # extract needed things from formula
-  vars <- all.vars(formula)
-  treat <- vars[1]
-  if (length(vars) > 1) {
-    match_vars <- vars[2:length(vars)]
-  } else {
-    match_vars <- NULL
-  }
+  form <- process_formula(formula)
 
   # fix treatment variable if needed
-  if (!is.logical(data[[treat]])) {
-    setnames(data, old=treat, new=".treat")
+  if (!is.logical(data[[form$treat]])) {
+    setnames(data, old=form$treat, new=".treat")
     data[, .treat := preprocess_treat(.treat)]
-    setnames(data, old=".treat", new=treat)
+    setnames(data, old=".treat", new=form$treat)
   }
 
   # extract relevant treatment times
-  d_treat <- times_from_start_stop(data=data, name=treat, id=id,
+  d_treat <- times_from_start_stop(data=data, name=form$treat, id=id,
                                    type="var", time_name=".time",
                                    start=start, stop=stop)
-  data[, (treat) := NULL]
+  data[, (form$treat) := NULL]
 
   # save sample sizes of input
   n_input_all <- length(unique(data[[id]]))
@@ -71,7 +65,7 @@ match_time <- function(formula, data, id, inclusion=NA,
 
   # call function that does all the work
   out <- match_time.fit(id=id, time=".time", d_treat=d_treat,
-                        d_covars=data, match_vars=match_vars,
+                        d_covars=data, match_vars=form$match_vars,
                         replace_over_t=replace_over_t,
                         replace_at_t=replace_at_t, replace_cases=replace_cases,
                         estimand=estimand, ratio=ratio,

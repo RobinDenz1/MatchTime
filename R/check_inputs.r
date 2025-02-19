@@ -22,6 +22,13 @@ stopifnotm <- function(assert, ...) {
   }
 }
 
+## similar to stopifnotm() but just returns a warning
+warnifnotm <- function(assert, ...) {
+  if (!assert) {
+    warning(paste(..., collapse=""), call.=FALSE)
+  }
+}
+
 ## input checks for the match_time() function
 #' @importFrom fastmatch %fin%
 check_inputs_match_time <- function(formula, data, id, inclusion,
@@ -51,8 +58,8 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
                     " were not found in 'data'."))
 
   # correct treatment
-  treat <- all.vars(formula)[1]
-  stopifnotm(length(unique(data[[treat]]))==2,
+  form <- process_formula(formula)
+  stopifnotm(length(unique(data[[form$treat]]))==2,
              paste0("The treatment variable specified on the LHS of the",
                     " 'formula' argument must be binary."))
 
@@ -107,6 +114,12 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
   stopifnotm(!(method[1]=="dsm" && length(all.vars(formula))==1),
              paste0("'formula' must contain at least one variable on the RHS",
                     " if method='dsm'."))
+
+  # with method greedy
+  warnifnotm(method[1]!= "greedy" |
+               (method[1]=="greedy" && length(form$match_vars) == 0),
+             "Variables on the RHS of 'formula' are ignored",
+             "because method='greedy' is used.")
 
   # correct logical variables
   stopifnotm(is_single_logical(replace_over_t),

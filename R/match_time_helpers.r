@@ -117,3 +117,20 @@ set_score_at_t <- function(data, h0, t, name_score, name_lp,
     data[, (name_score) := scale_0_1(get(name_score))]
   }
 }
+
+## extracts treatment and variables from formula
+process_formula <- function(formula) {
+
+  match_vars <- all.vars(formula[-2])
+  treat <- all.vars(formula)[!all.vars(formula) %in% match_vars]
+
+  stopifnotm(is_single_character(treat),
+          "There must be a single variable on the left hand side of 'formula'.")
+
+  if (length(match_vars)==0) {
+    match_vars <- NULL
+  }
+
+  out <- list(treat=treat, match_vars=match_vars)
+  return(out)
+}

@@ -654,7 +654,7 @@ test_that("matching on time-fixed and time-dependent variable, method='dsm'", {
 test_that("matching using method='greedy'", {
 
   set.seed(134)
-  out <- match_time(formula=vacc ~ mac + meds,
+  out <- match_time(formula=vacc ~ 1,
                     data=d_single,
                     id=".id",
                     inclusion="inclusion",
