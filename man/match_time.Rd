@@ -11,27 +11,31 @@ Similar to \code{\link[MatchIt]{matchit}}, this page only documents the overall 
 }
 \usage{
 match_time(formula, data, id, inclusion=NA,
-           start="start", stop="stop",
+           outcomes=NA, start="start", stop="stop",
            method=c("brsm", "psm", "pgm",
                     "dsm", "greedy"),
            replace_over_t=FALSE, replace_at_t=FALSE,
            replace_cases=TRUE, estimand="ATT",
            ratio=1, match_method="fast_exact",
            matchit_args=list(), save_matchit=FALSE,
-           verbose=FALSE, ...)
+           censor_at_treat=TRUE, censor_pairs=FALSE,
+           units="auto", verbose=FALSE, ...)
 }
 \arguments{
   \item{formula}{
 A \code{formula} object with a binary treatment variable on the left hand side and the covariates to be balanced on the right hand side. Interactions and functions of covariates are currently not allowed. The treatment variable is ideally coded as a logical variable (\code{TRUE} = treatment, \code{FALSE} = control). See details for how the "treated" group is identified with other input types.
   }
   \item{data}{
-A \code{data.table} like object in the start-stop format, containing information about variables that are time-invariant or time-dependent. Each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. Intervals should be coded to be \emph{right-open} (corresponds to \code{[start, stop)}). Continuous (float) and discrete (integer, datetime) values are supported for both time columns. The dataset should also include an \code{id} variable (see argument \code{id}). See details and examples for more information.
+A \code{data.table} like object in the start-stop format, containing information about variables that are time-invariant or time-dependent and potentially outcomes. Each row corresponds to a period of time in which no variables changed. These intervals are defined by the \code{start} and \code{stop} columns. The \code{start} column gives the time at which the period started, the \code{stop} column denotes the time when the period ended. Intervals should be coded to be \emph{right-open} (corresponds to \code{[start, stop)}). Continuous (float) and discrete (integer, datetime) values are supported for both time columns. The dataset should also include an \code{id} variable (see argument \code{id}). See details and examples for more information, including how events should be coded.
   }
   \item{id}{
 A single character string specifying the unique case identifier in \code{data}.
   }
   \item{inclusion}{
 A single character string specifying an optional logical variable in \code{data} which should be \code{TRUE} if the period specified by the \code{start} and \code{stop} columns in \code{data} corresponds to a period in which the individual fufills the inclusion criteria and \code{FALSE} if the individual does not. All periods where the variable is \code{FALSE} will be excluded from the matching process dynamically. Set to \code{NA} to not use this functionality (default).
+  }
+  \item{outcomes}{
+An optional character vector to specify which logical variables in \code{data} should be treated as (potentially right-censored) outcomes. These should be coded differently than time-dependent variables as explained throughout the documentation and the relevant vignette. Columns named in this argument will be re-coded in the output so that they appear as the time until the first occurrence of the respective outcome after inclusion in the matching process. This is equivalent to calling the \code{\link{add_outcome}} function on the output object once for each value in \code{outcomes}. Note that all \code{outcomes} cannot be matched on, because they occur \emph{after} the respective point in time. Set to \code{NA} to not use this functionality (default).
   }
   \item{start}{
 A single character string specifying a column in \code{data} specifying the beginning of a time-interval. Defaults to \code{"start"}.
@@ -65,6 +69,15 @@ A named list of further arguments that should be passed to \code{\link[MatchIt]{
   }
   \item{save_matchit}{
 Whether to save the objects created by each \code{\link[MatchIt]{matchit}} call at different points in time when using a \code{match_method} that is used in \code{\link[MatchIt]{matchit}}. If set to \code{TRUE}, the \code{matchit_objects} list will include one entry per point in time at which matching was performed. Defaults to \code{FALSE} to save RAM space.
+  }
+  \item{censor_at_treat}{
+Only used when \code{outcomes} is specified. Either \code{TRUE} or \code{FALSE}, indicating whether the created event time should be censored at the time of the next treatment. This only applies to cases that were included in the matching process as controls but later become cases themselves. Defaults to \code{TRUE}.
+  }
+  \item{censor_pairs}{
+Only used when \code{outcomes} is specified. Either \code{TRUE} or \code{FALSE}. Only used if \code{censor_at_treat=TRUE}. If set to \code{TRUE}, the case matched to a control is censored at the same time that the control was censored due to the next treatment occurring. If \code{ratio > 1}, the minimum time to "artificial censoring" is used as censoring time for all cases with the same \code{.id_pair}. This may in some cases be sufficient to deal with the covariate dependent censoring induced by using \code{censor_at_treat=TRUE}.
+  }
+  \item{units}{
+Only used when \code{outcomes} is specified. Corresponds to the argument of the same name in the \code{\link{difftime}} function. This argument is only used when the \code{start} and \code{stop} columns correspond to a \code{Date} (or similar) variable. It should be used to indicate the time-scale of the created event time (seconds, days, years, ...).
   }
   \item{verbose}{
 Whether to print a summary of how many matches were made for each point in time or not (default). This argument is \emph{not} passed to the \code{\link[MatchIt]{matchit}} function if used.
@@ -105,7 +118,7 @@ Ideally, the treatment specified on the LHS of the \code{formula} argument is co
 
 \strong{\emph{Interval Coding}}:
 
-The intervals supplied to the \code{data} argument are required to be \emph{right-open} intervals \code{[start, stop)}, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message. Note that events should be coded differently, as described in the \code{\link{merge_start_stop}} function. This is only relevant when using \code{method="pgm"} or \code{method="dsm"}.
+The intervals supplied to the \code{data} argument are required to be \emph{right-open} intervals \code{[start, stop)}, which is the usual data format expected for time-to-event modelling and corresponds to the interval format of the \code{tmerge} function of the \pkg{survival} package. As a consequence, intervals of length 0 (where \code{start==stop}) are not supported and will result in an error message. Note that events should be coded differently, as described in the \code{\link{merge_start_stop}} function. At least one outcome \emph{needs} to be included when using \code{method="pgm"} or \code{method="dsm"}, but users may include an arbitrary amount of additional outcome event variables using the \code{outcomes} argument.
 
 \strong{\emph{Adding more Variables}}
 
@@ -187,14 +200,12 @@ library(ggplot2)
 
 # load some example data from the survival package
 data("heart", package="survival")
-
-# keep only columns relevant for matching
-heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
+heart$event <- as.logical(heart$event)
 
 ## time-dependent matching, using "transplant" as treatment and only
-## "surgery" as variable to match on
+## "surgery" as variable to match on, with "event" as outcome
 m.obj <- match_time(transplant ~ surgery, data=heart, id="id",
-                    match_method="fast_exact")
+                    match_method="fast_exact", outcomes="event")
 
 # show some balance statistics + the resulting sample sizes
 summary(m.obj)

@@ -15,7 +15,7 @@ An optional formula object, specifying the right-hand side of the formula that s
 Same as \code{formula_ps} but used for the propensity score model.
   }
   \item{event}{
-A single character string specifying a column in \code{data} containing the event status of interest. The outcome specified by this argument will be used as dependent variable in the prognostic score model. This argument therefore \emph{must} be specified, otherwise an error will be produced.
+A single character string specifying a column in \code{data} containing the event status of interest. The outcome specified by this argument will be used as dependent variable in the prognostic score model. This argument therefore \emph{must} be specified, otherwise an error will be produced. Note that this argument will be treated as an outcome by default and does not have to be added to \code{outcomes} in the main function call.
   }
   \item{ps_type}{
 A single character string, specifying which type of "propensity score" to use. Currently supports \code{"ps"}, which results in usage of the actual propensity score at time t and \code{"lp"}, which instead uses only the linear predictor of the model (disregarding the baseline hazard), as proposed by Hade et al. (2015). Using \code{"lp"} is faster because the baseline hazard does not need to be estimated and because there is no need to calculate the actual propensity score on each time where matching is done. There are, however, currently no studies showing that the \code{"lp"} method performs as well as the \code{"ps"} method, which is why it is recommended to keep this at \code{"ps"}.

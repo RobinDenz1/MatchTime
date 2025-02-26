@@ -670,3 +670,35 @@ test_that("matching using method='greedy'", {
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 18950)
 })
+
+test_that("outcomes arg working", {
+
+  data("heart", package="survival")
+
+  heart$event_logical <- as.logical(heart$event)
+  heart$event_logical2 <- heart$event_logical
+  heart$event_logical2[1:17] <- FALSE
+
+  ## time-dependent matching, using "transplant" as treatment and only
+  ## "surgery" as variable to match on
+  m.obj <- match_time(transplant ~ surgery + age, data=heart, id="id",
+                      match_method="nearest",
+                      outcomes=c("event_logical", "event_logical2"))
+
+
+  dat1 <- times_from_start_stop(heart, id="id", name="event_logical",
+                                type="event")
+  dat2 <- times_from_start_stop(heart, id="id", name="event_logical2",
+                                type="event")
+
+  m.obj <- add_outcome(m.obj, data=dat1, event_time_name="time1",
+                       status_name="status1", time="time")
+  m.obj <- add_outcome(m.obj, data=dat2, event_time_name="time2",
+                       status_name="status2", time="time")
+
+  expect_true(all(m.obj$data$event_logical_status==m.obj$data$status1))
+  expect_true(all(m.obj$data$event_logical_time==m.obj$data$time1))
+
+  expect_true(all(m.obj$data$event_logical2_status==m.obj$data$status2))
+  expect_true(all(m.obj$data$event_logical2_time==m.obj$data$time2))
+})

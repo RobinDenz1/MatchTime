@@ -35,7 +35,7 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
                                     replace_over_t, replace_at_t,
                                     replace_cases, estimand, ratio,
                                     match_method, verbose,
-                                    start, stop, method) {
+                                    start, stop, method, outcomes) {
 
   # correct data
   stopifnotm(is_single_character(start) && start %in% colnames(data),
@@ -75,6 +75,19 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
               is.logical(data[[inclusion]])),
              paste0("'inclusion' must be a single character string specifying",
                     " a logical variable in 'data' or NA."))
+
+  # correct outcomes
+  stopifnotm(all(is.na(outcomes)) || (is.character(outcomes) &&
+               all(outcomes %in% colnames(data))),
+             "'outcomes' must be a character vector specifying logical",
+             "event variables in 'data'.")
+  stopifnotm(all(is.na(outcomes)) ||
+             all(unlist(lapply(data[, outcomes, with=FALSE], is.logical))),
+             "All columns named in 'outcomes' must be logical.")
+  form_in_outcomes <- form$match_vars[form$match_vars %in% outcomes]
+  stopifnotm(length(form_in_outcomes)==0,
+             "Cannot match on variables specified as outcome(s):",
+             paste0(form_in_outcomes, collapse=", "))
 
   # correct ratio
   stopifnotm(length(ratio)==1 && is.numeric(ratio) && ratio >= 1 &&

@@ -8,12 +8,14 @@
 #' @importFrom data.table :=
 #' @export
 match_time <- function(formula, data, id, inclusion=NA,
-                       start="start", stop="stop",
+                       outcomes=NA, start="start", stop="stop",
                        method=c("brsm", "psm", "pgm", "dsm", "greedy"),
                        replace_over_t=FALSE, replace_at_t=FALSE,
                        replace_cases=TRUE, estimand="ATT", ratio=1,
                        match_method="fast_exact", matchit_args=list(),
-                       save_matchit=FALSE, verbose=FALSE, ...) {
+                       save_matchit=FALSE, censor_at_treat=TRUE,
+                       censor_pairs=FALSE, units="auto", verbose=FALSE,
+                       ...) {
 
   .inclusion <- .treat <- .time <- NULL
 
@@ -26,7 +28,7 @@ match_time <- function(formula, data, id, inclusion=NA,
 
   # check inputs
   check_inputs_match_time(formula=formula, data=data, id=id,
-                          inclusion=inclusion,
+                          inclusion=inclusion, outcomes=outcomes,
                           replace_over_t=replace_over_t,
                           replace_at_t=replace_at_t,
                           replace_cases=replace_cases,
@@ -56,6 +58,24 @@ match_time <- function(formula, data, id, inclusion=NA,
   n_input_cases <- nrow(d_treat)
   n_input_controls <- n_input_all - nrow(d_treat[.time==0])
 
+  # extract outcome info, if available
+  if (all(!is.na(outcomes))) {
+
+    # handle 'event' argument if needed
+    if (methods::hasArg("event")) {
+      event <- list(...)$event
+      outcomes_remove <- outcomes[outcomes != event]
+      outcomes <- unique(c(outcomes, event))
+    } else {
+      outcomes_remove <- outcomes
+    }
+
+    l_events <- lapply(outcomes, FUN=times_from_start_stop,
+                       id=id, type="event", time_name=".time",
+                       data=data)
+    data[, (outcomes_remove) := NULL]
+  }
+
   # remove all rows when inclusion criteria are not met
   if (!is.na(inclusion)) {
     setnames(data, old=inclusion, new=".inclusion")
@@ -71,13 +91,29 @@ match_time <- function(formula, data, id, inclusion=NA,
                         estimand=estimand, ratio=ratio,
                         match_method=match_method, verbose=verbose,
                         start=start, stop=stop, save_matchit=save_matchit,
-                        method=method, matchit_args=matchit_args, ...)
+                        method=method[1], matchit_args=matchit_args, ...)
 
   # add stuff to output
   out$call <- match.call()
   out$sizes$n_input_all <- n_input_all
   out$sizes$n_input_cases <- n_input_cases
   out$sizes$n_input_controls <- n_input_controls
+
+  # add back outcomes if specified
+  if (all(!is.na(outcomes))) {
+    for (i in seq_len(length(outcomes))) {
+      out <- add_outcome(out, data=l_events[[i]],
+                         id=id, time=".time",
+                         event_time_name=paste0(outcomes[i], "_time"),
+                         status_name=paste0(outcomes[i], "_status"),
+                         censor_at_treat=censor_at_treat,
+                         censor_pairs=censor_pairs,
+                         units=units)
+    }
+    if (methods::hasArg("event")) {
+      out$data[, (event) := NULL]
+    }
+  }
 
   return(out)
 }
@@ -93,8 +129,7 @@ match_time <- function(formula, data, id, inclusion=NA,
 #' @importFrom data.table rbindlist
 #' @importFrom data.table setcolorder
 match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
-                           method=c("brsm", "psm", "pgm", "dsm", "greedy"),
-                           replace_over_t=FALSE,
+                           method="brsm", replace_over_t=FALSE,
                            replace_at_t=FALSE, replace_cases=TRUE,
                            estimand="ATT", ratio=1,
                            match_method="fast_exact",
@@ -111,9 +146,14 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
     .fully_matched <- .weights <- ..id.. <- .distance <- .ps_score <-
     .lp_ps <- .prog_score <- .lp_prog <- NULL
 
-  if (method[1]=="greedy") {
+  if (method=="greedy") {
     replace_over_t <- TRUE
   }
+
+  # event must be specified with method "pgm" or "dsm"
+  stopifnotm(!((method=="pgm" | method=="dsm") && is.na(event)),
+             "'event' must be specified when using method='pgm' or",
+             "method='dsm'.")
 
   # rename id / time to prevent possible errors with get()
   setnames(d_treat, old=c(id, time), new=c(".id", ".time"))
@@ -134,16 +174,16 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   }
 
   # add propensity score variables to vector of names that will be included
-  if ((method[1]=="psm" | method[1]=="dsm") & ps_type[1]=="ps") {
+  if ((method=="psm" | method=="dsm") & ps_type[1]=="ps") {
     select_vars <- c(select_vars, ".lp_ps")
-  } else if (method[1]=="psm" | method[1]=="dsm") {
+  } else if (method=="psm" | method=="dsm") {
     select_vars <- c(select_vars, ".ps_score")
   }
 
   # add prognostic score variables to vector of names that will be included
-  if ((method[1]=="pgm" | method[1]=="dsm") & prog_type[1]=="p") {
+  if ((method=="pgm" | method=="dsm") & prog_type[1]=="p") {
     select_vars <- c(select_vars, ".lp_prog")
-  } else if (method[1]=="pgm" | method[1]=="dsm") {
+  } else if (method=="pgm" | method=="dsm") {
     select_vars <- c(select_vars, ".prog_score")
   }
 
@@ -152,13 +192,13 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   colnames(d_longest) <- c(id, ".max_t")
 
   # estimate propensity score model, if specified
-  if (method[1]=="psm" | method[1]=="dsm") {
+  if (method=="psm" | method=="dsm") {
     ps_model <- fit_ps_model(data=d_covars, d_treat=d_treat,
                              match_vars=match_vars, formula=formula_ps)
   }
 
   # estimate prognostic score model, if specified
-  if (method[1]=="pgm" | method[1]=="dsm") {
+  if (method=="pgm" | method=="dsm") {
     prog_model <- fit_prog_model(data=d_covars, d_treat=d_treat,
                                  match_vars=match_vars, event=event,
                                  formula=formula_prog)
@@ -194,7 +234,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   }
 
   # set up propensity score, if specified
-  if (method[1]=="psm" | method[1]=="dsm") {
+  if (method=="psm" | method=="dsm") {
 
     # directly use linear predictor as propensity score, as done in
     # Hade et al. (2020)
@@ -214,7 +254,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   }
 
   # set up prognostic score, if specified
-  if (method[1]=="pgm" | method[1]=="dsm") {
+  if (method=="pgm" | method=="dsm") {
 
     # directly use linear predictor as prognostic score
     if (prog_type[1]=="lp") {
@@ -279,19 +319,19 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
     d_all_i[, .treat := .id %fin% ids_cases_i]
 
     # for propensity score matching, calculate .ps_score
-    if ((method[1]=="psm" | method[1]=="dsm") & ps_type[1]=="ps") {
+    if ((method=="psm" | method=="dsm") & ps_type[1]=="ps") {
       set_score_at_t(data=d_all_i, t=case_times[i], h0=h0_ps,
                      name_score=".ps_score", name_lp=".lp_ps",
                      standardize=standardize_ps)
     }
-    if ((method[1]=="pgm" | method[1]=="dsm") & prog_type[1]=="p") {
+    if ((method=="pgm" | method=="dsm") & prog_type[1]=="p") {
       set_score_at_t(data=d_all_i, t=case_times[i], h0=h0_prog,
                      name_score=".prog_score", name_lp=".lp_prog",
                      standardize=standardize_prog)
     }
 
     # simply take the entire dataset for method="greedy"
-    if (method[1]=="greedy") {
+    if (method=="greedy") {
       d_match_i <- d_all_i
       d_match_i[, .treat_time := case_times[i]]
       d_match_i[, .weights := NA]
@@ -341,13 +381,13 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       requireNamespace("MatchIt")
 
       # create formulas for matchit call
-      if (method[1]=="brsm") {
+      if (method=="brsm") {
         main_formula <- paste0(".treat ~ ", paste0(match_vars, collapse=" + "))
-      } else if (method[1]=="psm") {
+      } else if (method=="psm") {
         main_formula <- ".treat ~ .ps_score"
-      } else if (method[1]=="pgm") {
+      } else if (method=="pgm") {
         main_formula <- ".treat ~ .prog_score"
-      } else if (method[1]=="dsm") {
+      } else if (method=="dsm") {
         main_formula <- ".treat ~ .ps_score + .prog_score"
       }
 
@@ -478,7 +518,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                         replace_cases=replace_cases,
                         estimand=estimand,
                         ratio=ratio,
-                        method=method[1],
+                        method=method,
                         match_method=match_method,
                         match_vars=match_vars,
                         added_event_times=c(),
@@ -500,15 +540,15 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   class(out) <- "match_time"
 
   if (save_matchit & !match_method %in% c("none", "fast_exact") &
-      method[1] != "greedy") {
+      method != "greedy") {
     names(matchit_out) <- as.character(case_times)
     out$matchit_objects <- matchit_out
   }
 
-  if (method[1]=="psm" | method[1]=="dsm") {
+  if (method=="psm" | method=="dsm") {
     out$ps_model <- ps_model
   }
-  if (method[1]=="pgm" | method[1]=="dsm") {
+  if (method=="pgm" | method=="dsm") {
     out$prog_model <- prog_model
   }
 

@@ -18,6 +18,7 @@ Imports:
 Suggests:
 	MatchIt,
 	survival,
+	methods,
 	ggplot2,
     knitr,
     rmarkdown,

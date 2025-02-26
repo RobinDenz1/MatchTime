@@ -9,7 +9,7 @@ This documentation page describes the matching process used when setting \code{m
 }
 \arguments{
   \item{event}{
-A single character string specifying a column in \code{data} containing the event status of interest. The outcome specified by this argument will be used as dependent variable in the prognostic score model. This argument therefore \emph{must} be specified, otherwise an error will be produced.
+A single character string specifying a column in \code{data} containing the event status of interest. The outcome specified by this argument will be used as dependent variable in the prognostic score model. This argument therefore \emph{must} be specified, otherwise an error will be produced. Note that this argument will be treated as an outcome by default and does not have to be added to \code{outcomes} in the main function call.
   }
   \item{formula_prog}{
 An optional formula object, specifying the right-hand side of the formula that should be used for the outcome model, or \code{NULL} (default). If \code{NULL}, the right-hand side of the \code{formula} argument is used to fit the model. This argument is useful mostly to specify interactions, non-linear effects or similar thing. Note that this formula object should start with \code{~} and have nothing on the left-hand side.

@@ -5,7 +5,7 @@
 Add a Time-to-Event Outcome to a \code{match_time} object
 }
 \description{
-After performing time-dependent matching using the \code{\link{match_time}} function, users usually want to add one or more outcomes to the data. This function may be used to do this efficiently, potentially using different censoring schemes.
+After performing time-dependent matching using the \code{\link{match_time}} function, users usually want to add one or more outcomes to the data. This function may be used to do this efficiently, potentially using different censoring schemes. This is equivalent to including the outcome in the start-stop dataset supplied in the matching process and specifying it in the \code{outcomes} argument.
 }
 \usage{
 add_outcome(x, data, censor_at_treat=TRUE,
