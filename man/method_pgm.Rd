@@ -15,7 +15,7 @@ A single character string specifying a column in \code{data} containing the even
 An optional formula object, specifying the right-hand side of the formula that should be used for the outcome model, or \code{NULL} (default). If \code{NULL}, the right-hand side of the \code{formula} argument is used to fit the model. This argument is useful mostly to specify interactions, non-linear effects or similar thing. Note that this formula object should start with \code{~} and have nothing on the left-hand side.
   }
   \item{prog_type}{
-A single character string, specifying which type of "prognostic score" to use. Currently supports \code{"p"}, which results in usage of the outcome probability at time t and \code{"lp"}, which instead uses only the linear predictor of the model (disregarding the baseline hazard). Using \code{"lp"} is faster because the baseline hazard does not need to be estimated and because there is no need to calculate the actual probability on each time where matching is done. There are, however, currently no studies showing that the \code{"lp"} method performs as well as the \code{"p"} method, which is why it is recommended to keep this at \code{"p"}.
+A single character string, specifying which type of "prognostic score" to use. Currently supports \code{"p"}, which results in usage of the hazard of the outcome at time \eqn{t} and \code{"lp"}, which instead uses only the linear predictor of the model (disregarding the baseline hazard). Using \code{"lp"} is faster because the baseline hazard does not need to be estimated and because there is no need to calculate the actual hazard on each time where matching is done. See details.
   }
   \item{standardize_prog}{
 Either \code{TRUE} or \code{FALSE} (default), specifying whether to standardize the "prognostic score" as specified by \code{prog_type} to the 0 / 1 range. This might be beneficial for some matching strategies.
@@ -24,7 +24,7 @@ Either \code{TRUE} or \code{FALSE} (default), specifying whether to standardize 
 A single character string controlling how the estimated baseline hazard should be interpolated. This is only used when \code{type_prog="p"}, in which case the baseline hazard is estimated from the fitted prognostic score Cox model using the \code{\link{basehaz}} function from the \pkg{survival} package. Allowed values are \code{"constant"} (default) for step function interpolation (as usual for survival curves) or \code{"linear"} for linear interpolation. Should usually be kept at \code{"constant"}. Interpolation is performed internally using the \code{\link[stats]{approxfun}} function with \code{rule=2}.
   }
   \item{remove_prog}{
-Either \code{TRUE} or \code{FALSE} (default), specifying whether the estimated prognostic score should be removed from \code{data}. If \code{FALSE}, the prognostic score at \code{.treat_time} is included in the \code{.ps_score} column.
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the estimated prognostic score should be removed from \code{data}. If \code{FALSE}, the prognostic score at \code{.treat_time} is included in the \code{.prog_score} column.
   }
 }
 \details{
@@ -40,7 +40,13 @@ This might seem weird at first. After all, one of the main reasons for using tim
 
 The prognostic score is estimated using a Cox model with the actual outcome of interest as the dependent variable in the first step. All variables on the RHS of the \code{formula} are used as independent variables (time-fixed and time-dependent ones). Importantly, only the time under control conditions for all individuals is used in this model. Individuals who do receive the treatment at some point during the observation period are artificially censored at this point in time. The model therefore does not include the treatment status as covariate.
 
-The hazard of experiencing an outcome event, e.g. the time-dependent propensity score, is then calculated for all individuals at each point where matching is performed. The matching is then done entirely using this prognostic score, ignoring all other covariates. The model used to predict the prognostic scores is included in the output object whenever \code{method="pgm"} is used.
+The hazard of experiencing an outcome event, e.g. the time-dependent prognostic score, is then calculated for all individuals at each point where matching is performed. The matching is then done entirely using this prognostic score, ignoring all other covariates. The model used to predict the prognostic scores is included in the output object whenever \code{method="pgm"} is used.
+
+Formally, the model can be described as:
+
+\deqn{h_Y(t) = h_{Y0}(t) e^{\beta X(t)},}
+
+where \eqn{X(t)} refers to an arbitrary amount of (possibly) time-dependent covariates. The matching is done either on \eqn{\hat{h}_Y(t)} (when using \code{prog_type="p"}) or only on the linear predictor \eqn{e^{\beta X(t)}} (when using \code{prog_type="lp"}). As explained in \code{?method_psm}, this only makes a difference when \code{\link[survival]{strata}} terms are included in the Cox model \code{formula}, in which case the default of \code{"p"} should be preferred.
 
 \strong{\emph{Interval Coding}}:
 

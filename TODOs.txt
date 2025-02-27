@@ -4,6 +4,9 @@ match_time() methods
 	- allow user-supplied models in methods "psm", "pgm", "dsm"
 	- support things other than the cox model internally when using methods "psm", "pgm", "dsm"
 	- maybe allow competing risks models in methods "pgm" and "dsm"
+	- in method="pgm" / "dsm": allow fit of risk score model to be made on either all units or only on
+	  untreated units as described in He (2020)
+	- method="psm" / "pgm" / "dsm" probably fail when strata() is used in formula of cox model
 
 match_time() general
 	- currently, when using matchit(), cases are discarded if no match is found,

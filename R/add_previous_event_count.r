@@ -47,12 +47,11 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
 
   # count number of events per .id_new
   if (include_same_t) {
-    out <- data[, .(.count = sum(.diff <= 0 & .diff >= -duration)),
-                by=".id_new"]
+    data[, .condition := .diff <= 0 & .diff >= -duration]
   } else {
-    out <- data[, .(.count = sum(.diff < 0 & .diff >= -duration)),
-                by=".id_new"]
+    data[, .condition := .diff < 0 & .diff >= -duration]
   }
+  out <- data[, .(.count = sum(.condition)), by=".id_new"]
   out[is.na(.count), .count := 0]
 
   # merge back to original data

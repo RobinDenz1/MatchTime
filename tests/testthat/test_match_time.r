@@ -681,7 +681,7 @@ test_that("outcomes arg working", {
 
   ## time-dependent matching, using "transplant" as treatment and only
   ## "surgery" as variable to match on
-  m.obj <- match_time(transplant ~ surgery + age, data=heart, id="id",
+  m.obj <- match_time(transplant ~ surgery, data=heart, id="id",
                       match_method="nearest",
                       outcomes=c("event_logical", "event_logical2"))
 
