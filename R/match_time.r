@@ -17,7 +17,7 @@ match_time <- function(formula, data, id, inclusion=NA,
                        censor_pairs=FALSE, units="auto", verbose=FALSE,
                        ...) {
 
-  .inclusion <- .treat <- .time <- NULL
+  .treat <- .time <- NULL
 
   # coerce to data.table
   if (!is.data.table(data)) {
@@ -53,11 +53,6 @@ match_time <- function(formula, data, id, inclusion=NA,
                                    start=start, stop=stop)
   data[, (form$treat) := NULL]
 
-  # save sample sizes of input
-  n_input_all <- length(unique(data[[id]]))
-  n_input_cases <- nrow(d_treat)
-  n_input_controls <- n_input_all - nrow(d_treat[.time==0])
-
   # extract outcome info, if available
   if (all(!is.na(outcomes))) {
 
@@ -76,13 +71,6 @@ match_time <- function(formula, data, id, inclusion=NA,
     data[, (outcomes_remove) := NULL]
   }
 
-  # remove all rows when inclusion criteria are not met
-  if (!is.na(inclusion)) {
-    setnames(data, old=inclusion, new=".inclusion")
-    data <- data[.inclusion==TRUE]
-    data[, .inclusion := NULL]
-  }
-
   # call function that does all the work
   out <- match_time.fit(id=id, time=".time", d_treat=d_treat,
                         d_covars=data, match_vars=form$match_vars,
@@ -91,13 +79,11 @@ match_time <- function(formula, data, id, inclusion=NA,
                         estimand=estimand, ratio=ratio,
                         match_method=match_method, verbose=verbose,
                         start=start, stop=stop, save_matchit=save_matchit,
-                        method=method[1], matchit_args=matchit_args, ...)
+                        method=method[1], matchit_args=matchit_args,
+                        inclusion=inclusion, ...)
 
-  # add stuff to output
+  # add call to output
   out$call <- match.call()
-  out$sizes$n_input_all <- n_input_all
-  out$sizes$n_input_cases <- n_input_cases
-  out$sizes$n_input_controls <- n_input_controls
 
   # add back outcomes if specified
   if (all(!is.na(outcomes))) {
@@ -139,12 +125,18 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                            standardize_ps=FALSE, prog_type=c("p", "lp"),
                            standardize_prog=FALSE, event=NA,
                            formula_ps=NULL, formula_prog=NULL,
-                           remove_ps=FALSE, remove_prog=FALSE) {
+                           remove_ps=FALSE, remove_prog=FALSE,
+                           inclusion=NA) {
 
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
     .fully_matched <- .weights <- ..id.. <- .distance <- .ps_score <-
-    .lp_ps <- .prog_score <- .lp_prog <- NULL
+    .lp_ps <- .prog_score <- .lp_prog <- .inclusion <- NULL
+
+  # save sample sizes of input
+  n_input_all <- length(unique(d_covars[[id]]))
+  n_input_cases <- nrow(d_treat)
+  n_input_controls <- n_input_all - nrow(d_treat[.time==0])
 
   if (method=="greedy") {
     replace_over_t <- TRUE
@@ -164,10 +156,10 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   if (is.null(match_vars)) {
     cnames <- colnames(d_covars)
     match_vars <- cnames[!cnames %fin% c(".id", ".time", ".treat", ".start",
-                                         ".stop")]
+                                         ".stop", inclusion)]
   }
   cnames <- colnames(d_covars)
-  select_vars <- cnames[!cnames %fin% c(".start", ".stop")]
+  select_vars <- cnames[!cnames %fin% c(".start", ".stop", inclusion)]
 
   if (match_method %in% c("none", "fast_exact")) {
     select_vars <- c(select_vars, ".strata")
@@ -187,10 +179,6 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
     select_vars <- c(select_vars, ".prog_score")
   }
 
-  # get maximum follow-up time per person (used for adding events later)
-  d_longest <- d_covars[, (.max_t = max(.stop)), by=".id"]
-  colnames(d_longest) <- c(id, ".max_t")
-
   # estimate propensity score model, if specified
   if (method=="psm" | method=="dsm") {
     ps_model <- fit_ps_model(data=d_covars, d_treat=d_treat,
@@ -204,8 +192,26 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                                  formula=formula_prog)
   }
 
-  # keep only cases that meet inclusion criteria at treatment time
+  # time at treatment
   d_covars <- merge.data.table(d_covars, d_treat, by=".id", all.x=TRUE)
+
+  # remove all rows when inclusion criteria are not met
+  if (!all(is.na(inclusion))) {
+    .incl <- inclusion
+    d_covars[, .inclusion := rowSums(.SD) == length(.incl),
+             .SDcols=.incl]
+    d_exclusion <- d_covars[.time >= .start & .time < .stop & !.inclusion]
+    d_exclusion <- d_exclusion[, c(".id", .incl), with=FALSE]
+
+    d_covars <- d_covars[.inclusion==TRUE]
+    d_covars[, c(inclusion, ".inclusion") := NULL]
+  }
+
+  # get maximum follow-up time per person (used for adding events later)
+  d_longest <- d_covars[, (.max_t = max(.stop)), by=".id"]
+  colnames(d_longest) <- c(id, ".max_t")
+
+  # keep only cases that meet inclusion criteria at treatment time
   include <- d_covars[.time >= .start & .time < .stop]$.id
   d_treat <- d_treat[.id %fin% include]
 
@@ -532,8 +538,12 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                          n_matched_controls=n_matched_controls,
                          n_incl_all=n_incl_all,
                          n_incl_cases=n_incl_cases,
-                         n_incl_controls=n_incl_controls),
+                         n_incl_controls=n_incl_controls,
+                         n_input_all=n_input_all,
+                         n_input_cases=n_input_cases,
+                         n_input_controls=n_input_controls),
               trace=rbindlist(trace),
+              exclusion=NULL,
               matchit_objects=NULL,
               ps_model=NULL,
               prog_model=NULL)
@@ -543,6 +553,10 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       method != "greedy") {
     names(matchit_out) <- as.character(case_times)
     out$matchit_objects <- matchit_out
+  }
+
+  if (!all(is.na(inclusion))) {
+    out$exclusion <- d_exclusion
   }
 
   if (method=="psm" | method=="dsm") {

@@ -10,7 +10,7 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
                                      include_same_t=TRUE, units="auto",
                                      name=".prev_event_count") {
 
-  . <- .time <- .count <- .diff <- .treat_time <- NULL
+  . <- .time <- .count <- .diff <- .treat_time <- .condition <- NULL
 
   stopifnotm(inherits(x, "match_time"),
    "'x' must be a 'match_time' object created using the match_time() function.")

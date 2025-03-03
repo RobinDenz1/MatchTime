@@ -499,7 +499,8 @@ test_that("matching on fixed and time-dependent variable with psm method", {
                     id=".id",
                     inclusion="inclusion",
                     method="psm",
-                    match_method="nearest")$data
+                    match_method="nearest",
+                    matchit_args=list(distance="mahalanobis"))$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -522,11 +523,11 @@ test_that("matching on fixed and time-dependent variable with psm method", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(41, 41))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 41)
 })
 
 test_that("using lp in method='psm'", {
@@ -538,7 +539,8 @@ test_that("using lp in method='psm'", {
                     inclusion="inclusion",
                     method="psm",
                     match_method="nearest",
-                    ps_type="lp")$data
+                    ps_type="lp",
+                    matchit_args=list(distance="mahalanobis"))$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -561,11 +563,11 @@ test_that("using lp in method='psm'", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(41, 41))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 41)
 })
 
 test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
@@ -577,7 +579,8 @@ test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
                     inclusion="inclusion",
                     method="pgm",
                     event="influenza",
-                    match_method="nearest")$data
+                    match_method="nearest",
+                    matchit_args=list(distance="mahalanobis"))$data
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -600,11 +603,11 @@ test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(41, 41))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 41)
 
   expect_true(all(!is.na(out$.prog_score)) & is.numeric(out$.prog_score))
 })
@@ -701,4 +704,25 @@ test_that("outcomes arg working", {
 
   expect_true(all(m.obj$data$event_logical2_status==m.obj$data$status2))
   expect_true(all(m.obj$data$event_logical2_time==m.obj$data$time2))
+})
+
+test_that("vector of inclusion criteria", {
+
+  set.seed(12341234)
+
+  heart$A <- sample(c(TRUE, FALSE), size=nrow(heart), replace=TRUE,
+                    prob=c(0.9, 0.1))
+  heart$B <- sample(c(TRUE, FALSE), size=nrow(heart), replace=TRUE,
+                    prob=c(0.9, 0.1))
+  heart$C <- sample(c(TRUE, FALSE), size=nrow(heart), replace=TRUE,
+                    prob=c(0.9, 0.1))
+
+  out <- match_time(transplant ~ surgery, data=heart, id="id",
+                    match_method="fast_exact",
+                    replace_at_t=TRUE, ratio=1,
+                    inclusion=c("A", "B", "C"))
+  expect_true(is.data.table(out$exclusion))
+
+  out$exclusion[, sum_incl := A + B + C]
+  expect_true(all(out$exclusion$sum_incl >= 1))
 })

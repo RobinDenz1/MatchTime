@@ -1,12 +1,11 @@
 
 match_time() methods
-	- currently uses the data after exclusion of time-periods, which is not ideal
 	- allow user-supplied models in methods "psm", "pgm", "dsm"
 	- support things other than the cox model internally when using methods "psm", "pgm", "dsm"
 	- maybe allow competing risks models in methods "pgm" and "dsm"
 	- in method="pgm" / "dsm": allow fit of risk score model to be made on either all units or only on
 	  untreated units as described in He (2020)
-	- method="psm" / "pgm" / "dsm" probably fail when strata() is used in formula of cox model
+	- method="psm" / "pgm" / "dsm" fail when strata() is used in formula of cox model
 
 match_time() general
 	- currently, when using matchit(), cases are discarded if no match is found,
@@ -15,12 +14,9 @@ match_time() general
 	- maybe add a debug more or something similar to better understand when an error occured
 	- catch warnings in matchit() or fast_exact_matching() and output better warning instead
 	- "d_longest" is calculated by ignoring inclusion criteria, an option to change this might be useful
-	- re-allow "events" argument, but allowing a character vector or formula with multiple events
 	- input checks
 		- should check whether there is only one treatment per person
 		- should check if it "stays" there
-	- documentation
-		- improve explanation on start-stop data (since events may also need to be in there, "data" is no longer up to date)
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)

@@ -29,6 +29,11 @@ warnifnotm <- function(assert, ...) {
   }
 }
 
+## extract types of columns from data
+col_types <- function(data, cols) {
+  lapply(cols, FUN=function(data, x){class(data[[x]])}, data=data)
+}
+
 ## input checks for the match_time() function
 #' @importFrom fastmatch %fin%
 check_inputs_match_time <- function(formula, data, id, inclusion,
@@ -69,12 +74,12 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
                     " a variable in 'data'."))
 
   # correct inclusion
-  stopifnotm(is.na(inclusion) || (length(inclusion)==1 &&
+  stopifnotm(all(is.na(inclusion)) || (length(inclusion) >= 1 &&
               is.character(inclusion) &&
-              inclusion %fin% colnames(data) &&
-              is.logical(data[[inclusion]])),
-             paste0("'inclusion' must be a single character string specifying",
-                    " a logical variable in 'data' or NA."))
+              all(inclusion %fin% colnames(data)) &&
+              all(unlist(col_types(data=data, cols=inclusion))=="logical")),
+             paste0("'inclusion' must be a character vector specifying",
+                    " logical variables in 'data' or NA."))
 
   # correct outcomes
   stopifnotm(all(is.na(outcomes)) || (is.character(outcomes) &&
