@@ -721,8 +721,11 @@ test_that("vector of inclusion criteria", {
                     match_method="fast_exact",
                     replace_at_t=TRUE, ratio=1,
                     inclusion=c("A", "B", "C"))
-  expect_true(is.data.table(out$exclusion))
+  expect_true(is.data.table(out$exclusion$stage1))
+  expect_true(is.data.table(out$exclusion$stage2))
 
-  out$exclusion[, sum_incl := A + B + C]
-  expect_true(all(out$exclusion$sum_incl >= 1))
+  out$exclusion$stage1[, sum_incl := A + B + C]
+  out$exclusion$stage2[, sum_incl := A + B + C]
+  expect_true(all(out$exclusion$stage1$sum_incl >= 1))
+  expect_true(all(out$exclusion$stage2$sum_incl >= 1))
 })

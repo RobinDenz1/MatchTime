@@ -40,7 +40,7 @@ Formally, following the Cox model, the hazard of receiving treatment \eqn{A} is 
 
 \deqn{h_A(t) = h_{A0}(t) e^{\beta X(t)},}
 
-where \eqn{h_{A0}(t)} is the baseline hazard and \eqn{X(t)} stands for an arbitrary amount of (possibly) time-dependent covariates. By default (\code{ps_type="ps"}), the estimated hazard of treatment at \eqn{t} \eqn{\left(\hat{h}_{A0}(t)\right)} is used in matching. Internally, the \code{\link[survival]{basehaz}} function is simply called on the Cox model to estimate \eqn{h_{A0}(t)}. If there are no \code{\link[survival]{strata}} terms in the \code{formula} used to fit this model, the baseline hazard will be the same for all individuals at \eqn{t}, in which case it would be equivalent to use \code{ps_type="lp"}, in which case only the linear predictor \eqn{\left(e^{\beta X(t)}\right)} is used for matching.
+where \eqn{h_{A0}(t)} is the baseline hazard and \eqn{X(t)} stands for an arbitrary amount of (possibly) time-dependent covariates. By default (\code{ps_type="ps"}), the estimated hazard of treatment at \eqn{t} \eqn{\left(\hat{h}_{A}(t)\right)} is used in matching. Internally, the \code{\link[survival]{basehaz}} function is simply called on the Cox model to estimate \eqn{h_{A0}(t)}. If there are no \code{\link[survival]{strata}} terms in the \code{formula} used to fit this model, the baseline hazard will be the same for all individuals at \eqn{t}, in which case it would be equivalent to use \code{ps_type="lp"}, in which case only the linear predictor \eqn{\left(e^{\beta X(t)}\right)} is used for matching.
 
 }
 \references{

@@ -195,16 +195,28 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   # time at treatment
   d_covars <- merge.data.table(d_covars, d_treat, by=".id", all.x=TRUE)
 
-  # remove all rows when inclusion criteria are not met
+  # applying inclusion criteria
   if (!all(is.na(inclusion))) {
     .incl <- inclusion
-    d_covars[, .inclusion := rowSums(.SD) == length(.incl),
-             .SDcols=.incl]
-    d_exclusion <- d_covars[.time >= .start & .time < .stop & !.inclusion]
-    d_exclusion <- d_exclusion[, c(".id", .incl), with=FALSE]
+    d_covars[, .inclusion := rowSums(.SD) == length(.incl), .SDcols=.incl]
 
+    # never meet inclusion criteria
+    d_covars[, .remove_all := sum(!.inclusion)==.N, by=.id]
+    d_exclusion1 <- d_covars[.remove_all==TRUE][, c(".id", .incl, ".time"),
+                                                with=FALSE]
+    d_exclusion1[, .treat := !is.na(.time)]
+    d_exclusion1[, .treat_at_0 := fifelse(.time==0, TRUE, FALSE, na=FALSE)]
+    d_exclusion1 <- d_exclusion1[, lapply(.SD, all), by=".id",
+                                 .SDcols=c(.incl, ".treat", ".treat_at_0")]
+
+    # inclusion criteria not met at treatment time
+    d_exclusion2 <- d_covars[.time >= .start & .time < .stop & !.inclusion &
+                              !.remove_all]
+    d_exclusion2 <- d_exclusion2[, c(".id", .incl), with=FALSE]
+
+    # remove all rows when inclusion criteria are not met
     d_covars <- d_covars[.inclusion==TRUE]
-    d_covars[, c(inclusion, ".inclusion") := NULL]
+    d_covars[, c(inclusion, ".inclusion", ".remove_all") := NULL]
   }
 
   # get maximum follow-up time per person (used for adding events later)
@@ -527,6 +539,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                         method=method,
                         match_method=match_method,
                         match_vars=match_vars,
+                        inclusion=inclusion,
                         added_event_times=c(),
                         added_status=c(),
                         added_next_time=c()),
@@ -543,7 +556,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                          n_input_cases=n_input_cases,
                          n_input_controls=n_input_controls),
               trace=rbindlist(trace),
-              exclusion=NULL,
+              exclusion=list(stage1=NULL, stage2=NULL),
               matchit_objects=NULL,
               ps_model=NULL,
               prog_model=NULL)
@@ -556,7 +569,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   }
 
   if (!all(is.na(inclusion))) {
-    out$exclusion <- d_exclusion
+    out$exclusion <- list(stage1=d_exclusion1,
+                          stage2=d_exclusion2)
   }
 
   if (method=="psm" | method=="dsm") {
