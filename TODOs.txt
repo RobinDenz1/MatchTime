@@ -17,6 +17,7 @@ match_time() general
 	- input checks
 		- should check whether there is only one treatment per person
 		- should check if it "stays" there
+		- checks for empty input / empty after inclusion criteria
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
