@@ -32,7 +32,7 @@ A \code{data.table} like object in the start-stop format, containing information
 A single character string specifying the unique case identifier in \code{data}.
   }
   \item{inclusion}{
-A character vector specifying optional logical variables in \code{data} used as inclusion criteria. These should be \code{TRUE} if the period specified by the \code{start} and \code{stop} columns in \code{data} corresponds to a period in which the individual fufills the inclusion criteria and \code{FALSE} if the individual does not. All periods where any of the named variables are \code{FALSE} will be excluded from the matching process dynamically. Set to \code{NA} to not use this functionality (default).
+An optional character vector specifying logical variables in \code{data} used as inclusion criteria. These should be \code{TRUE} if the period specified by the \code{start} and \code{stop} columns in \code{data} corresponds to a period in which the individual fufills the inclusion criteria and \code{FALSE} if the individual does not. All periods where any of the named variables are \code{FALSE} will be excluded from the matching process dynamically. By supplying the criteria as separate columns, reasons for exclusions will be automatically included in the output. Set to \code{NA} to not use this functionality (default).
   }
   \item{outcomes}{
 An optional character vector to specify which logical variables in \code{data} should be treated as (potentially right-censored) outcomes. These should be coded differently than time-dependent variables as explained throughout the documentation and the relevant vignette. Columns named in this argument will be re-coded in the output so that they appear as the time until the first occurrence of the respective outcome after inclusion in the matching process. This is equivalent to calling the \code{\link{add_outcome}} function on the output object once for each value in \code{outcomes}. Note that all \code{outcomes} cannot be matched on, because they occur \emph{after} the respective point in time. Set to \code{NA} to not use this functionality (default).
@@ -165,6 +165,7 @@ Potentially contains any number of additional covariates supplied in the origina
 \item{time}{A character string used internally to identify the time in other datasets.}
 \item{info}{A \code{list} containing various information on the matching process.}
 \item{sizes}{A \code{list} containing various information on the overall sample sizes at each stage.}
+\item{exclusion}{A \code{list} containing two \code{data.tables} which contain the \code{id}s removed from the data at different stages due to \code{inclusion} as well as the reason for removal.}
 \item{matchit_objects}{A \code{list} of \code{matchit} objects created at each point in time where matching was performed. Only included if \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}} and \code{save_matchit=TRUE}.}
 \item{ps_model}{A \code{\link[survival]{coxph}} model fit to estimate the time-dependent propensity score. Only included when \code{method="psm"}.}
 \item{prog_model}{A \code{\link[survival]{coxph}} model fit to estimate the time-dependent prognostic score. Only included when \code{method="pgm"}.}

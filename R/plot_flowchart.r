@@ -1,12 +1,9 @@
 
 # TODO:
-# - documentation page
 # - tests
-# - include in README.rmd
 # - make all box texts arguments
 # - allow further stylistic customization options on boxes / lines
 # - allow percentages on / off for main text + items separately
-# - check with different setting, methods, match_methods
 # - maybe add "style" or similar to automatically put the number
 #   before the text instead of TEXT <br> n =
 
@@ -25,10 +22,10 @@ plot_flowchart <- function(x,
                            box_main_halign=0.5,
                            box_main_nudge_x=0,
                            box_main_nudge_y=0,
-                           box_main_padding=unit(c(5.5, 5.5, 5.5, 5.5), "pt"),
-                           box_main_margin=unit(c(0, 0, 0, 0), "pt"),
-                           box_main_r=unit(5.5, "pt"),
-                           box_main_width=unit(2, "inch"),
+                           box_main_padding=ggplot2::unit(c(5.5, 5.5, 5.5, 5.5), "pt"),
+                           box_main_margin=ggplot2::unit(c(0, 0, 0, 0), "pt"),
+                           box_main_r=ggplot2::unit(5.5, "pt"),
+                           box_main_width=ggplot2::unit(2, "inch"),
                            box_main_minwidth=NULL,
                            box_main_maxwidth=NULL,
                            box_main_height=NULL,
@@ -62,6 +59,9 @@ plot_flowchart <- function(x,
                            arrow_size=0.1,
                            xlim=c(-20, 20),
                            ylim=c(-6, 11)) {
+
+  .inclusion_names <- .treat_at_0 <- .treat <- . <- .n <- label <- box_id <-
+    y <- xend <- yend <- NULL
 
   stopifnotm(inherits(x, "match_time"),
              "'x' must be a 'match_time' object created using match_time().")
@@ -179,7 +179,6 @@ plot_flowchart <- function(x,
     label_box2.5r <- "No inclusion criteria applied"
   }
 
-
   ## define labels for secondary boxes between row 3 and 4
   if (!all(is.na(x$info$inclusion))) {
 
@@ -187,7 +186,8 @@ plot_flowchart <- function(x,
     n3.5l <- as.vector(unlist(
       x$exclusion$stage2[, lapply(.SD, neg_sum), .SDcols=x$info$inclusion]
     ))
-    perc3.5l <- (n3.5l / x$sizes$n_incl_cases) * 100
+    perc3.5l <- (n3.5l / (x$sizes$n_input_cases -
+                            sum(x$exclusion$stage1$.treat))) * 100
 
     if (remove_0_lines) {
       incl_vec <- incl_names[n3.5l!=0]

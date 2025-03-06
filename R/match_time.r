@@ -131,7 +131,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   .treat <- .id_pair <- .subclass <- .treat_time <- .strata <- .start <-
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
     .fully_matched <- .weights <- ..id.. <- .distance <- .ps_score <-
-    .lp_ps <- .prog_score <- .lp_prog <- .inclusion <- NULL
+    .lp_ps <- .prog_score <- .lp_prog <- .inclusion <- .remove_all <-
+    .treat_at_0 <- NULL
 
   # save sample sizes of input
   n_input_all <- length(unique(d_covars[[id]]))
