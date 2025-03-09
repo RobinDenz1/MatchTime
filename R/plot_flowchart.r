@@ -19,6 +19,7 @@ plot_flowchart <- function(x,
                            inclusion_text=NULL,
                            remove_0_lines=TRUE,
                            remove_0_boxes=FALSE,
+                           perc_inclusion=TRUE,
                            box_main_halign=0.5,
                            box_main_nudge_x=0,
                            box_main_nudge_y=0,
@@ -80,7 +81,7 @@ plot_flowchart <- function(x,
 
   # change inclusion criteria labels
   if (!is.null(inclusion_text) & !all(is.na(x$info$inclusion))) {
-    incl_names <- as.vector(unlist(inclusion_names[x$info$inclusion]))
+    incl_names <- as.vector(unlist(inclusion_text[x$info$inclusion]))
   } else {
     incl_names <- x$info$inclusion
   }
@@ -112,132 +113,27 @@ plot_flowchart <- function(x,
   label_box4r <- paste0("Matched Controls <br> ", pref, "n = ",
                         x$sizes$n_matched_controls, pref)
 
-  ## define labels for secondary boxes between row 2 and 3
-  if (!all(is.na(x$info$inclusion))) {
+  # 2.5 row left & right
+  label_box2.5l <- get_label_inclusion(x=x, type="left1", digits=digits,
+                                       incl_names=incl_names,
+                                       perc_inclusion=perc_inclusion,
+                                       remove_0_lines=remove_0_lines)
+  label_box2.5r <- get_label_inclusion(x=x, type="right1", digits=digits,
+                                       incl_names=incl_names,
+                                       perc_inclusion=perc_inclusion,
+                                       remove_0_lines=remove_0_lines)
 
-    # calculate n and % controls for left box
-    n2.5r <- as.vector(unlist(
-      x$exclusion$stage1[.treat_at_0!=TRUE, lapply(.SD, neg_sum),
-                         .SDcols=x$info$inclusion]
-    ))
-    perc2.5r <- (n2.5r / x$sizes$n_input_controls) * 100
-
-    # calculate n and % cases for right box
-    n2.5l <- as.vector(unlist(
-      x$exclusion$stage1[.treat==TRUE, lapply(.SD, neg_sum),
-                         .SDcols=x$info$inclusion]))
-    perc2.5l <- (n2.5l / x$sizes$n_input_cases) * 100
-
-    # remove those with 0
-    if (remove_0_lines) {
-      incl_vec_l <- incl_names[n2.5l!=0]
-      n2.5l <- n2.5l[n2.5l!=0]
-      perc2.5l <- perc2.5l[perc2.5l!=0]
-
-      incl_vec_r <- incl_names[n2.5r!=0]
-      n2.5r <- n2.5r[n2.5r!=0]
-      perc2.5r <- perc2.5r[perc2.5r!=0]
-    } else {
-      incl_vec_l <- incl_vec_r <- incl_names
-    }
-
-    # labels for left box
-    if (length(n2.5l)!=0 | remove_0_lines) {
-      label_box2.5l <- paste0(
-        paste0(round(n2.5l, digits=digits), " (",
-               round(perc2.5l, digits=digits), "%) ",
-               incl_vec_l),
-        collapse="<br>"
-      )
-      label_box2.5l <- paste0(": <br> <br>", label_box2.5l)
-    } else {
-      label_box2.5l <- ""
-    }
-
-    label_box2.5l <- paste0(sum(x$exclusion$stage1$.treat),
-                            " never met inclusion criteria",
-                            label_box2.5l)
-
-    # labels for right box
-    if (length(n2.5r)!=0 | remove_0_lines) {
-      label_box2.5r <- paste0(
-        paste0(round(n2.5r, digits=digits), " (",
-               round(perc2.5r, digits=digits), "%) ",
-               incl_vec_r),
-        collapse="<br>"
-      )
-      label_box2.5r <- paste0(": <br> <br>", label_box2.5r)
-    } else {
-      label_box2.5r <- ""
-    }
-
-    label_box2.5r <- paste0(nrow(x$exclusion$stage1),
-                            " never met inclusion criteria",
-                            label_box2.5r)
-  } else {
-    label_box2.5l <- "No inclusion criteria applied"
-    label_box2.5r <- "No inclusion criteria applied"
-  }
-
-  ## define labels for secondary boxes between row 3 and 4
-  if (!all(is.na(x$info$inclusion))) {
-
-    # calculate n and % for left box
-    n3.5l <- as.vector(unlist(
-      x$exclusion$stage2[, lapply(.SD, neg_sum), .SDcols=x$info$inclusion]
-    ))
-    perc3.5l <- (n3.5l / (x$sizes$n_input_cases -
-                            sum(x$exclusion$stage1$.treat))) * 100
-
-    if (remove_0_lines) {
-      incl_vec <- incl_names[n3.5l!=0]
-      n3.5l <- n3.5l[n3.5l!=0]
-      perc3.5l <- perc3.5l[perc3.5l!=0]
-    } else {
-      incl_vec <- incl_names
-    }
-
-    # label for left box
-    label_box3.5l <- paste0(paste0(round(n3.5l, digits=digits),
-                                   " (", round(perc3.5l, digits=digits), "%) ",
-                                   incl_vec),
-                            collapse="<br>")
-    n_crit3.5l <- sum(n3.5l)
-  } else {
-    n_crit3.5l <- 0
-    label_box3.5l <- ""
-  }
-
-  # could not be matched
+  # 3.5 row left
+  label_box3.5l <- get_label_inclusion(x=x, type="left2", digits=digits,
+                                       incl_names=incl_names,
+                                       perc_inclusion=perc_inclusion,
+                                       remove_0_lines=remove_0_lines)
   no_match3.5l <- paste0(x$sizes$n_incl_cases - x$sizes$n_matched_cases,
                          " could not be matched")
+  label_box3.5l <- paste0(no_match3.5l, "<br>", label_box3.5l)
 
-  # did not meet inclusion criteria at treatment time
-  if (all(is.na(x$info$inclusion))) {
-    no_crit3.5l <- "No inclusion criteria applied"
-  } else if (n_crit3.5l==0 & remove_0_lines) {
-    no_crit3.5l <- "0 did not meet inclusion criteria at treatment time"
-  } else {
-    no_crit3.5l <- paste0(
-      n_crit3.5l,
-      " did not meet inclusion criteria at treatment time: <br> <br>",
-      label_box3.5l)
-  }
-
-  # put together no match & inclusion at t
-  label_box3.5l <- paste0(no_match3.5l, "<br>", no_crit3.5l)
-
-  # right side bottom
-  n_geq_1 <- nrow(x$data[, .(.n = .N), by=c(".treat", x$id)][
-    .treat==FALSE & .n > 1])
-  label_box3.5r <- paste0(x$sizes$n_incl_controls -
-                            length(unique(x$data[.treat==FALSE][[x$id]])),
-                          " never selected as controls")
-
-  if (!(remove_0_lines & n_geq_1==0)) {
-    label_box3.5r <- paste0(label_box3.5r, "<br>", n_geq_1,
-                            " selected as control more than once")
-  }
+  # 3.5 row right
+  label_box3.5r <- get_label_box_3.5r(x=x, remove_0_lines=remove_0_lines)
 
   # coordinates for main boxes
   d_box_coord <- data.frame(x=c(0, -5, 5, -5, 5, -5, 5),
@@ -357,4 +253,129 @@ plot_flowchart <- function(x,
 # take the sum of the inverse of a logical variable
 neg_sum <- function(x, ...) {
   sum(!x, ...)
+}
+
+## utility function to calculate n (percentage) for the boxes
+## with inclusion criteria
+calculate_n_box <- function(x, type, digits) {
+
+  # specify what to calculate based on box
+  if (type=="left1") {
+    cond <- x$exclusion$stage1$.treat
+    n_total <- x$sizes$n_input_controls
+    stage <- "stage1"
+  } else if (type=="right1") {
+    cond <- !x$exclusion$stage1$.treat_at_0
+    n_total <- x$sizes$n_input_cases
+    stage <- "stage1"
+  } else if (type=="left2") {
+    cond <- TRUE
+    n_total <- x$sizes$n_input_cases - sum(x$exclusion$stage1$.treat)
+    stage <- "stage2"
+  }
+
+  # calculate n and % of individuals not meeting inclusion criteria x
+  n_box <- as.vector(unlist(
+    x$exclusion[[stage]][eval(cond), lapply(.SD, neg_sum),
+                         .SDcols=x$info$inclusion]
+  ))
+  perc <- round((n_box / n_total) * 100, digits=digits)
+
+  # calculate total number of individuals not meeting inclusion criteria
+  n_total <- nrow(x$exclusion[[stage]][eval(cond)])
+
+  # put together
+  out <- list(n=n_box, perc=perc, n_total=n_total,
+              incl_vec=x$info$inclusion)
+  return(out)
+}
+
+## removes all lines with n = 0
+remove_0_n <- function(numbers, incl_names) {
+
+  numbers$incl_vec <- incl_names
+  numbers$incl_vec <- numbers$incl_vec[numbers$n!=0]
+  numbers$n <- numbers$n[numbers$n!=0]
+  numbers$perc <- numbers$perc[numbers$perc!=0]
+
+  return(numbers)
+}
+
+## create the label with inclusion criteria items info
+get_label_inclusion_items <- function(numbers, perc_inclusion, remove_0_lines,
+                                      type) {
+
+  if (length(numbers$n)!=0 | remove_0_lines) {
+    if (perc_inclusion) {
+      label_box <- paste0(
+        paste0(numbers$n, " (", numbers$perc, "%) ", numbers$incl_vec),
+        collapse="<br>"
+      )
+    } else {
+      label_box <- paste0(
+        paste0(numbers$n, " ", numbers$incl_vec),
+        collapse="<br>"
+      )
+    }
+
+    label_box <- paste0(": <br> <br>", label_box)
+  } else {
+    label_box <- ""
+  }
+
+  if (type=="left2") {
+    incl_text <- " did not meet inclusion criteria at treatment time"
+  } else {
+    incl_text <- " never met inclusion criteria"
+  }
+
+  label_box <- paste0(numbers$n_total, incl_text, label_box)
+
+  return(label_box)
+}
+
+## get entire text in inclusion criteria box
+get_label_inclusion <- function(x, type, digits, incl_names,
+                                perc_inclusion, remove_0_lines) {
+
+  if (!all(is.na(x$info$inclusion))) {
+    numbers <- calculate_n_box(x=x, type=type, digits=digits)
+
+    # remove those with 0
+    if (remove_0_lines) {
+      numbers <- remove_0_n(numbers, incl_names=incl_names)
+    }
+
+    # get list of reasons for exclusion
+    label_box <- get_label_inclusion_items(
+      numbers=numbers,
+      perc_inclusion=perc_inclusion,
+      remove_0_lines=remove_0_lines,
+      type=type
+    )
+
+  } else {
+    label_box <- "No inclusion criteria applied"
+  }
+
+  return(label_box)
+}
+
+## label for lower right box
+get_label_box_3.5r <- function(x, remove_0_lines) {
+
+  . <- .treat <- .n <- NULL
+
+  n_geq_1 <- nrow(x$data[, .(.n = .N), by=c(".treat", x$id)][
+    .treat==FALSE & .n > 1])
+  label_box3.5r <- paste0(x$sizes$n_incl_controls -
+                            length(unique(x$data[.treat==FALSE][[x$id]])),
+                          " never selected as controls")
+
+  if (!(remove_0_lines & n_geq_1==0)) {
+    label_box3.5r <- paste0(label_box3.5r, "<br>", n_geq_1,
+                            " selected as control more than once")
+  }
+
+  return(label_box3.5r)
 }

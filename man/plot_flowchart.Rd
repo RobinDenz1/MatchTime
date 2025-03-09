@@ -15,6 +15,7 @@ plot_flowchart(
   inclusion_text=NULL,
   remove_0_lines=TRUE,
   remove_0_boxes=FALSE,
+  perc_inclusion=TRUE,
   box_main_halign=0.5,
   box_main_nudge_x=0,
   box_main_nudge_y=0,
@@ -75,6 +76,9 @@ Either \code{TRUE} or \code{FALSE}, specifying whether lines about 0 occurrences
   }
   \item{remove_0_boxes}{
 Either \code{TRUE} or \code{FALSE}, specifying whether boxes that are basically empty because of 0 occurrences should be removed from the plot.
+  }
+  \item{perc_inclusion}{
+Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for the individual exclusion criteria reasons.
   }
   \item{box_main_halign}{
 Passed to the \code{halign} aesthetic in the \code{\link[ggtext]{geom_textbox}} function used for the main boxes.
