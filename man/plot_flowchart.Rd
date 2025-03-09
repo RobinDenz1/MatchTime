@@ -16,6 +16,8 @@ plot_flowchart(
   remove_0_lines=TRUE,
   remove_0_boxes=FALSE,
   perc_inclusion=TRUE,
+  perc_inclusion_total=FALSE,
+  perc_other=FALSE,
   box_main_halign=0.5,
   box_main_nudge_x=0,
   box_main_nudge_y=0,
@@ -79,6 +81,12 @@ Either \code{TRUE} or \code{FALSE}, specifying whether boxes that are basically 
   }
   \item{perc_inclusion}{
 Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for the individual exclusion criteria reasons.
+  }
+  \item{perc_inclusion_total}{
+Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for total numbers of individuals excluded because of the inclusion criteria.
+  }
+  \item{perc_other}{
+Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for all numbers in the side-boxes that are not related to the inclusion criteria.
   }
   \item{box_main_halign}{
 Passed to the \code{halign} aesthetic in the \code{\link[ggtext]{geom_textbox}} function used for the main boxes.
