@@ -20,6 +20,7 @@ plot_flowchart <- function(x,
                            perc_inclusion=TRUE,
                            perc_inclusion_total=FALSE,
                            perc_other=FALSE,
+                           number_format=format,
                            box_main_halign=0.5,
                            box_main_nudge_x=0,
                            box_main_nudge_y=0,
@@ -59,7 +60,8 @@ plot_flowchart <- function(x,
                            arrow_vjust=-0.4,
                            arrow_size=0.1,
                            xlim=c(-20, 20),
-                           ylim=c(-6, 11)) {
+                           ylim=c(-6, 11),
+                           ...) {
 
   .inclusion_names <- .treat_at_0 <- .treat <- . <- .n <- label <- box_id <-
     y <- xend <- yend <- NULL
@@ -89,55 +91,61 @@ plot_flowchart <- function(x,
   ## define labels for the main boxes in the middle
   # 1 row
   label_box1 <- paste0("Total Input Data <br> ", pref,
-                       "N = ", x$sizes$n_input_all, pref)
+                       "N = ", number_format(x$sizes$n_input_all, ...), pref)
 
   # 2 row
   label_box2l <- paste0("Potential Cases <br> ", pref,
-                        "n = ", x$sizes$n_input_cases, pref)
+                        "n = ", number_format(x$sizes$n_input_cases, ...), pref)
   label_box2r <- paste0("Potential Controls <br> ", pref, "n = ",
-                        x$sizes$n_input_controls, pref)
+                        number_format(x$sizes$n_input_controls, ...), pref)
 
   # 3 row
-  label_box3l <- paste0("Potential Cases <br> Included in Matching <br> ",
-                        pref, "n = ",
-                        x$sizes$n_input_cases - sum(x$exclusion$stage1$.treat),
-                        pref)
+  label_box3l <- paste0(
+    "Potential Cases <br> Included in Matching <br> ", pref, "n = ",
+     number_format(x$sizes$n_input_cases - sum(x$exclusion$stage1$.treat),
+                   ...), pref
+  )
   label_box3r <- paste0(
     "Potential Controls <br> Included in Matching <br> ", pref, "n = ",
-    x$sizes$n_incl_controls, pref
+    number_format(x$sizes$n_incl_controls, ...), pref
   )
 
   # 4 row
   label_box4l <- paste0("Matched Cases <br> ", pref, "n = ",
-                        x$sizes$n_matched_cases, pref)
+                        number_format(x$sizes$n_matched_cases, ...), pref)
   label_box4r <- paste0("Matched Controls <br> ", pref, "n = ",
-                        x$sizes$n_matched_controls, pref)
+                        number_format(x$sizes$n_matched_controls, ...), pref)
 
   # 2.5 row left & right
   label_box2.5l <- get_label_inclusion(x=x, type="left1", digits=digits,
                                       incl_names=incl_names,
                                       perc_inclusion=perc_inclusion,
                                       perc_inclusion_total=perc_inclusion_total,
-                                      remove_0_lines=remove_0_lines)
+                                      remove_0_lines=remove_0_lines,
+                                      format_fun=number_format, ...)
   label_box2.5r <- get_label_inclusion(x=x, type="right1", digits=digits,
                                       incl_names=incl_names,
                                       perc_inclusion=perc_inclusion,
                                       perc_inclusion_total=perc_inclusion_total,
-                                      remove_0_lines=remove_0_lines)
+                                      remove_0_lines=remove_0_lines,
+                                      format_fun=number_format, ...)
 
   # 3.5 row left
   label_box3.5l <- get_label_inclusion(x=x, type="left2", digits=digits,
                                       incl_names=incl_names,
                                       perc_inclusion=perc_inclusion,
                                       perc_inclusion_total=perc_inclusion_total,
-                                      remove_0_lines=remove_0_lines)
+                                      remove_0_lines=remove_0_lines,
+                                      format_fun=number_format, ...)
   label_no_match3.5l <- get_label_nomatch(x=x, perc_other=perc_other,
-                                          digits=digits)
+                                          digits=digits,
+                                          format_fun=number_format, ...)
   label_box3.5l <- paste0(label_no_match3.5l, "<br>", label_box3.5l)
 
   # 3.5 row right
   label_box3.5r <- get_label_box_3.5r(x=x, remove_0_lines=remove_0_lines,
-                                      perc_other=perc_other)
+                                      perc_other=perc_other,
+                                      format_fun=number_format, ...)
 
   # coordinates for main boxes
   d_box_coord <- data.frame(x=c(0, -5, 5, -5, 5, -5, 5),
@@ -296,12 +304,11 @@ calculate_n_box <- function(x, type, digits) {
 }
 
 ## removes all lines with n = 0
-remove_0_n <- function(numbers, incl_names) {
+remove_0_n <- function(numbers) {
 
-  numbers$incl_vec <- incl_names
   numbers$incl_vec <- numbers$incl_vec[numbers$n!=0]
+  numbers$perc <- numbers$perc[numbers$n!=0]
   numbers$n <- numbers$n[numbers$n!=0]
-  numbers$perc <- numbers$perc[numbers$perc!=0]
 
   return(numbers)
 }
@@ -309,11 +316,12 @@ remove_0_n <- function(numbers, incl_names) {
 ## create the label with inclusion criteria items info
 get_label_inclusion_items <- function(numbers, perc_inclusion,
                                       perc_inclusion_total,
-                                      remove_0_lines, type) {
+                                      remove_0_lines, type, format_fun,
+                                      ...) {
 
   # if specified, add percentage to total number excluded as well
   if (perc_inclusion_total) {
-    perc_total <- paste0(" (", numbers$perc_total, "%) ")
+    perc_total <- paste0(" (", format_fun(numbers$perc_total, ...), "%) ")
   } else {
     perc_total <- ""
   }
@@ -321,12 +329,13 @@ get_label_inclusion_items <- function(numbers, perc_inclusion,
   if (length(numbers$n)!=0 | remove_0_lines) {
     if (perc_inclusion) {
       label_box <- paste0(
-        paste0(numbers$n, " (", numbers$perc, "%) ", numbers$incl_vec),
+        paste0(format_fun(numbers$n, ...), " (", format_fun(numbers$perc, ...),
+               "%) ", numbers$incl_vec),
         collapse="<br>"
       )
     } else {
       label_box <- paste0(
-        paste0(numbers$n, " ", numbers$incl_vec),
+        paste0(format_fun(numbers$n, ...), " ", numbers$incl_vec),
         collapse="<br>"
       )
     }
@@ -342,7 +351,8 @@ get_label_inclusion_items <- function(numbers, perc_inclusion,
     incl_text <- " never met inclusion criteria"
   }
 
-  label_box <- paste0(numbers$n_total, perc_total, incl_text, label_box)
+  label_box <- paste0(format_fun(numbers$n_total, ...), perc_total, incl_text,
+                      label_box)
 
   return(label_box)
 }
@@ -350,14 +360,15 @@ get_label_inclusion_items <- function(numbers, perc_inclusion,
 ## get entire text in inclusion criteria box
 get_label_inclusion <- function(x, type, digits, incl_names,
                                 perc_inclusion, perc_inclusion_total,
-                                remove_0_lines) {
+                                remove_0_lines, format_fun, ...) {
 
   if (!all(is.na(x$info$inclusion))) {
     numbers <- calculate_n_box(x=x, type=type, digits=digits)
+    numbers$incl_vec <- incl_names
 
     # remove those with 0
     if (remove_0_lines) {
-      numbers <- remove_0_n(numbers, incl_names=incl_names)
+      numbers <- remove_0_n(numbers)
     }
 
     # get list of reasons for exclusion
@@ -366,7 +377,9 @@ get_label_inclusion <- function(x, type, digits, incl_names,
       perc_inclusion=perc_inclusion,
       perc_inclusion_total=perc_inclusion_total,
       remove_0_lines=remove_0_lines,
-      type=type
+      type=type,
+      format_fun=format_fun,
+      ...
     )
 
   } else {
@@ -377,7 +390,8 @@ get_label_inclusion <- function(x, type, digits, incl_names,
 }
 
 ## label for lower right box
-get_label_box_3.5r <- function(x, remove_0_lines, digits, perc_other) {
+get_label_box_3.5r <- function(x, remove_0_lines, digits, perc_other,
+                               format_fun, ...) {
 
   . <- .treat <- .n <- NULL
 
@@ -390,6 +404,12 @@ get_label_box_3.5r <- function(x, remove_0_lines, digits, perc_other) {
   n_geq_1 <- nrow(x$data[, .(.n = .N), by=c(".treat", x$id)][
     .treat==FALSE & .n > 1])
   perc_geq_1 <- round((n_geq_1 / x$sizes$n_incl_controls) * 100, digits=digits)
+
+  # format all numbers
+  n_never <- format_fun(n_never, ...)
+  perc_never <- format_fun(perc_never, ...)
+  n_geq_1 <- format_fun(n_geq_1, ...)
+  perc_geq_1 <- format_fun(perc_geq_1, ...)
 
   if (perc_other) {
     perc_never <- paste0(" (", perc_never, "%) ")
@@ -411,10 +431,15 @@ get_label_box_3.5r <- function(x, remove_0_lines, digits, perc_other) {
 }
 
 ## create label for the "number of unmatched cases" string
-get_label_nomatch <- function(x, digits, perc_other) {
+get_label_nomatch <- function(x, digits, perc_other, format_fun, ...) {
 
+  # calculate
   n_nomatch <- x$sizes$n_incl_cases - x$sizes$n_matched_cases
   perc_nomatch <- round((n_nomatch / x$sizes$n_incl_cases) * 100, digits=digits)
+
+  # format
+  n_nomatch <- format_fun(n_nomatch, ...)
+  perc_nomatch <- format_fun(perc_nomatch, ...)
 
   if (perc_other) {
     perc <- paste0(" (", perc_nomatch, "%) ")

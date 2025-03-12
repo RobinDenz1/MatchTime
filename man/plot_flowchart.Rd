@@ -18,6 +18,7 @@ plot_flowchart(
   perc_inclusion=TRUE,
   perc_inclusion_total=FALSE,
   perc_other=FALSE,
+  number_format=format,
   box_main_halign=0.5,
   box_main_nudge_x=0,
   box_main_nudge_y=0,
@@ -57,7 +58,8 @@ plot_flowchart(
   arrow_vjust=-0.4,
   arrow_size=0.1,
   xlim=c(-20, 20),
-  ylim=c(-6, 11)
+  ylim=c(-6, 11),
+  ...
 )
 }
 \arguments{
@@ -87,6 +89,9 @@ Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be sho
   }
   \item{perc_other}{
 Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for all numbers in the side-boxes that are not related to the inclusion criteria.
+  }
+  \item{number_format}{
+A function that can be called on a vector of numbers and outputs those numbers as strings in some form. This can be used to ensure that the same number of digits is shown regardless of number, or to break up large numbers with commas or points. Defaults to the \code{\link[base]{format}} function. Further arguments to this function may be passed through the \code{...} syntax.
   }
   \item{box_main_halign}{
 Passed to the \code{halign} aesthetic in the \code{\link[ggtext]{geom_textbox}} function used for the main boxes.
@@ -207,6 +212,9 @@ The x limits of the plot.
   }
   \item{ylim}{
 The y limits of the plot.
+  }
+  \item{...}{
+Further arguments passed to the \code{number_format} function.
   }
 }
 \details{
