@@ -7,7 +7,7 @@
 #' @importFrom data.table copy
 #' @export
 add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
-                                     include_same_t=TRUE, units="auto",
+                                     include_same_t=FALSE, units="auto",
                                      name=".prev_event_count") {
 
   . <- .time <- .count <- .diff <- .treat_time <- .condition <- NULL

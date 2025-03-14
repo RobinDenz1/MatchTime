@@ -9,7 +9,7 @@ In some cases, some relevant events occur \emph{before} the time at which a case
 }
 \usage{
 add_previous_event_count(x, data, id=x$id, time=x$time,
-                         duration, include_same_t=TRUE,
+                         duration, include_same_t=FALSE,
                          units="auto", name=".prev_event_count")
 }
 \arguments{
@@ -29,7 +29,7 @@ A single character string specifying a column in \code{data}, specifying the col
 A single positive number specifying the duration before the inclusion time (\code{.treat_time} in \code{x$data}) in which the events should be counted. For example, setting \code{duration = 20} means that the number of events occuring 20 time units before the inclusion time will be counted.
   }
   \item{include_same_t}{
-Either \code{TRUE} or \code{FALSE}, specifying whether the time of inclusion (\code{.treat_time} in \code{x$data}) should be included when adding the next indicator. If \code{TRUE} (default), an event occuring exactly at the time of inclusion will be considered as a previous event, resulting in the added indicator being one point higher. If \code{FALSE}, an event occuring exactly at the time of inclusion will not be considered a previous event.
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the time of inclusion (\code{.treat_time} in \code{x$data}) should be included when adding the next indicator. If \code{TRUE}, an event occuring exactly at the time of inclusion will be considered as a previous event, resulting in the added indicator being one point higher. If \code{FALSE}, an event occuring exactly at the time of inclusion will not be considered a previous event.
   }
   \item{units}{
 Corresponds to the argument of the same name in the \code{\link{difftime}} function. This argument is only used when the \code{time} column corresponds to a \code{Date} (or similar) variable. It should be used to indicate the time-scale of the \code{duration} (seconds, days, years, ...).

@@ -8,9 +8,9 @@
 #' @importFrom data.table copy
 #' @export
 add_previous_event <- function(x, data, id=x$id, time=x$time, duration,
-                               include_same_t=TRUE, name=".prev_event") {
+                               include_same_t=FALSE, name=".prev_event") {
 
-  .in_risk <- .treat_time <- .time <- .id_new <- .next_treat_time <- NULL
+  .in_risk <- .treat_time <- .time <- .id_new <- NULL
 
   x <- copy(x)
 
@@ -35,8 +35,6 @@ add_previous_event <- function(x, data, id=x$id, time=x$time, duration,
   x$data <- merge.data.table(x$data, data, by=x$id, all.x=TRUE)
 
   # check if .treat_time is in any of the previous risk periods by event
-  # NOTE: the way I simulated the data this argument should be TRUE for
-  #       time-dependent covariates, but FALSE for outcomes
   if (include_same_t) {
     x$data[, .in_risk := .treat_time < (.time + eval(duration)) &
              .treat_time >= .time]

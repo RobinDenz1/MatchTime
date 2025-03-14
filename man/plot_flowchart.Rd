@@ -70,7 +70,7 @@ A \code{match_time} object created using the \code{\link{match_time}} function.
 A single integer, specifying the number of digits the percentages should be rounded to.
   }
   \item{n_fontface}{
-Either \code{TRUE} or \code{FALSE}, specifying whether the "n = X" texts in the main boxes should be \code{"normal"}, \code{"italic"} or \code{"bold"}.
+Either \code{TRUE} or \code{FALSE}, specifying whether the "n = X" texts in the main boxes should be \code{"normal"}, \code{"italic"}, \code{"bold"} or \code{"bolditalic"}.
   }
   \item{inclusion_text}{
 A named list specifying the text that should be used for the exclusion criteria reasons. This list should contain only names that have been used as inclusion criteria in the \code{inclusion} argument of the \code{\link{match_time}} function.

@@ -9,7 +9,7 @@ In some cases, some relevant events occur \emph{before} the time at which a case
 }
 \usage{
 add_previous_event(x, data, id=x$id, time=x$time,
-                   duration, include_same_t=TRUE,
+                   duration, include_same_t=FALSE,
                    name=".prev_event")
 }
 \arguments{
@@ -32,7 +32,7 @@ A single positive number specifying the duration of the events listed in \code{d
 A single character string specifying the name of the column containing the indicator that will be added to the \code{data} object contained in \code{x}. Defaults to \code{.prev_event}. If the name is already present, an error message is returned instead.
   }
   \item{include_same_t}{
-Either \code{TRUE} or \code{FALSE}, specifying whether the time of inclusion (\code{.treat_time} in \code{x$data}) should be included when adding the next indicator. If \code{TRUE} (default), an event starting or ending exactly at the time of inclusion will be considered as a previous event, resulting in the added indicator being \code{TRUE}. If \code{FALSE}, an event starting or ending exactly at the time of inclusion will not be considered a previous event.
+Either \code{TRUE} or \code{FALSE} (default), specifying whether the time of inclusion (\code{.treat_time} in \code{x$data}) should be included when adding the next indicator. If \code{TRUE}, an event starting or ending exactly at the time of inclusion will be considered as a previous event, resulting in the added indicator being \code{TRUE}. If \code{FALSE}, an event starting or ending exactly at the time of inclusion will not be considered a previous event.
   }
 }
 \details{

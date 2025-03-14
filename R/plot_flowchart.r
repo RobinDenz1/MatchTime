@@ -72,13 +72,15 @@ plot_flowchart <- function(x,
   requireNamespace("ggplot2")
   requireNamespace("ggtext")
 
-  # set highliting for later
+  # set highlighting for later
   if (n_fontface=="normal") {
     pref <- ""
   } else if (n_fontface=="italic") {
     pref <- "*"
   } else if (n_fontface=="bold") {
     pref <- "**"
+  } else if (n_fontface=="bolditalic") {
+    pref <- "***"
   }
 
   # change inclusion criteria labels
