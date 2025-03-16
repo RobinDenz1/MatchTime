@@ -15,8 +15,9 @@ match_time(formula, data, id, inclusion=NA,
            method=c("brsm", "psm", "pgm",
                     "dsm", "greedy"),
            replace_over_t=FALSE, replace_at_t=FALSE,
-           replace_cases=TRUE, estimand="ATT",
-           ratio=1, match_method="fast_exact",
+           replace_cases=TRUE, estimand="ATT", ratio=1,
+           recruitment_start=NULL, recruitment_stop=NULL,
+          match_method="fast_exact",
            matchit_args=list(), save_matchit=FALSE,
            censor_at_treat=TRUE, censor_pairs=FALSE,
            units="auto", verbose=FALSE, ...)
@@ -60,6 +61,12 @@ Currently only allows \code{"ATT"} to get a dataset with which to estimate the a
   }
   \item{ratio}{
 How many control units should be matched to each treated unit in k:1 matching. Should be a single integer value. The default is 1 for 1:1 matching. If \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}}, this argument will be passed to the argument of the same name in the \code{\link[MatchIt]{matchit}} function.
+  }
+  \item{recruitment_start}{
+An optional single value specifying the time at which the matching process should start. This will be the first time at which individuals receiving the treatment are included in the matching process. Note that individuals receiving the treatment \emph{before} this time period will be considered \emph{not treated}, regardless of whether they did receive the treatment before this date or not. If users want to exclude previously treated individuals, the \code{inclusion} argument should be used or the input \code{data} should be modified accordingly. Set to \code{NULL} to use all available information in \code{data} (default).
+  }
+  \item{recruitment_stop}{
+An optional single value specifying the time at which the matching process should stop. This will be the last time at which people are still included in the matching process. Set to \code{NULL} to use all available information in \code{data} (default).
   }
   \item{match_method}{
 A single character string specifying which method should be used to perform matching at each point in time. Allowed values are \code{"none"} (to perform no matching on covariates), \code{"fast_exact"} (default, to use fast exact matching as implemented in the \code{\link{fast_exact_matching}} function of this package) or any valid method of the \code{\link[MatchIt]{matchit}} function. If the latter is used, this argument is passed to the \code{method} argument of the \code{\link[MatchIt]{matchit}} function directly. Further arguments may be passed to \code{\link[MatchIt]{matchit}} in this case using the \code{matchit_args} argument.

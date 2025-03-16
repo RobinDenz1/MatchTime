@@ -31,34 +31,34 @@ subset_start_stop <- function(data, first_time, last_time,
   setnames(data, old=c(start, stop), new=c(".start", ".stop"))
 
   # remove rows before first_time
-  if (!missing(first_time)) {
+  if (!missing(first_time) && !is.null(first_time)) {
     data[, .first_time := first_time]
     data <- data[.stop > .first_time | (is.na(.first_time) & !na.rm)]
   }
 
   # remove rows after last time
-  if (!missing(last_time)) {
+  if (!missing(last_time) && !is.null(last_time)) {
     data[, .last_time := last_time]
     data <- data[.start < .last_time | (is.na(.last_time) & !na.rm)]
   }
 
   # adjust first start and last stop if needed
-  if (truncate & !missing(first_time)) {
+  if (truncate && !missing(first_time) && !is.null(first_time)) {
     data[.start < .first_time, .start := .first_time]
   }
 
-  if (truncate & !missing(last_time)) {
+  if (truncate && !missing(last_time) && !is.null(last_time)) {
     data[.stop > .last_time, .stop := .last_time]
   }
 
   # set names back
   setnames(data, old=c(".start", ".stop"), new=c(start, stop))
 
-  if (!missing(first_time)) {
+  if (!missing(first_time) && !is.null(first_time)) {
     data[, .first_time := NULL]
   }
 
-  if (!missing(last_time)) {
+  if (!missing(last_time) && !is.null(last_time)) {
     data[, .last_time := NULL]
   }
 
@@ -75,11 +75,11 @@ check_inputs_subset_start_stop <- function(data, start, stop, first_time,
   stopifnotm(is_single_character(stop) & stop %in% colnames(data),
              paste0("'stop' needs to be a single character string ",
                     "specifying a column in 'data'."))
-  stopifnotm(missing(first_time) || length(first_time)==1 ||
-               length(first_time)==nrow(data),
+  stopifnotm(missing(first_time) || is.null(first_time) ||
+               length(first_time)==1 || length(first_time)==nrow(data),
    "'first_time' must be a single value or have the same length as nrow(data).")
-  stopifnotm(missing(last_time) || length(last_time)==1 ||
-               length(last_time)==nrow(data),
+  stopifnotm(missing(last_time) || is.null(last_time) ||
+               length(last_time)==1 || length(last_time)==nrow(data),
     "'last_time' must be a single value or have the same length as nrow(data).")
   stopifnotm(is_single_logical(truncate),
              "'truncate' must be either TRUE or FALSE.")

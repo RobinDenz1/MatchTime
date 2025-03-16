@@ -39,6 +39,7 @@ col_types <- function(data, cols) {
 check_inputs_match_time <- function(formula, data, id, inclusion,
                                     replace_over_t, replace_at_t,
                                     replace_cases, estimand, ratio,
+                                    recruitment_start, recruitment_stop,
                                     match_method, verbose,
                                     start, stop, method, outcomes) {
 
@@ -93,6 +94,14 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
   stopifnotm(length(form_in_outcomes)==0,
              "Cannot match on variables specified as outcome(s):",
              paste0(form_in_outcomes, collapse=", "))
+
+  # correct recruitment_start
+  stopifnotm(is.null(recruitment_start) || (length(recruitment_start==1)),
+             "'recruitment_start' must be a single number or Date or NULL.")
+
+  # correct recruitment_stop
+  stopifnotm(is.null(recruitment_stop) || (length(recruitment_stop==1)),
+             "'recruitment_stop' must be a single number or Date or NULL.")
 
   # correct ratio
   stopifnotm(length(ratio)==1 && is.numeric(ratio) && ratio >= 1 &&

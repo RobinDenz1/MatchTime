@@ -729,3 +729,42 @@ test_that("vector of inclusion criteria", {
   expect_true(all(out$exclusion$stage1$sum_incl >= 1))
   expect_true(all(out$exclusion$stage2$sum_incl >= 1))
 })
+
+test_that("recruitment period change works", {
+
+  data("heart", package="survival")
+  heart <- heart[, c("id", "start", "stop", "transplant", "age", "surgery")]
+
+  # using matchit because age is continuous
+  set.seed(12341432)
+  m_obj <- suppressWarnings(
+    match_time(transplant ~ age + surgery, data=heart, id="id",
+               match_method="nearest",
+               matchit_args=list(exact="surgery"),
+               replace_at_t=TRUE, ratio=1,
+               recruitment_start=10, recruitment_stop=200)
+  )
+  out <- match_data(m_obj)
+
+  # .treat equally distributed
+  expect_equal(as.vector(table(out$.treat)), c(54, 54))
+
+  # surgery equally distributed in each level of .treat
+  tab <- table(out$.treat, out$surgery)
+  expect_true(tab[1,1] == tab[2,1])
+
+  # pair id always occurs 2 times
+  expect_true(all(table(out$.id_pair)==2))
+
+  # .id_new is unique
+  expect_true(length(unique(out$.id_new))==nrow(out))
+
+  # .id may occur more then twice
+  expect_true(max(table(out$id))==3)
+  out[, n_id := .N, by=id]
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(19, 17))
+
+  # next treatment only possible for controls
+  expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 34)
+})

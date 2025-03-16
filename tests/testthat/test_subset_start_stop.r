@@ -36,8 +36,12 @@ test_that("using only first_time", {
                          stop=c(812, 1092, 34334, 8021, 9823, 220022),
                          some_col=c(3, 4, 5, 6, 7, 8))
 
+  # with missing last_time
   out <- subset_start_stop(data, first_time=28)
+  expect_equal(out, expected)
 
+  # with NULL last_time
+  out <- subset_start_stop(data, first_time=28, last_time=NULL)
   expect_equal(out, expected)
 })
 
@@ -46,8 +50,12 @@ test_that("using only last_time", {
   expected <- data.table(id=1, start=c(0, 10, 25),
                          stop=c(10, 25, 28), some_col=c(1, 2, 3))
 
+  # with missing first_time
   out <- subset_start_stop(data, last_time=28)
+  expect_equal(out, expected)
 
+  # with NULL first_time
+  out <- subset_start_stop(data, last_time=28, first_time=NULL)
   expect_equal(out, expected)
 })
 

@@ -12,6 +12,7 @@ match_time <- function(formula, data, id, inclusion=NA,
                        method=c("brsm", "psm", "pgm", "dsm", "greedy"),
                        replace_over_t=FALSE, replace_at_t=FALSE,
                        replace_cases=TRUE, estimand="ATT", ratio=1,
+                       recruitment_start=NULL, recruitment_stop=NULL,
                        match_method="fast_exact", matchit_args=list(),
                        save_matchit=FALSE, censor_at_treat=TRUE,
                        censor_pairs=FALSE, units="auto", verbose=FALSE,
@@ -35,23 +36,12 @@ match_time <- function(formula, data, id, inclusion=NA,
                           estimand=estimand, ratio=ratio,
                           match_method=match_method,
                           verbose=verbose,
-                          start=start, stop=stop, method=method)
+                          start=start, stop=stop, method=method,
+                          recruitment_start=recruitment_start,
+                          recruitment_stop=recruitment_stop)
 
   # extract needed things from formula
   form <- process_formula(formula)
-
-  # fix treatment variable if needed
-  if (!is.logical(data[[form$treat]])) {
-    setnames(data, old=form$treat, new=".treat")
-    data[, .treat := preprocess_treat(.treat)]
-    setnames(data, old=".treat", new=form$treat)
-  }
-
-  # extract relevant treatment times
-  d_treat <- times_from_start_stop(data=data, name=form$treat, id=id,
-                                   type="var", time_name=".time",
-                                   start=start, stop=stop)
-  data[, (form$treat) := NULL]
 
   # extract outcome info, if available
   if (all(!is.na(outcomes))) {
@@ -70,6 +60,26 @@ match_time <- function(formula, data, id, inclusion=NA,
                        data=data)
     data[, (outcomes_remove) := NULL]
   }
+
+  # remove data not relevant for recruitment period
+  if (!is.null(recruitment_start) && !is.null(recruitment_stop)) {
+    data <- subset_start_stop(data=data, first_time=recruitment_start,
+                              last_time=recruitment_stop, truncate=TRUE,
+                              start=start, stop=stop)
+  }
+
+  # fix treatment variable if needed
+  if (!is.logical(data[[form$treat]])) {
+    setnames(data, old=form$treat, new=".treat")
+    data[, .treat := preprocess_treat(.treat)]
+    setnames(data, old=".treat", new=form$treat)
+  }
+
+  # extract relevant treatment times
+  d_treat <- times_from_start_stop(data=data, name=form$treat, id=id,
+                                   type="var", time_name=".time",
+                                   start=start, stop=stop)
+  data[, (form$treat) := NULL]
 
   # call function that does all the work
   out <- match_time.fit(id=id, time=".time", d_treat=d_treat,
