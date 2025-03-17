@@ -19,6 +19,7 @@ plot_flowchart(
   perc_inclusion_total=FALSE,
   perc_other=FALSE,
   number_format=format,
+  box_main_style="n_last",
   box_main_halign=0.5,
   box_main_nudge_x=0,
   box_main_nudge_y=0,
@@ -92,6 +93,9 @@ Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be sho
   }
   \item{number_format}{
 A function that can be called on a vector of numbers and outputs those numbers as strings in some form. This can be used to ensure that the same number of digits is shown regardless of number, or to break up large numbers with commas or points. Defaults to the \code{\link[base]{format}} function. Further arguments to this function may be passed through the \code{...} syntax.
+  }
+  \item{box_main_style}{
+A single character string, controlling which "style" the text in the main boxes should have. Should be either \code{"n_first"}, in which case the numbers appear before the text, or \code{"n_last"} in which the numbers appear after the text (default).
   }
   \item{box_main_halign}{
 Passed to the \code{halign} aesthetic in the \code{\link[ggtext]{geom_textbox}} function used for the main boxes.

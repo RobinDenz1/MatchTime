@@ -2,8 +2,6 @@
 # TODO:
 # - tests
 # - make all box texts arguments
-# - maybe add "style" or similar to automatically put the number
-#   before the text instead of TEXT <br> n =
 
 ## plots a consort type flowchart of the matching process
 #' @importFrom data.table fifelse
@@ -21,10 +19,12 @@ plot_flowchart <- function(x,
                            perc_inclusion_total=FALSE,
                            perc_other=FALSE,
                            number_format=format,
+                           box_main_style="n_last",
                            box_main_halign=0.5,
                            box_main_nudge_x=0,
                            box_main_nudge_y=0,
-                           box_main_padding=ggplot2::unit(c(5.5, 5.5, 5.5, 5.5), "pt"),
+                           box_main_padding=ggplot2::unit(c(5.5, 5.5, 5.5, 5.5),
+                                                          "pt"),
                            box_main_margin=ggplot2::unit(c(0, 0, 0, 0), "pt"),
                            box_main_r=ggplot2::unit(5.5, "pt"),
                            box_main_width=ggplot2::unit(2, "inch"),
@@ -91,32 +91,25 @@ plot_flowchart <- function(x,
   }
 
   ## define labels for the main boxes in the middle
-  # 1 row
-  label_box1 <- paste0("Total Input Data <br> ", pref,
-                       "N = ", number_format(x$sizes$n_input_all, ...), pref)
-
-  # 2 row
-  label_box2l <- paste0("Potential Cases <br> ", pref,
-                        "n = ", number_format(x$sizes$n_input_cases, ...), pref)
-  label_box2r <- paste0("Potential Controls <br> ", pref, "n = ",
-                        number_format(x$sizes$n_input_controls, ...), pref)
-
-  # 3 row
-  label_box3l <- paste0(
-    "Potential Cases <br> Included in Matching <br> ", pref, "n = ",
-     number_format(x$sizes$n_input_cases - sum(x$exclusion$stage1$.treat),
-                   ...), pref
-  )
-  label_box3r <- paste0(
-    "Potential Controls <br> Included in Matching <br> ", pref, "n = ",
-    number_format(x$sizes$n_incl_controls, ...), pref
-  )
-
-  # 4 row
-  label_box4l <- paste0("Matched Cases <br> ", pref, "n = ",
-                        number_format(x$sizes$n_matched_cases, ...), pref)
-  label_box4r <- paste0("Matched Controls <br> ", pref, "n = ",
-                        number_format(x$sizes$n_matched_controls, ...), pref)
+  labs_main <- c("Total Input Data", "Potential Cases", "Potential Controls",
+                 "Potential Cases <br> Included in Matching",
+                 "Potential Controls <br> Included in Matching",
+                 "Matched Cases", "Matched Controls")
+  numbers_main <- c(x$sizes$n_input_all, x$sizes$n_input_cases,
+                    x$sizes$n_input_controls,
+                    x$sizes$n_input_cases - sum(x$exclusion$stage1$.treat),
+                    x$sizes$n_incl_controls, x$sizes$n_matched_cases,
+                    x$sizes$n_matched_controls)
+  labels_main <- vector(mode="character", length=7)
+  for (i in seq_len(7)) {
+    labels_main[i] <- get_main_label(n=numbers_main[i],
+                                     text=labs_main[i],
+                                     n_text="n = ",
+                                     pref=pref,
+                                     style=box_main_style,
+                                     number_format=number_format,
+                                     ...)
+  }
 
   # 2.5 row left & right
   label_box2.5l <- get_label_inclusion(x=x, type="left1", digits=digits,
@@ -152,10 +145,7 @@ plot_flowchart <- function(x,
   # coordinates for main boxes
   d_box_coord <- data.frame(x=c(0, -5, 5, -5, 5, -5, 5),
                             y=c(10, 5, 5, 0, 0, -5, -5),
-                            label=c(label_box1, label_box2l,
-                                    label_box2r, label_box3l,
-                                    label_box3r, label_box4l,
-                                    label_box4r))
+                            label=labels_main)
 
   # coordinates for secondary boxes
   d_box_coord2 <- data.frame(x=c(-14, 14, -14, 14),
@@ -450,5 +440,17 @@ get_label_nomatch <- function(x, digits, perc_other, format_fun, ...) {
   }
 
   label <- paste0(n_nomatch, perc, " could not be matched")
+  return(label)
+}
+
+## create main labels
+get_main_label <- function(n, text, pref, style, n_text="n = ",
+                           number_format, ...) {
+
+  if (style=="n_first") {
+    label <- paste0(pref, n_text, number_format(n, ...), pref, "<br>", text)
+  } else if (style=="n_last") {
+    label <- paste0(text, "<br>", pref, n_text, number_format(n, ...), pref)
+  }
   return(label)
 }
