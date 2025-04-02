@@ -17,7 +17,7 @@ match_time(formula, data, id, inclusion=NA,
            replace_over_t=FALSE, replace_at_t=FALSE,
            replace_cases=TRUE, estimand="ATT", ratio=1,
            recruitment_start=NULL, recruitment_stop=NULL,
-          match_method="fast_exact",
+           match_method="fast_exact",
            matchit_args=list(), save_matchit=FALSE,
            censor_at_treat=TRUE, censor_pairs=FALSE,
            units="auto", verbose=FALSE, ...)
@@ -174,8 +174,8 @@ Potentially contains any number of additional covariates supplied in the origina
 \item{sizes}{A \code{list} containing various information on the overall sample sizes at each stage.}
 \item{exclusion}{A \code{list} containing two \code{data.tables} which contain the \code{id}s removed from the data at different stages due to \code{inclusion} as well as the reason for removal.}
 \item{matchit_objects}{A \code{list} of \code{matchit} objects created at each point in time where matching was performed. Only included if \code{match_method} is set to a valid method in \code{\link[MatchIt]{matchit}} and \code{save_matchit=TRUE}.}
-\item{ps_model}{A \code{\link[survival]{coxph}} model fit to estimate the time-dependent propensity score. Only included when \code{method="psm"}.}
-\item{prog_model}{A \code{\link[survival]{coxph}} model fit to estimate the time-dependent prognostic score. Only included when \code{method="pgm"}.}
+\item{ps_model}{A \code{\link[survival]{coxph}} model fit to estimate the time-dependent propensity score. Only included when \code{method="psm"} or \code{method="dsm"}.}
+\item{prog_model}{A \code{\link[survival]{coxph}} model fit to estimate the time-dependent prognostic score. Only included when \code{method="pgm"} or \code{method="dsm"}.}
 \item{call}{The original function call.}
 
 }
@@ -187,7 +187,7 @@ Li, Yunfei Pail, Kathleen J. Propert, and Paul R. Rosenbaum (2001). "Balanced Ri
 Lu, Bo (2005). "Propensity Score Matching with Time-Dependent Covariates". In: Biometrics 61.3, pp. 721-728.
 }
 \note{
-Column names starting with a single point (e.g. names like \code{".variable"} or \code{".id"}) cannot be used in \code{data}, because they are used internally, which could lead to weird errors.
+Column names starting with a single point (e.g. names like \code{".variable"} or \code{".id"}) \bold{can not} be used in \code{data}, because they are used internally, which could lead to weird errors.
 }
 \author{
 Robin Denz

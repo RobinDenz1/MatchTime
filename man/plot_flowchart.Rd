@@ -20,6 +20,7 @@ plot_flowchart(
   perc_other=FALSE,
   number_format=format,
   box_main_style="n_last",
+  box_main_text=list(),
   box_main_halign=0.5,
   box_main_nudge_x=0,
   box_main_nudge_y=0,
@@ -34,6 +35,7 @@ plot_flowchart(
   box_main_maxheight=NULL,
   box_main_colour="black",
   box_main_fill="lightblue",
+  box_sec_text=list(),
   box_sec_halign=0,
   box_sec_nudge_x=box_main_nudge_x,
   box_sec_nudge_y=box_main_nudge_y,
@@ -56,6 +58,7 @@ plot_flowchart(
   line_sec_linewidth=line_main_linewidth,
   arrow=TRUE,
   arrow_type="closed",
+  arrow_angle=30,
   arrow_vjust=-0.4,
   arrow_size=0.1,
   xlim=c(-20, 20),
@@ -96,6 +99,9 @@ A function that can be called on a vector of numbers and outputs those numbers a
   }
   \item{box_main_style}{
 A single character string, controlling which "style" the text in the main boxes should have. Should be either \code{"n_first"}, in which case the numbers appear before the text, or \code{"n_last"} in which the numbers appear after the text (default).
+  }
+  \item{box_main_text}{
+A named list of single character strings, specifying alternative text to the defaults printed in the main boxes. The names of the list should be one of \code{"box1"} (defining the text in the first box from the top), \code{"box2l"} (defining the text in the second box from the top on the left), \code{"box2r"} (defining the text in the second box from the top on the right), \code{"box3l"} (defining the text in the third box from the top on the left), \code{"box3r"} (defining the text in the third box from the top on the right), \code{"box4l"} (fourth box on the left), \code{"box4r"} (fourth box on the right). Set to \code{list()} to not change the text (default).
   }
   \item{box_main_halign}{
 Passed to the \code{halign} aesthetic in the \code{\link[ggtext]{geom_textbox}} function used for the main boxes.
@@ -138,6 +144,9 @@ Passed to the \code{box.colour} aesthetic in the \code{\link[ggtext]{geom_textbo
   }
   \item{box_main_fill}{
 Passed to the \code{fill} aesthetic in the \code{\link[ggtext]{geom_textbox}} function used for the main boxes.
+  }
+  \item{box_sec_text}{
+A named list of single character strings, specifying alternative text to the defaults printed in the secondary boxes. The names of the list should be one of \code{"box1l"} (defining the text in the first secondary box from the top on the left side), \code{"box1r"} (defining the text in the first secondary box from the top on the right), \code{"box2l1"} (defining the text for the unmatched in the second secondary box from the top on the left side), \code{"box2l2"} (defining the text for the inclusion criteria in the second secondary box from the top on the left side), \code{"box2r1"} (defining the text on how many controls were not used in the bottom right box), \code{"box2r2"} (defining the text on how many controls were used more than once in the bottom right box). Set to \code{list()} to not change the text (default).
   }
   \item{box_sec_halign}{
 Passed to the \code{halign} aesthetic in the \code{\link[ggtext]{geom_textbox}} function used for the secondary boxes.
@@ -203,6 +212,9 @@ The width of the lines connecting the secondary boxes to the main lines.
 Either \code{TRUE} or \code{FALSE}, specifying whether to draw arrows on the main lines.
   }
   \item{arrow_type}{
+The angle of the arrow head in degrees (smaller numbers produce narrower, pointier arrows). Essentially describes the width of the arrow head. Ignored if \code{arrow=FALSE}.
+  }
+  \item{arrow_angle}{
 The type of the arrow heads drawn, ignored if \code{arrow=FALSE}.
   }
   \item{arrow_vjust}{
@@ -212,10 +224,10 @@ A single number that may be used to shift the arrow heads up or down. This is pr
 The size of the drawn arrow heads, ignored if \code{arrow=FALSE}.
   }
   \item{xlim}{
-The x limits of the plot.
+The x limits of the plot. Should usually stay at the values given here, because the positions of the boxes are hard-coded. They can, however, be changed to allow drawing more boxes etc. To change the size of the boxes, arguments starting with \code{box_main_} or \code{box_sec_} should be more useful.
   }
   \item{ylim}{
-The y limits of the plot.
+The y limits of the plot. See argument \code{xlim}.
   }
   \item{...}{
 Further arguments passed to the \code{number_format} function.

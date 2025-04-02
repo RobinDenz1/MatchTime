@@ -163,6 +163,8 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
       def_NA <- NA_character_
     } else  if (inherits(data[[name_value]], "integer")) {
       def_NA <- NA_integer_
+    } else if (inherits(data[[name_value]], "numeric")) {
+      def_NA <- NA_real_
     } else {
       def_NA <- NA
     }

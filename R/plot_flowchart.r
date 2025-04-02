@@ -1,10 +1,5 @@
 
-# TODO:
-# - tests
-# - make all box texts arguments
-
 ## plots a consort type flowchart of the matching process
-#' @importFrom data.table fifelse
 #' @importFrom data.table .N
 #' @importFrom data.table .SD
 #' @importFrom data.table :=
@@ -20,6 +15,7 @@ plot_flowchart <- function(x,
                            perc_other=FALSE,
                            number_format=format,
                            box_main_style="n_last",
+                           box_main_text=list(),
                            box_main_halign=0.5,
                            box_main_nudge_x=0,
                            box_main_nudge_y=0,
@@ -35,6 +31,7 @@ plot_flowchart <- function(x,
                            box_main_maxheight=NULL,
                            box_main_colour="black",
                            box_main_fill="lightblue",
+                           box_sec_text=list(),
                            box_sec_halign=0,
                            box_sec_nudge_x=box_main_nudge_x,
                            box_sec_nudge_y=box_main_nudge_y,
@@ -57,6 +54,7 @@ plot_flowchart <- function(x,
                            line_sec_linewidth=line_main_linewidth,
                            arrow=TRUE,
                            arrow_type="closed",
+                           arrow_angle=30,
                            arrow_vjust=-0.4,
                            arrow_size=0.1,
                            xlim=c(-20, 20),
@@ -95,6 +93,12 @@ plot_flowchart <- function(x,
                  "Potential Cases <br> Included in Matching",
                  "Potential Controls <br> Included in Matching",
                  "Matched Cases", "Matched Controls")
+
+  # replace with custom ones if specified by user
+  if (length(box_main_text) > 0) {
+    labs_main <- replace_labs_main(labs_main, box_main_text)
+  }
+
   numbers_main <- c(x$sizes$n_input_all, x$sizes$n_input_cases,
                     x$sizes$n_input_controls,
                     x$sizes$n_input_cases - sum(x$exclusion$stage1$.treat),
@@ -111,19 +115,23 @@ plot_flowchart <- function(x,
                                      ...)
   }
 
+  sec_labs <- get_sec_labs(box_sec_text)
+
   # 2.5 row left & right
   label_box2.5l <- get_label_inclusion(x=x, type="left1", digits=digits,
                                       incl_names=incl_names,
                                       perc_inclusion=perc_inclusion,
                                       perc_inclusion_total=perc_inclusion_total,
                                       remove_0_lines=remove_0_lines,
-                                      format_fun=number_format, ...)
+                                      format_fun=number_format,
+                                      text=sec_labs[["box1l"]], ...)
   label_box2.5r <- get_label_inclusion(x=x, type="right1", digits=digits,
                                       incl_names=incl_names,
                                       perc_inclusion=perc_inclusion,
                                       perc_inclusion_total=perc_inclusion_total,
                                       remove_0_lines=remove_0_lines,
-                                      format_fun=number_format, ...)
+                                      format_fun=number_format,
+                                      text=sec_labs[["box1r"]], ...)
 
   # 3.5 row left
   label_box3.5l <- get_label_inclusion(x=x, type="left2", digits=digits,
@@ -131,16 +139,20 @@ plot_flowchart <- function(x,
                                       perc_inclusion=perc_inclusion,
                                       perc_inclusion_total=perc_inclusion_total,
                                       remove_0_lines=remove_0_lines,
-                                      format_fun=number_format, ...)
+                                      format_fun=number_format,
+                                      text=sec_labs[["box2l2"]], ...)
   label_no_match3.5l <- get_label_nomatch(x=x, perc_other=perc_other,
                                           digits=digits,
-                                          format_fun=number_format, ...)
+                                          format_fun=number_format,
+                                          text=sec_labs[["box2l1"]], ...)
   label_box3.5l <- paste0(label_no_match3.5l, "<br>", label_box3.5l)
 
   # 3.5 row right
   label_box3.5r <- get_label_box_3.5r(x=x, remove_0_lines=remove_0_lines,
                                       perc_other=perc_other,
-                                      format_fun=number_format, ...)
+                                      format_fun=number_format,
+                                      lab1=sec_labs[["box2r1"]],
+                                      lab2=sec_labs[["box2r2"]], ...)
 
   # coordinates for main boxes
   d_box_coord <- data.frame(x=c(0, -5, 5, -5, 5, -5, 5),
@@ -175,11 +187,11 @@ plot_flowchart <- function(x,
 
   # remove no information boxes if specified
   if (remove_0_lines & remove_0_boxes) {
-    empty_labs <- c("0 never met inclusion criteria",
-                    "0 never selected as controls",
+    empty_labs <- c(paste0("0 ", sec_labs[["box1l"]]),
+                    paste0("0 ", sec_labs[["box1r"]]),
                     "No inclusion criteria applied",
-                    paste0("0 could not be matched<br>0 did not meet ",
-                           "inclusion criteria at treatment time"))
+                    paste0("0 ", sec_labs[["box1l"]], "<br>0 ",
+                           sec_labs[["box1r"]]))
     d_box_coord2 <- subset(d_box_coord2, !label %in% empty_labs)
     d_lines2 <- subset(d_lines2, box_id %in% d_box_coord2$box_id)
   }
@@ -206,8 +218,12 @@ plot_flowchart <- function(x,
       ggplot2::geom_segment(data=d_arrows,
                             ggplot2::aes(x=x, xend=xend, y=y, yend=yend),
                             inherit.aes=FALSE,
+                            colour=line_sec_colour,
+                            linewidth=line_main_linewidth,
+                            linetype=line_main_linetype,
                             arrow=ggplot2::arrow(
                               type=arrow_type,
+                              angle=arrow_angle,
                               length=ggplot2::unit(arrow_size, "inches")
                             )
       )
@@ -308,8 +324,8 @@ remove_0_n <- function(numbers) {
 ## create the label with inclusion criteria items info
 get_label_inclusion_items <- function(numbers, perc_inclusion,
                                       perc_inclusion_total,
-                                      remove_0_lines, type, format_fun,
-                                      ...) {
+                                      remove_0_lines, format_fun,
+                                      text, ...) {
 
   # if specified, add percentage to total number excluded as well
   if (perc_inclusion_total) {
@@ -337,13 +353,7 @@ get_label_inclusion_items <- function(numbers, perc_inclusion,
     label_box <- ""
   }
 
-  if (type=="left2") {
-    incl_text <- " did not meet inclusion criteria at treatment time"
-  } else {
-    incl_text <- " never met inclusion criteria"
-  }
-
-  label_box <- paste0(format_fun(numbers$n_total, ...), perc_total, incl_text,
+  label_box <- paste0(format_fun(numbers$n_total, ...), perc_total, text,
                       label_box)
 
   return(label_box)
@@ -369,7 +379,6 @@ get_label_inclusion <- function(x, type, digits, incl_names,
       perc_inclusion=perc_inclusion,
       perc_inclusion_total=perc_inclusion_total,
       remove_0_lines=remove_0_lines,
-      type=type,
       format_fun=format_fun,
       ...
     )
@@ -383,7 +392,7 @@ get_label_inclusion <- function(x, type, digits, incl_names,
 
 ## label for lower right box
 get_label_box_3.5r <- function(x, remove_0_lines, digits, perc_other,
-                               format_fun, ...) {
+                               format_fun, lab1, lab2, ...) {
 
   . <- .treat <- .n <- NULL
 
@@ -411,19 +420,17 @@ get_label_box_3.5r <- function(x, remove_0_lines, digits, perc_other,
     perc_geq_1 <- ""
   }
 
-  label_box3.5r <- paste0(n_never, perc_never,
-                          " never selected as controls")
+  label_box3.5r <- paste0(n_never, perc_never, lab1)
 
   if (!(remove_0_lines & n_geq_1==0)) {
-    label_box3.5r <- paste0(label_box3.5r, "<br>", n_geq_1, perc_geq_1,
-                            " selected as control more than once")
+    label_box3.5r <- paste0(label_box3.5r, "<br>", n_geq_1, perc_geq_1, lab2)
   }
 
   return(label_box3.5r)
 }
 
 ## create label for the "number of unmatched cases" string
-get_label_nomatch <- function(x, digits, perc_other, format_fun, ...) {
+get_label_nomatch <- function(x, digits, perc_other, format_fun, text, ...) {
 
   # calculate
   n_nomatch <- x$sizes$n_incl_cases - x$sizes$n_matched_cases
@@ -439,7 +446,7 @@ get_label_nomatch <- function(x, digits, perc_other, format_fun, ...) {
     perc <- ""
   }
 
-  label <- paste0(n_nomatch, perc, " could not be matched")
+  label <- paste0(n_nomatch, perc, text)
   return(label)
 }
 
@@ -453,4 +460,61 @@ get_main_label <- function(n, text, pref, style, n_text="n = ",
     label <- paste0(text, "<br>", pref, n_text, number_format(n, ...), pref)
   }
   return(label)
+}
+
+# replaces the standard text of main boxes if specified by user
+replace_labs_main <- function(labs_main, box_main_text) {
+
+  names(labs_main) <- c("box1", "box2l", "box2r", "box3l", "box3r",
+                        "box4l", "box4r")
+  for (i in seq_len(length(box_main_text))) {
+    name_i <- names(box_main_text[i])
+
+    # must be a single character
+    stopifnotm(length(box_main_text[[i]])==1 &&
+               is.character(box_main_text[[i]]),
+               "Every entry in 'box_main_text' must be a single character",
+               "string.")
+
+    if (name_i %in% names(labs_main)) {
+      labs_main[[name_i]] <- box_main_text[[i]]
+    } else {
+      stop("'box_main_text' should be a named list of characters, where ",
+           "the names can only be one or more of 'box1', 'box2l', ",
+           "'box2r', 'box3l', 'box3r', 'box4l', 'box4r', not: ", name_i)
+    }
+  }
+  names(labs_main) <- NULL
+  return(labs_main)
+}
+
+## get text used in all secondary boxes
+get_sec_labs <- function(box_sec_text) {
+
+  defaults <- list(box1l=" never met inclusion criteria",
+                   box1r=" never met inclusion criteria",
+                   box2l1=" could no be matched",
+                   box2l2=" did not meet inclusion criteria at treatment time",
+                   box2r1=" never selected as controls",
+                   box2r2=" selected as control more than once")
+
+  for (i in seq_len(length(box_sec_text))) {
+    name_i <- names(box_sec_text[i])
+
+    # must be a single character
+    stopifnotm(length(box_sec_text[[i]])==1 &&
+                 is.character(box_sec_text[[i]]),
+               "Every entry in 'box_sec_text' must be a single character",
+               "string.")
+
+    if (name_i %in% names(defaults)) {
+      defaults[[name_i]] <- box_sec_text[[i]]
+    } else {
+      stop("'box_sec_text' should be a named list of characters, where ",
+           "the names can only be one or more of 'box1l', 'box1r', ",
+           "'box2l1', 'box2l2', 'box2r1', 'box2r2', not: ", name_i)
+    }
+  }
+
+  return(defaults)
 }
