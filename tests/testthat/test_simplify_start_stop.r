@@ -56,7 +56,7 @@ test_that("with no change at the beginning", {
   data <- rbind(data1, data2)
   setkey(data, id, start)
 
-  out <- simplify_start_stop(data, id="id", cols=c("A", "B"))
+  out <- simplify_start_stop(as.data.frame(data), id="id", cols=c("A", "B"))
 
   # three rows are removed when excluding C
   expect_true(nrow(out)==nrow(data)-3)

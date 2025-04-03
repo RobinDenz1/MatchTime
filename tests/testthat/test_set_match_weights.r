@@ -109,3 +109,10 @@ test_that("ATT on reversed .treat is same as ATC on regular, with replace", {
 
   expect_equal(data1$.weights, data2$.weights)
 })
+
+test_that("estimand other than ATT or ATC", {
+  data <- data.table(.treat=c(TRUE, rep(FALSE, 7), TRUE, FALSE),
+                      .id_pair=c(1, rep(1, 7), 2, 2))
+  expect_error(set_match_weights(data, treat=".treat", estimand="ATO"),
+               "Only 'ATT' and 'ATC' estimands are currently supported.")
+})

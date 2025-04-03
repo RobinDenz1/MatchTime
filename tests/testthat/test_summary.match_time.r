@@ -14,3 +14,7 @@ out <- match_time(formula=vacc ~ mac,
 test_that("general test case", {
   expect_snapshot_output(summary(out))
 })
+
+test_that("with standardize=FALSE", {
+  expect_snapshot_output(summary(out, standardize=FALSE))
+})

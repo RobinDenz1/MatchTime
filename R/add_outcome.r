@@ -159,8 +159,8 @@ check_inputs_add_outcome <- function(x, id, time, data, censor_at_treat,
              "'time' must specify a valid column in 'data'.")
 
   # cannot censor at pairs if no pairs exist
-  if (censor_at_treat && censor_pairs && !".id_pair" %in% colnames(x$data)) {
-    stop("Cannot use 'censor_pairs' when a 'match_method' was used that",
-         " did not create an '.id_pair' for the matched data.")
-  }
+  stopifnotm(!(censor_at_treat && censor_pairs &&
+               !".id_pair" %in% colnames(x$data)),
+             "Cannot use 'censor_pairs' when a 'match_method' was used that",
+             "did not create an '.id_pair' for the matched data.")
 }

@@ -106,8 +106,10 @@ test_that("id not in every data.table (all.x, all.y)", {
 
   # call merge_start_stop() with different all.x, all.y
   output_all <- merge_start_stop(dlist=dlist, by="id", all=TRUE)
-  output_all_x <- merge_start_stop(dlist=dlist, by="id", all.x=TRUE, all.y=FALSE)
-  output_all_y <- merge_start_stop(dlist=dlist, by="id", all.x=FALSE, all.y=TRUE)
+  output_all_x <- merge_start_stop(dlist=dlist, by="id", all.x=TRUE,
+                                   all.y=FALSE)
+  output_all_y <- merge_start_stop(dlist=dlist, by="id", all.x=FALSE,
+                                   all.y=TRUE)
   output_neither <- merge_start_stop(dlist=dlist, by="id")
 
   # test equality
@@ -149,8 +151,9 @@ test_that("using first_time", {
                          B=c(NA, TRUE, NA, NA, NA))
   setkey(expected, id, start)
 
-  output <- merge_start_stop(dlist=dlist, first_time=9, remove_before_first=TRUE,
-                     all=TRUE, by="id")
+  output <- merge_start_stop(dlist=dlist, first_time=9,
+                             remove_before_first=TRUE,
+                             all=TRUE, by="id")
   expect_equal(output, expected)
 
   # with first_time sometimes > actual entry & remove_before_first=FALSE
@@ -161,8 +164,9 @@ test_that("using first_time", {
                          B=c(NA, TRUE, NA, NA, TRUE, NA, NA, NA))
   setkey(expected, id, start)
 
-  output <- merge_start_stop(dlist=dlist, first_time=9, remove_before_first=FALSE,
-                     all=TRUE, by="id")
+  output <- merge_start_stop(dlist=dlist, first_time=9,
+                             remove_before_first=FALSE,
+                             all=TRUE, by="id")
   expect_equal(output, expected)
 })
 
@@ -210,8 +214,9 @@ test_that("using last_time", {
                          value3=c(NA, TRUE, NA, TRUE, NA, NA, NA, NA))
   setkey(expected, id, start)
 
-  output <- merge_start_stop(dlist=dlist, last_time=101, remove_after_last=FALSE,
-                     all=TRUE, by="id")
+  output <- merge_start_stop(dlist=dlist, last_time=101,
+                             remove_after_last=FALSE,
+                             all=TRUE, by="id")
   expect_equal(output, expected)
 })
 
@@ -428,7 +433,8 @@ test_that("POSIXct start / stop", {
   expect_equal(output, expected)
 
   # with center_on_first=TRUE
-  output <- merge_start_stop(dlist=dlist, center_on_first=TRUE, all=TRUE, by="id")
+  output <- merge_start_stop(dlist=dlist, center_on_first=TRUE, all=TRUE,
+                             by="id")
   expect_true(all(output[, .(start = min(start)), by=id]$start==0))
 })
 
@@ -450,7 +456,8 @@ test_that("include time-invariant variables", {
                        age=c(10, 23, 93, 12))
 
   output1 <- merge_start_stop(dlist=dlist, all=TRUE, by="id")
-  output2 <- merge_start_stop(dlist=dlist, constant_vars=dfixed, all=TRUE, by="id")
+  output2 <- merge_start_stop(dlist=dlist, constant_vars=dfixed, all=TRUE,
+                              by="id")
 
   expect_true(unique(output2[id==1]$sex)=="m")
   expect_true(unique(output2[id==2]$sex)=="f")

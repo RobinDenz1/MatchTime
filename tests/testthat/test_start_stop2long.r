@@ -31,8 +31,9 @@ test_that("using different names", {
                      C=c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),
                      D=c("A", "B", "C", "D", "E", "F"))
 
-  out <- start_stop2long(data, id="identifier", start="beginning",
-                         stop="ending", time_name="time_variable")
+  out <- start_stop2long(as.data.frame(data), id="identifier",
+                         start="beginning", stop="ending",
+                         time_name="time_variable")
 
   expect_true(nrow(out)==113)
   expect_equal(colnames(out), c("identifier", "A", "B", "C", "D",

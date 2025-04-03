@@ -20,7 +20,7 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
 
   # x
   stopifnotm(inherits(x, "match_time"),
-         "'x' must be a match_time object created using the match_time() function.")
+     "'x' must be a match_time object created using the match_time() function.")
 
   # include
   if (!missing(include)) {
@@ -32,14 +32,18 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
   if (!missing(time_name)) {
     stopifnotm(is_single_character(time_name) &&
                  time_name %in% x$info$added_event_time,
-     "'time_name' must specify an event-time added to 'x' using add_outcome().")
+               "'time_name' must specify an event-time in 'x'",
+               "specified using the 'event' argument in match_time() or",
+               "added using add_outcome().")
   }
 
   # status name
   if (!missing(status_name)) {
     stopifnotm(is_single_character(status_name) &&
                  status_name %in% x$info$added_status,
- "'status_name' must specify an event-status added to 'x' using add_outcome().")
+               "'status_name' must specify an event-status in 'x'",
+               "specified using the 'event' argument in match_time() or",
+               "added using add_outcome().")
   }
 
   # correct .id_pair
@@ -75,15 +79,15 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
 
   # set event-time / status if there is only one
   if (length(x$info$added_event_times)==0) {
-    stop("Timelines can only be plotted if at least one event was added",
+    stop("Timelines can only be plotted if at least one event was",
+         " specified in the 'event' argument of match_time() or added",
          " to the match_time object using the add_outcome() function.")
   } else if (length(x$info$added_event_times)==1 & missing(time_name)) {
     time_name <- x$info$added_event_times
     status_name <- x$info$added_status
   } else if (missing(time_name)) {
     stop("Arguments 'time_name' and 'status_name' must be specified when",
-         " more than one event was added to the match_time object using",
-         " the add_outcome() function.")
+         " more than one event is present in 'x'.")
   }
 
   # which way to color the lines and dots

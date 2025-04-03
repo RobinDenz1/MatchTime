@@ -23,7 +23,7 @@ test_that("general test case, no truncation", {
                          stop=c(812, 1092, 34334, 8021, 9823, 220022),
                          some_col=c(3, 4, 5, 6, 7, 8))
 
-  out <- subset_start_stop(data, first_time=28, last_time=15000,
+  out <- subset_start_stop(as.data.frame(data), first_time=28, last_time=15000,
                            truncate=FALSE)
 
   expect_equal(out, expected)
@@ -118,4 +118,9 @@ test_that("vector input to first_time", {
   out <- subset_start_stop(data=input, first_time=c(110, 110, 110, 24, 24, NA),
                            na.rm=TRUE)
   expect_equal(out, subset(expected, .id != 4))
+})
+
+test_that("neither first_time nor last_time supplied", {
+  expect_error(subset_start_stop(data),
+               "Either 'first_time' or 'last_time' need to be specified.")
 })
