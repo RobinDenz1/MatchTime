@@ -12,8 +12,8 @@ dat[, strat := paste0(A, B)]
 
 test_that("1:1 matching without replacement", {
   set.seed(123431)
-  out <- fast_exact_matching(treatment ~ strat, data=dat, replace=FALSE,
-                             ratio=1)
+  out <- fast_exact_matching(treatment ~ strat, data=as.data.frame(dat),
+                             replace=FALSE, ratio=1)
 
   # one match per treated
   expect_true(nrow(out)==nrow(dat[treatment==TRUE])*2)
@@ -151,4 +151,11 @@ test_that("4:1 matching with replacement", {
 
   # .id_pair correctly assigned
   expect_true(all(table(out$.id_pair)==5))
+})
+
+test_that("no variables to match on", {
+  expect_error(fast_exact_matching(treatment ~ 1, data=dat,
+                                   replace=TRUE, ratio=1),
+               paste0("'formula' needs to contain at least one variable on ",
+                      "the right-hand side to match on."))
 })

@@ -28,7 +28,7 @@ test_that("with include_same_t=TRUE", {
                          .next_time=c(98, 48, 48, 15, 2, NA))
   setkey(expected, id)
 
-  out <- add_next_time(x=obj, data=d_event)$data
+  out <- add_next_time(x=obj, data=as.data.frame(d_event))$data
 
   expect_equal(out, expected)
 })

@@ -42,4 +42,14 @@ test_that("with ratio > 1", {
   # no removing, equal to input
   data <- match_data(out, remove_unmatched=FALSE)
   expect_equal(data, out$data)
+
+  # removing with n_required specified
+  data <- match_data(out, remove_unmatched=TRUE, n_required=1)
+  expect_true(is.data.table(data))
+
+  # warning if n_required gets ignored
+  out$data[, .id_pair := NULL]
+  expect_warning(match_data(out, remove_unmatched=TRUE, n_required=1),
+                 paste0("Argument 'n_required' ignored, because there are ",
+                        "no pairs to which this argument could be applied."))
 })

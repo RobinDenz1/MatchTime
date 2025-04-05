@@ -33,7 +33,7 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
     stopifnotm(is_single_character(time_name) &&
                  time_name %in% x$info$added_event_time,
                "'time_name' must specify an event-time in 'x'",
-               "specified using the 'event' argument in match_time() or",
+               "specified using the 'outcomes' argument in match_time() or",
                "added using add_outcome().")
   }
 
@@ -42,7 +42,7 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
     stopifnotm(is_single_character(status_name) &&
                  status_name %in% x$info$added_status,
                "'status_name' must specify an event-status in 'x'",
-               "specified using the 'event' argument in match_time() or",
+               "specified using the 'outcomes' argument in match_time() or",
                "added using add_outcome().")
   }
 
@@ -80,7 +80,7 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
   # set event-time / status if there is only one
   if (length(x$info$added_event_times)==0) {
     stop("Timelines can only be plotted if at least one event was",
-         " specified in the 'event' argument of match_time() or added",
+         " specified in the 'outcomes' argument of match_time() or added",
          " to the match_time object using the add_outcome() function.")
   } else if (length(x$info$added_event_times)==1 & missing(time_name)) {
     time_name <- x$info$added_event_times

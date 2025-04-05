@@ -37,7 +37,7 @@ test_that("using a few .id_mew", {
 test_that("wrong time_name", {
   expect_error(plot_timeline(out, time_name=1),
     paste0("'time_name' must specify an event-time in 'x' specified ",
-           "using the 'event' argument in match_time() or ",
+           "using the 'outcomes' argument in match_time() or ",
            "added using add_outcome()."),
     fixed=TRUE)
 })
@@ -46,7 +46,7 @@ test_that("wrong status_name", {
   expect_error(plot_timeline(out, status_name=1),
                paste0("'status_name' must specify an event-status in",
                       " 'x' specified ",
-                      "using the 'event' argument in match_time() or ",
+                      "using the 'outcomes' argument in match_time() or ",
                       "added using add_outcome()."),
                fixed=TRUE)
 })
@@ -81,4 +81,14 @@ test_that("multiple events", {
   expect_error(plot_timeline(out2, warn=FALSE),
                paste0("Arguments 'time_name' and 'status_name' must be ",
                       "specified when more than one event is present in 'x'."))
+})
+
+test_that("no events to use", {
+  out2 <- copy(out)
+  out2$info$added_event_times <- c()
+  expect_error(plot_timeline(out2, warn=FALSE),
+               paste0("Timelines can only be plotted if at least one event",
+                      " was specified in the 'outcomes' argument of ",
+                      "match_time() or added to the match_time object ",
+                      "using the add_outcome() function."), fixed=TRUE)
 })

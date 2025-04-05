@@ -39,7 +39,7 @@ test_that("interval starts on the same day", {
                    stop=c(10, 22),
                    d1=c(32.1, 35))
 
-  d2 <- data.table(id=c(1, 1),
+  d2 <- data.frame(id=c(1, 1),
                    start=c(3, 10),
                    stop=c(4, 13),
                    B=c(TRUE, TRUE))
@@ -550,4 +550,9 @@ test_that("multiple variables in the same start-stop table", {
   setkey(expected, id, start)
 
   expect_equal(output, expected)
+
+  # error with intervals of equal length
+  dlist[[2]][start==3, stop := 3]
+
+  expect_error(merge_start_stop(dlist=dlist, all=TRUE, by="id"))
 })

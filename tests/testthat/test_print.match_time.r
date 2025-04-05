@@ -65,3 +65,47 @@ test_that("print.match_time, method='psm'", {
   fake_obj$info$method <- "psm"
   expect_snapshot_output(print(fake_obj))
 })
+
+test_that("print.match_time, method='pgm'", {
+  fake_obj$info$method <- "pgm"
+  expect_snapshot_output(print(fake_obj))
+})
+
+test_that("print.match_time, method='dsm'", {
+  fake_obj$info$method <- "dsm"
+  expect_snapshot_output(print(fake_obj))
+})
+
+test_that("print.match_time, method='greedy'", {
+  fake_obj$info$method <- "greedy"
+  expect_snapshot_output(print(fake_obj))
+})
+
+test_that("checking all matchit() methods", {
+
+  fake_obj$info$match_method <- "exact"
+  expect_snapshot_output(print(fake_obj))
+
+  fake_obj$info$match_method <- "cem"
+  expect_snapshot_output(print(fake_obj))
+
+  fake_obj$info$match_method <- "optimal"
+  expect_snapshot_output(print(fake_obj))
+
+  fake_obj$info$match_method <- "full"
+  expect_snapshot_output(print(fake_obj))
+
+  fake_obj$info$match_method <- "quick"
+  expect_snapshot_output(print(fake_obj))
+
+  fake_obj$info$match_method <- "genetic"
+  expect_snapshot_output(print(fake_obj))
+
+  fake_obj$info$match_method <- "cardinality"
+  expect_snapshot_output(print(fake_obj))
+})
+
+test_that("not matched on any covariates", {
+  fake_obj$info$match_vars <- NULL
+  expect_snapshot_output(print(fake_obj))
+})

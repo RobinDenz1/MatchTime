@@ -13,6 +13,11 @@ test_that("general test case", {
                   inclusion="inclusion",
                   match_method="fast_exact")
 
+  # without unmatched
   out <- bal.tab(obj)
+  expect_equal(round(out$Balance$Diff.Un, 3), c(0.24, 0.00, 0.00))
+
+  # with unmatched
+  out <- bal.tab(obj, remove_unmatched=FALSE)
   expect_equal(round(out$Balance$Diff.Un, 3), c(0.24, 0.00, 0.00))
 })

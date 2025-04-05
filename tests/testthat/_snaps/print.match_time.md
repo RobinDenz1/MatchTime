@@ -108,3 +108,124 @@
      - target estimand: ATT
      - covariates: mac
 
+# print.match_time, method='pgm'
+
+    A match_time object
+     - method: time-dependent prognostic score matching
+     - match-method: 1:1 (exact) matching only on time
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+# print.match_time, method='dsm'
+
+    A match_time object
+     - method: time-dependent double score matching
+     - match-method: 1:1 (exact) matching only on time
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+# print.match_time, method='greedy'
+
+    A match_time object
+     - method: always selecting all possible controls
+     - match-method: 1:1 (exact) matching only on time
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+# checking all matchit() methods
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 exact matching (using matchit())
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+---
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 coarsened exact matching (using matchit())
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+---
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 optimal pair matching (using matchit())
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+---
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 optimal full matching (using matchit())
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+---
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 generalized full matching (using matchit())
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+---
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 genetic matching (using matchit())
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+---
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 cardinality matching (using matchit())
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: mac
+
+# not matched on any covariates
+
+    A match_time object
+     - method: balanced risk set matching
+     - match-method: 1:1 (exact) matching only on time
+     - controls: Not replacing controls
+     - cases: Using all cases
+     - number of obs.: 1000 (original), 458 (matched)
+     - target estimand: ATT
+     - covariates: Only matched on time
+

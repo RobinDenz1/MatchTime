@@ -53,7 +53,9 @@ test_that("using events argument", {
   data[, E := FALSE]
   data[, var10 := TRUE]
 
-  out <- start_stop2long(data, id="id", events=c("C", "E", "var10"))
+  out <- start_stop2long(data, id="id", events=c("C", "E", "var10"),
+                         add_missing_intervals=TRUE)
+  out[, .in_data := NULL]
 
   expect_true(nrow(out)==113)
   expect_equal(colnames(out), c("id", "time", "A", "B", "D", "C", "E", "var10"))
