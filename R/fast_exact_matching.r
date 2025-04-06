@@ -125,6 +125,7 @@ fast_exact_matching.fit <- function(data, treat, strata, replace=FALSE,
 
     d_cases[, .weights := 1]
     setnames(d_cases, old=c(".treat", ".strata"), new=c(treat, strata))
+
     return(d_cases)
   }
 

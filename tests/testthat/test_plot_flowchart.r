@@ -38,6 +38,11 @@ test_that("bolditalic n = X", {
   expect_snapshot_output(plot_flowchart(out, n_fontface="bolditalic"))
 })
 
+test_that("remove 0 lines and remove 0 boxes", {
+  expect_snapshot_output(plot_flowchart(out, remove_0_lines=TRUE,
+                                        remove_0_boxes=TRUE))
+})
+
 test_that("do not remove 0 lines", {
   expect_snapshot_output(plot_flowchart(out, remove_0_lines=FALSE,
                                         remove_0_boxes=TRUE))

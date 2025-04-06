@@ -516,7 +516,7 @@ test_that("multiple variables in the same start-stop table", {
                    start=c(0, 4, 15),
                    stop=c(4, 22, 110),
                    A=c(32.1, 35, 28),
-                   B=c(33.1, 36, 29),
+                   B=c(33L, 36L, 29L),
                    C=c(TRUE, FALSE, TRUE))
 
   d2 <- data.table(id=c(1, 1),
@@ -539,8 +539,9 @@ test_that("multiple variables in the same start-stop table", {
                                 110, 25),
                          A=c(32.1, 32.1, 35.0, 35.0, 35.0, 35.0, NA, NA, NA,
                              28.0, 28.0, 28.0, NA),
-                         B=c(33.1, 33.1, 36.0, 36.0, 36.0, 36.0, NA, NA, NA,
-                             29.0, 29.0, 29.0, NA),
+                         B=c(33L, 33L, 36L, 36L, 36L, 36L, NA_integer_,
+                             NA_integer_, NA_integer_,
+                             29L, 29L, 29L, NA_integer_),
                          BB=c(NA, TRUE, NA, TRUE, NA, NA, NA, NA, NA, NA, NA,
                               NA, NA),
                          C=c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, NA, NA,
@@ -552,7 +553,13 @@ test_that("multiple variables in the same start-stop table", {
   expect_equal(output, expected)
 
   # error with intervals of equal length
-  dlist[[2]][start==3, stop := 3]
+  dlist2 <- copy(dlist)
+  dlist2[[2]][start==3, stop := 3]
+  expect_error(merge_start_stop(dlist=dlist2, all=TRUE, by="id"))
 
-  expect_error(merge_start_stop(dlist=dlist, all=TRUE, by="id"))
+  # error with not supported input in variables
+  dlist2 <- copy(dlist)
+  dlist2[[1]][, A := as.Date(A, origin="01-01-2020")]
+
+  expect_error(merge_start_stop(dlist=dlist2, all=TRUE, by="id"))
 })

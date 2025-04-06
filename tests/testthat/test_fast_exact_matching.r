@@ -153,6 +153,28 @@ test_that("4:1 matching with replacement", {
   expect_true(all(table(out$.id_pair)==5))
 })
 
+test_that("no controls found", {
+
+  set.seed(12314)
+
+  dat <- data.table(
+    id=c(1, 2, 3, 4),
+    strat=c(0, 0, 1, 1),
+    treatment=c(TRUE, TRUE, FALSE, FALSE)
+  )
+
+  # with estimand="ATT"
+  out <- suppressWarnings(fast_exact_matching(treatment ~ strat, data=dat,
+                             remove_unmatched=FALSE))
+  expect_equal(nrow(out), 2)
+
+  # with estimand="ATC"
+  out <- suppressWarnings(fast_exact_matching(treatment ~ strat, data=dat,
+                                              remove_unmatched=FALSE,
+                                              estimand="ATC"))
+  expect_equal(nrow(out), 2)
+})
+
 test_that("no variables to match on", {
   expect_error(fast_exact_matching(treatment ~ 1, data=dat,
                                    replace=TRUE, ratio=1),

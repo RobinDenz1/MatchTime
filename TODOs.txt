@@ -47,7 +47,6 @@ General TODOs:
 		- ...
 
 Theoretical:
-	- what would other estimands look like?
 	- categorical treatments?
 	- what about treatments that do not stay at "treated" value once there?
 

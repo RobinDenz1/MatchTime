@@ -176,19 +176,10 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
     select_vars <- c(select_vars, ".strata")
   }
 
-  # add propensity score variables to vector of names that will be included
-  if ((method=="psm" | method=="dsm") & ps_type[1]=="ps") {
-    select_vars <- c(select_vars, ".lp_ps")
-  } else if (method=="psm" | method=="dsm") {
-    select_vars <- c(select_vars, ".ps_score")
-  }
-
-  # add prognostic score variables to vector of names that will be included
-  if ((method=="pgm" | method=="dsm") & prog_type[1]=="p") {
-    select_vars <- c(select_vars, ".lp_prog")
-  } else if (method=="pgm" | method=="dsm") {
-    select_vars <- c(select_vars, ".prog_score")
-  }
+  select_vars <- update_select_vars(select_vars=select_vars,
+                                    method=method[1],
+                                    ps_type=ps_type,
+                                    prog_type=prog_type)
 
   # estimate propensity score model, if specified
   if (method=="psm" | method=="dsm") {
@@ -208,26 +199,9 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
 
   # applying inclusion criteria
   if (!all(is.na(inclusion))) {
-    .incl <- inclusion
-    d_covars[, .inclusion := rowSums(.SD) == length(.incl), .SDcols=.incl]
-
-    # never meet inclusion criteria
-    d_covars[, .remove_all := sum(!.inclusion)==.N, by=.id]
-    d_exclusion1 <- d_covars[.remove_all==TRUE][, c(".id", .incl, ".time"),
-                                                with=FALSE]
-    d_exclusion1[, .treat := !is.na(.time)]
-    d_exclusion1[, .treat_at_0 := fifelse(.time==0, TRUE, FALSE, na=FALSE)]
-    d_exclusion1 <- d_exclusion1[, lapply(.SD, all), by=".id",
-                                 .SDcols=c(.incl, ".treat", ".treat_at_0")]
-
-    # inclusion criteria not met at treatment time
-    d_exclusion2 <- d_covars[.time >= .start & .time < .stop & !.inclusion &
-                              !.remove_all]
-    d_exclusion2 <- d_exclusion2[, c(".id", .incl), with=FALSE]
-
-    # remove all rows when inclusion criteria are not met
-    d_covars <- d_covars[.inclusion==TRUE]
-    d_covars[, c(inclusion, ".inclusion", ".remove_all") := NULL]
+    l_incl <- apply_inclusion_criteria(d_covars=d_covars,
+                                       inclusion=inclusion)
+    d_covars <- l_incl$d_covars
   }
 
   # get maximum follow-up time per person (used for adding events later)
@@ -410,15 +384,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       requireNamespace("MatchIt")
 
       # create formulas for matchit call
-      if (method=="brsm") {
-        main_formula <- paste0(".treat ~ ", paste0(match_vars, collapse=" + "))
-      } else if (method=="psm") {
-        main_formula <- ".treat ~ .ps_score"
-      } else if (method=="pgm") {
-        main_formula <- ".treat ~ .prog_score"
-      } else if (method=="dsm") {
-        main_formula <- ".treat ~ .ps_score + .prog_score"
-      }
+      main_formula <- get_main_formula(method, match_vars)
 
       # perform matching on baseline covariates
       args <- list(formula=stats::as.formula(main_formula),
@@ -524,18 +490,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   n_matched_controls <- nrow(data[.fully_matched==TRUE & .treat==FALSE])
 
   # change order of columns
-  if (".id_pair" %in% colnames(data)) {
-    first_cols <- c(".id", ".id_new", ".id_pair", ".treat", ".treat_time",
-                    ".next_treat_time", ".fully_matched", ".weights")
-  } else {
-    first_cols <- c(".id", ".id_new", ".treat", ".treat_time",
-                    ".next_treat_time", ".fully_matched", ".weights")
-  }
-
-  last_cols <- colnames(data)[!colnames(data) %fin% first_cols]
-  setcolorder(data, c(first_cols, last_cols))
-  setnames(data, old=".id", new=id)
-  setnames(d_covars, old=".id", new=id)
+  set_cols_matchdata(data=data, d_covars=d_covars, id=id)
 
   # put together output
   out <- list(data=data,
@@ -580,8 +535,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   }
 
   if (!all(is.na(inclusion))) {
-    out$exclusion <- list(stage1=d_exclusion1,
-                          stage2=d_exclusion2)
+    out$exclusion <- list(stage1=l_incl$stage1,
+                          stage2=l_incl$stage2)
   }
 
   if (method=="psm" | method=="dsm") {

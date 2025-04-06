@@ -742,7 +742,8 @@ test_that("recruitment period change works", {
                match_method="nearest",
                matchit_args=list(exact="surgery"),
                replace_at_t=TRUE, ratio=1,
-               recruitment_start=10, recruitment_stop=200)
+               recruitment_start=10, recruitment_stop=200,
+               save_matchit=TRUE)
   )
   out <- match_data(m_obj)
 

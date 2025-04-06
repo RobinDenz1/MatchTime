@@ -13,6 +13,23 @@ test_that("general", {
   expect_true(inherits(m.obj$prog_model, "coxph"))
 })
 
+test_that("specifying outcomes as well", {
+
+  set.seed(123)
+  heart$event2 <- sample(c(TRUE, FALSE), size=nrow(heart), replace=TRUE)
+  heart$event <- as.logical(heart$event)
+
+  m.obj <- match_time(transplant ~ surgery + age, data=heart, id="id",
+                      method="pgm", match_method="nearest",
+                      replace_over_t=TRUE, ratio=2, event="event",
+                      matchit_args=list(distance="mahalanobis"),
+                      outcomes=c("event", "event2"))
+  expect_equal(as.vector(table(m.obj$data$.treat)), c(138, 69))
+  expect_true(inherits(m.obj$prog_model, "coxph"))
+
+  heart$event2 <- NULL
+})
+
 test_that("using formula_prog / remove_prog", {
 
   set.seed(123)
