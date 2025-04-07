@@ -109,3 +109,22 @@ test_that("not matched on any covariates", {
   fake_obj$info$match_vars <- NULL
   expect_snapshot_output(print(fake_obj))
 })
+
+test_that("separate test for get_matchit_method_str()", {
+  expect_equal(get_matchit_method_str("exact"),
+               "exact matching")
+  expect_equal(get_matchit_method_str("cem"),
+               "coarsened exact matching")
+  expect_equal(get_matchit_method_str("nearest"),
+               "nearest neighbor matching")
+  expect_equal(get_matchit_method_str("optimal"),
+               "optimal pair matching")
+  expect_equal(get_matchit_method_str("full"),
+               "optimal full matching")
+  expect_equal(get_matchit_method_str("quick"),
+               "generalized full matching")
+  expect_equal(get_matchit_method_str("genetic"),
+               "genetic matching")
+  expect_equal(get_matchit_method_str("cardinality"),
+               "cardinality matching")
+})

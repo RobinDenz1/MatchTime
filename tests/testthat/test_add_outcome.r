@@ -136,7 +136,7 @@ test_that("works with different names", {
   expect_equal(out, expected)
 })
 
-test_that("censor_at_treat=TRUE without censor_pairs", {
+test_that("censor_at_treat=TRUE without censor_pairs, date input", {
 
   obj$data[, .treat_time := as.Date(.treat_time, origin=as.Date("01-01-2020"))]
   obj$data[, .next_treat_time := as.Date(.next_treat_time,
@@ -161,5 +161,27 @@ test_that("censor_at_treat=TRUE without censor_pairs", {
   out <- add_outcome(x=obj, data=d_event, censor_at_treat=TRUE,
                      censor_pairs=FALSE)$data
 
+  expect_equal(out, expected)
+})
+
+test_that("censor_at_treat=TRUE with censor_pairs, date input", {
+
+  expected <- data.table(id=c(1, 2, 2, 3, 4, 5),
+                         .id_new=c(1, 2, 6, 3, 4, 5),
+                         .id_pair=c(1, 1, 3, 2, 2, 3),
+                         .treat_time=c(28, 28, 4, 2, 2, 4),
+                         .treat=c(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE),
+                         .next_treat_time=c(NA, NA, 28, 17, NA, NA),
+                         A=c("A", "B", "A", "A", "B", "B"),
+                         .status=c(TRUE, TRUE, FALSE, TRUE, TRUE, FALSE),
+                         .event_time=c(70, 20, 24, 13, 399, 24))
+  setkey(expected, id)
+
+  expected[, .treat_time := as.Date(.treat_time, origin=as.Date("01-01-2020"))]
+  expected[, .next_treat_time := as.Date(.next_treat_time,
+                                         origin=as.Date("01-01-2020"))]
+
+  out <- add_outcome(x=obj, data=d_event, censor_at_treat=TRUE,
+                     censor_pairs=TRUE)$data
   expect_equal(out, expected)
 })

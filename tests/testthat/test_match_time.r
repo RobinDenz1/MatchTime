@@ -750,6 +750,10 @@ test_that("recruitment period change works", {
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(54, 54))
 
+  # but unmatched individuals are also included in the original
+  # match_time object
+  expect_equal(as.vector(table(m_obj$data$.treat)), c(54, 65))
+
   # surgery equally distributed in each level of .treat
   tab <- table(out$.treat, out$surgery)
   expect_true(tab[1,1] == tab[2,1])

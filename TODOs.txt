@@ -8,11 +8,6 @@ match_time() methods
 	- method="psm" / "pgm" / "dsm" fail when strata() is used in formula of cox model
 
 match_time() general
-	- currently, when using matchit(), cases are discarded if no match is found,
-	  which is not what happens in match_method="none" or match_method="fast_exact"
-	  this should be consistent, not sure which option is better
-	- maybe add a debug more or something similar to better understand when an error occured
-	- catch warnings in matchit() or fast_exact_matching() and output better warning instead
 	- "d_longest" is calculated by ignoring inclusion criteria, an option to change this might be useful
 	- re-factor: split massive function into multiple ones to make it easier to maintain and change the code
 	- input checks

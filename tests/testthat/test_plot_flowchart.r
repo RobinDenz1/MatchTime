@@ -170,3 +170,8 @@ test_that("wrong input supplied to box_sec_text", {
             "character string."),
   fixed=TRUE)
 })
+
+test_that("without any inclusion criteria", {
+  out$info$inclusion <- NA
+  expect_snapshot_output(plot_flowchart(out))
+})

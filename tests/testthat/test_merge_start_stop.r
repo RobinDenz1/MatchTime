@@ -563,3 +563,41 @@ test_that("multiple variables in the same start-stop table", {
 
   expect_error(merge_start_stop(dlist=dlist2, all=TRUE, by="id"))
 })
+
+test_that("general test cases, 2 datasets, integers", {
+
+  d1 <- data.table(ID=c(1, 1, 1, 2, 2, 3, 5),
+                   start=c(20, 210, 370, 55, 98, 1, 9),
+                   stop=c(189, 301, 375, 90, 190, 900, 10),
+                   d1=c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE))
+  d1[, d1 := as.integer(d1)]
+
+  d2 <- data.table(ID=c(1, 1, 1, 2, 2, 3, 5),
+                   start=c(17, 211, 370, 58, 98, 1, 9),
+                   stop=c(189, 321, 375, 90, 191, 94, 11),
+                   d2=c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE))
+  d2[, d2 := as.integer(d2)]
+  dlist <- list(d1, d2)
+
+  expected <- data.table(ID=c(1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3,
+                              5, 5),
+                         start=c(17, 20, 189, 210, 211, 301, 321, 370, 55, 58,
+                                 90, 98, 190, 1, 94, 9, 10),
+                         stop=c(20, 189, 210, 211, 301, 321, 370, 375, 58, 90,
+                                98, 190, 191, 94, 900, 10, 11),
+                         d1=c(NA, TRUE, NA, TRUE, TRUE, NA, NA, FALSE, TRUE,
+                              TRUE, NA, FALSE, NA, FALSE, FALSE, TRUE, NA),
+                         d2=c(TRUE, TRUE, NA, NA, TRUE, TRUE, NA, FALSE, NA,
+                              TRUE, NA, FALSE, FALSE, FALSE, NA, TRUE, TRUE))
+  setkey(expected, ID, start)
+
+  expected[, d1 := as.integer(d1)]
+  expected[, d2 := as.integer(d2)]
+
+  output <- merge_start_stop(d1, d2, by="ID")
+  expect_equal(output, expected)
+
+  # with center_on_first=TRUE
+  output <- merge_start_stop(dlist=dlist, by="ID", center_on_first=TRUE)
+  expect_true(all(output[, .(start = min(start)), by=ID]$start==0))
+})
