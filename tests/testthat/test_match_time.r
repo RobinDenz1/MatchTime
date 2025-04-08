@@ -747,12 +747,15 @@ test_that("recruitment period change works", {
   )
   out <- match_data(m_obj)
 
+  expect_true(inherits(m_obj$matchit_objects[[1]], "matchit"))
+
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(54, 54))
 
-  # but unmatched individuals are also included in the original
+  # but unmatched cases are also included in the original
   # match_time object
-  expect_equal(as.vector(table(m_obj$data$.treat)), c(54, 65))
+  expect_equal(as.vector(table(m_obj$data$.treat)), c(54, 66))
+  expect_true(all(m_obj$data$.treat[!m_obj$data$.fully_matched]))
 
   # surgery equally distributed in each level of .treat
   tab <- table(out$.treat, out$surgery)
@@ -772,4 +775,63 @@ test_that("recruitment period change works", {
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
   expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 34)
+})
+
+test_that("ummatched cases are still present when using matchit()", {
+
+  ## no matches found error
+  data <- data.table(id=c(1, 2, 3, 4, 5, 6),
+                     start=c(0, 0, 25, 0, 0, 25),
+                     stop=c(200, 300, 400, 500, 600, 400),
+                     treatment=c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),
+                     covariate=c(1, 2, 2, 1, 2, 1))
+
+  set.seed(12341432)
+  m_obj <- suppressWarnings(
+    match_time(treatment ~ covariate, data=data, id="id",
+               match_method="nearest",
+               matchit_args=list(exact="covariate"),
+               replace_at_t=FALSE, ratio=1)
+  )
+
+  expect_equal(as.vector(table(m_obj$data$.treat)), c(2, 3))
+
+  ## found matches, but not for all
+  data <- data.table(id=c(1, 2, 3, 4, 5, 6, 7, 8),
+                     start=c(0, 0, 25, 0, 0, 25, 25, 25),
+                     stop=c(200, 300, 400, 500, 600, 400, 100, 100),
+                     treatment=c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE,
+                                 TRUE, FALSE),
+                     covariate=c(1, 2, 2, 1, 2, 1, 1, 1))
+
+  set.seed(12341432)
+  m_obj <- suppressWarnings(
+    match_time(treatment ~ covariate, data=data, id="id",
+               match_method="nearest",
+               matchit_args=list(exact="covariate"),
+               replace_at_t=FALSE, ratio=1)
+  )
+
+  expect_equal(as.vector(table(m_obj$data$.treat)), c(3, 4))
+})
+
+test_that("verbose working", {
+
+  data <- data.table(id=c(1, 2, 3, 4, 5, 6, 7, 8),
+                     start=c(0, 0, 25, 0, 0, 25, 25, 25),
+                     stop=c(200, 300, 400, 500, 600, 400, 100, 100),
+                     treatment=c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE,
+                                 TRUE, FALSE),
+                     covariate=c(1, 2, 2, 1, 2, 1, 1, 1))
+
+  set.seed(24234)
+
+  expect_output(
+    suppressWarnings(
+      match_time(treatment ~ covariate, data=data, id="id",
+                 match_method="nearest",
+                 matchit_args=list(exact="covariate"),
+                 replace_at_t=FALSE, ratio=1, verbose=TRUE)
+      )
+  )
 })

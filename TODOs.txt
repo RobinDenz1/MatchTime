@@ -9,7 +9,6 @@ match_time() methods
 
 match_time() general
 	- "d_longest" is calculated by ignoring inclusion criteria, an option to change this might be useful
-	- re-factor: split massive function into multiple ones to make it easier to maintain and change the code
 	- input checks
 		- should check whether there is only one treatment per person
 		- should check if it "stays" there

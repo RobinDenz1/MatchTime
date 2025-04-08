@@ -222,3 +222,56 @@ get_main_formula <- function(method, match_vars) {
 
   return(main_formula)
 }
+
+## adds propensity score to the data, also returns baseline hazard
+## function if needed
+set_propensity_score <- function(d_covars, ps_model, ps_type,
+                                 standardize_ps, basehaz_interpol) {
+
+  .ps_score <- .lp_ps <- NULL
+
+  # directly use linear predictor as propensity score, as done in
+  # Hade et al. (2020)
+  if (ps_type[1]=="lp") {
+    d_covars[, .ps_score := stats::predict(ps_model, newdata=d_covars)]
+    if (standardize_ps) {
+      d_covars[, .ps_score := scale_0_1(.ps_score)]
+    }
+    h0_ps <- NULL
+  # or use actual propensity score as done in Lu (2005)
+  } else if (ps_type[1]=="ps") {
+    # calculate linear predictor & estimate baseline hazard
+    d_covars[, .lp_ps := stats::predict(ps_model, newdata=d_covars)]
+    h0_ps <- survival::basehaz(ps_model)
+    h0_ps <- stats::approxfun(x=h0_ps$time, y=h0_ps$hazard,
+                              method=basehaz_interpol, rule=2)
+  }
+
+  return(h0_ps)
+}
+
+## adds prognostic score to the data, also returns baseline hazard
+## function if needed
+set_prognostic_score <- function(d_covars, prog_model, prog_type,
+                                 standardize_prog, basehaz_interpol) {
+
+  .prog_score <- .lp_prog <- NULL
+
+  # directly use linear predictor as prognostic score
+  if (prog_type[1]=="lp") {
+    d_covars[, .prog_score := stats::predict(prog_model, newdata=d_covars)]
+    if (standardize_prog) {
+      d_covars[, .prog_score := scale_0_1(.prog_score)]
+    }
+    h0_prog <- NULL
+  # or use actual probability
+  } else if (prog_type[1]=="p") {
+    # calculate linear predictor & estimate baseline hazard
+    d_covars[, .lp_prog := stats::predict(prog_model, newdata=d_covars)]
+    h0_prog <- survival::basehaz(prog_model)
+    h0_prog <- stats::approxfun(x=h0_prog$time, y=h0_prog$hazard,
+                                method=basehaz_interpol, rule=2)
+  }
+
+  return(h0_prog)
+}

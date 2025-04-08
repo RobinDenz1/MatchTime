@@ -238,41 +238,18 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
 
   # set up propensity score, if specified
   if (method=="psm" | method=="dsm") {
-
-    # directly use linear predictor as propensity score, as done in
-    # Hade et al. (2020)
-    if (ps_type[1]=="lp") {
-      d_covars[, .ps_score := stats::predict(ps_model, newdata=d_covars)]
-      if (standardize_ps) {
-        d_covars[, .ps_score := scale_0_1(.ps_score)]
-      }
-    # or use actual propensity score as done in Lu (2005)
-    } else if (ps_type[1]=="ps") {
-      # calculate linear predictor & estimate baseline hazard
-      d_covars[, .lp_ps := stats::predict(ps_model, newdata=d_covars)]
-      h0_ps <- survival::basehaz(ps_model)
-      h0_ps <- stats::approxfun(x=h0_ps$time, y=h0_ps$hazard,
-                                method=basehaz_interpol, rule=2)
-    }
+    h0_ps <- set_propensity_score(d_covars=d_covars, ps_model=ps_model,
+                                  ps_type=ps_type,
+                                  standardize_ps=standardize_ps,
+                                  basehaz_interpol=basehaz_interpol)
   }
 
   # set up prognostic score, if specified
   if (method=="pgm" | method=="dsm") {
-
-    # directly use linear predictor as prognostic score
-    if (prog_type[1]=="lp") {
-      d_covars[, .prog_score := stats::predict(prog_model, newdata=d_covars)]
-      if (standardize_prog) {
-        d_covars[, .prog_score := scale_0_1(.prog_score)]
-      }
-    # or use actual probability
-    } else if (prog_type[1]=="p") {
-      # calculate linear predictor & estimate baseline hazard
-      d_covars[, .lp_prog := stats::predict(prog_model, newdata=d_covars)]
-      h0_prog <- survival::basehaz(prog_model)
-      h0_prog <- stats::approxfun(x=h0_prog$time, y=h0_prog$hazard,
-                                  method=basehaz_interpol, rule=2)
-    }
+    h0_prog <- set_prognostic_score(d_covars=d_covars, prog_model=prog_model,
+                                    prog_type=prog_type,
+                                    standardize_prog=standardize_prog,
+                                    basehaz_interpol=basehaz_interpol)
   }
 
   # initialize needed id collections
@@ -343,8 +320,8 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
                           remove_ps=remove_ps, remove_prog=remove_prog)
     d_match_i <- match_i$d_match_i
 
-    if (!is.null(match_i$matchit_i)) {
-      matchit_out[[i]] <- match_i$matchit_i
+    if (!is.null(match_i$matchit_obj)) {
+      matchit_out[[i]] <- match_i$matchit_obj
     }
     rm(match_i)
 
@@ -391,7 +368,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
 
   # calculate number of actually matched individuals
   if (".id_pair" %in% colnames(data)) {
-    data[, .fully_matched := .N == ratio + 1, by=.id_pair]
+    data[, .fully_matched := .N == (ratio + 1), by=.id_pair]
   } else {
     data[, .fully_matched := TRUE]
   }
@@ -467,7 +444,7 @@ match_at_t <- function(d_all_i, case_times, i, method, ids_cases_i,
                        remove_ps, remove_prog) {
 
   .treat_time <- .weights <- .strata <- .id_pair <- weights <- ..id.. <-
-    .subclass <- .distance <- NULL
+    .subclass <- .distance <- .treat <- NULL
 
   out <- list()
 
@@ -480,12 +457,12 @@ match_at_t <- function(d_all_i, case_times, i, method, ids_cases_i,
     if (".strata" %in% colnames(d_match_i)) {
       d_match_i[, .strata := NULL]
     }
-    # return only cases if no controls left
+  # return only cases if no controls left
   } else if (nrow(d_all_i)==length(ids_cases_i)) {
 
-    d_match_i <- d_all_i
+    d_match_i <- subset(d_all_i, .treat==TRUE)
     d_match_i[, .treat_time := case_times[i]]
-    d_match_i[, .weights := 1]
+    d_match_i[, .weights := 0]
 
     if (match_method %in% c("none", "fast_exact")) {
       d_match_i[, .strata := NULL]
@@ -535,62 +512,98 @@ match_at_t <- function(d_all_i, case_times, i, method, ids_cases_i,
                  ratio=ratio)
     args <- c(args, matchit_args)
 
-    d_matchit_i <- do.call(MatchIt::matchit, args=args)
+    # call matchit(), returning NULL if no matches were found
+    d_matchit_i <- tryCatch({
+      do.call(MatchIt::matchit, args=args)},
+      error=function(e){
+        if (e$message=="No matches were found.") {
+          return(NULL)
+        } else {
+          stop(e)
+        }
+      }
+    )
 
-    if (save_matchit) {
-      out$matchit_obj <- d_matchit_i
-    }
+    # if no matches found, just take all cases
+    if (is.null(d_matchit_i)) {
+      d_match_i <- subset(d_all_i, .treat==TRUE)
+      d_match_i[, .treat_time := case_times[i]]
+      d_match_i[, .weights := 0]
 
-    # extract matched data, conditional on method used
-    if (!match_method %in% c("nearest", "full", "genetic")) {
-      d_match_i <- MatchIt::match.data(d_matchit_i,
-                                       weights=".weights",
-                                       subclass=".subclass",
-                                       distance=".distance",
-                                       drop.unmatched=FALSE)
-    } else {
-      d_match_i <- MatchIt::get_matches(d_matchit_i,
-                                        weights=".weights",
-                                        subclass=".subclass",
-                                        distance=".distance",
-                                        id="..id..")
-
-      # add the unmatched individuals back in, if required
-      if ((sum(d_match_i$.treat)*ratio) != sum(!d_match_i$.treat)) {
-        d_unmatched_i <- MatchIt::match.data(d_matchit_i,
-                                             weights=".weights",
-                                             subclass=".subclass",
-                                             distance=".distance",
-                                             drop.unmatched=FALSE)
-        d_unmatched_i <- subset(d_unmatched_i, weights==0)
-        d_match_i <- rbindlist(list(d_match_i, d_unmatched_i), fill=TRUE)
+      # add .id_pair if needed
+      if (match_method %in% c("nearest", "full", "genetic")) {
+        d_match_i[, .id_pair := paste0(i, "_", seq_len(.N))]
       }
 
-    }
-    d_match_i <- as.data.table(d_match_i)
-    d_match_i[, ..id.. := NULL]
+      set_remove_cols(data=d_match_i, method=method, ps_type=ps_type,
+                      prog_type=prog_type, remove_ps=remove_ps,
+                      remove_prog=remove_prog)
+    } else {
 
-    # clean up data
-    d_match_i <- copy(d_match_i)
+      if (save_matchit) {
+        out$matchit_obj <- d_matchit_i
+      }
 
-    if (match_method %in% c("nearest", "full", "genetic")) {
-      d_match_i[, .id_pair := paste0(i, "_", .subclass)]
-    }
-    if (".distance" %in% colnames(d_match_i)) {
-      d_match_i[, .distance := NULL]
-    }
-    if (".subclass" %in% colnames(d_match_i)) {
-      d_match_i[, .subclass := NULL]
-    }
+      # extract matched data, conditional on method used
+      # NOTE: unmatched cases are included as well to be consistent with
+      #       other methods
+      if (!match_method %in% c("nearest", "full", "genetic")) {
+        d_match_i <- MatchIt::match.data(d_matchit_i,
+                                         weights=".weights",
+                                         subclass=".subclass",
+                                         distance=".distance",
+                                         drop.unmatched=FALSE)
+        d_match_i <- subset(d_match_i, .treat | (!.treat & .weights != 0))
+      } else {
+        d_match_i <- MatchIt::get_matches(d_matchit_i,
+                                          weights=".weights",
+                                          subclass=".subclass",
+                                          distance=".distance",
+                                          id="..id..")
 
-    set_remove_cols(data=d_match_i, method=method, ps_type=ps_type,
-                    prog_type=prog_type, remove_ps=remove_ps,
-                    remove_prog=remove_prog)
+        # add the unmatched cases back in, if required
+        if (sum(d_match_i$.treat) != sum(d_all_i$.treat)) {
+          d_unmatched_i <- MatchIt::match.data(d_matchit_i,
+                                               weights=".weights",
+                                               subclass=".subclass",
+                                               distance=".distance",
+                                               drop.unmatched=FALSE)
+          d_unmatched_i <- as.data.table(
+            subset(d_unmatched_i, .treat & .weights == 0)
+          )
 
-    # add matched time
-    d_match_i[, .treat_time := case_times[i]]
+          d_unmatched_i[, .subclass := seq_len(.N) +
+                          max(as.numeric(as.character(d_match_i$.subclass)))]
+          d_match_i <- rbindlist(list(d_match_i, d_unmatched_i), fill=TRUE)
+        }
+
+      }
+      d_match_i <- as.data.table(d_match_i)
+      d_match_i[, ..id.. := NULL]
+
+      # clean up data
+      d_match_i <- copy(d_match_i)
+
+      if (match_method %in% c("nearest", "full", "genetic")) {
+        d_match_i[, .id_pair := paste0(i, "_", .subclass)]
+      }
+      if (".distance" %in% colnames(d_match_i)) {
+        d_match_i[, .distance := NULL]
+      }
+      if (".subclass" %in% colnames(d_match_i)) {
+        d_match_i[, .subclass := NULL]
+      }
+
+      set_remove_cols(data=d_match_i, method=method, ps_type=ps_type,
+                      prog_type=prog_type, remove_ps=remove_ps,
+                      remove_prog=remove_prog)
+
+      # add matched time
+      d_match_i[, .treat_time := case_times[i]]
+    }
   }
 
   out$d_match_i <- d_match_i
+
   return(out)
 }
