@@ -81,6 +81,8 @@ match_time <- function(formula, data, id, inclusion=NA,
                                    start=start, stop=stop)
   data[, (form$treat) := NULL]
 
+  check_treatment(data=d_treat, id=id)
+
   # call function that does all the work
   out <- match_time.fit(id=id, time=".time", d_treat=d_treat,
                         d_covars=data, match_vars=form$match_vars,

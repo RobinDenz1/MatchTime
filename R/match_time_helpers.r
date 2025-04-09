@@ -184,6 +184,11 @@ apply_inclusion_criteria <- function(d_covars, inclusion) {
   d_covars <- d_covars[.inclusion==TRUE]
   d_covars[, c(inclusion, ".inclusion", ".remove_all") := NULL]
 
+  if (nrow(d_covars)==0) {
+    stop("There are no observations left after applying the",
+         " inclusion criteria.", call.=FALSE)
+  }
+
   out <- list(d_covars=d_covars,
               stage1=d_exclusion1,
               stage2=d_exclusion2)
@@ -274,4 +279,14 @@ set_prognostic_score <- function(d_covars, prog_model, prog_type,
   }
 
   return(h0_prog)
+}
+
+## checks if the treatment is valid
+check_treatment <- function(data, id) {
+  d_count <- data[, .(n = .N), by=id]
+  ids_multi_treat <- d_count[[id]][d_count$n > 1]
+
+  stopifnotm(length(ids_multi_treat)==0,
+             "There should only be one treatment time per person. Multiple",
+             "treatments were detected for ", id, " = ", ids_multi_treat[1])
 }

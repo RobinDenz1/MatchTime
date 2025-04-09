@@ -53,6 +53,7 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
   stopifnotm(is.numeric(data[[stop]]) || is.Date(data[[stop]]),
              "'stop' must contain integers, continuous numbers or dates.")
   stopifnotm(!anyNA(data), "'data' may not contain missing values.")
+  stopifnotm(nrow(data) > 2, "'data' must contain at least two rows.")
 
   # correct formula
   stopifnotm(inherits(formula, "formula"),

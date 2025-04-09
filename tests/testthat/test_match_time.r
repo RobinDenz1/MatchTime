@@ -835,3 +835,24 @@ test_that("verbose working", {
       )
   )
 })
+
+test_that("error when everyone gets removed through inclusion criteria", {
+
+  data <- data.table(id=c(1, 2, 3, 4, 5, 6, 7, 8),
+                     start=c(0, 0, 25, 0, 0, 25, 25, 25),
+                     stop=c(200, 300, 400, 500, 600, 400, 100, 100),
+                     treatment=c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE,
+                                 TRUE, FALSE),
+                     covariate=c(1, 2, 2, 1, 2, 1, 1, 1),
+                     incl=rep(FALSE, 8))
+
+  set.seed(24234)
+
+  expect_error(
+    match_time(treatment ~ covariate, data=data, id="id",
+               match_method="fast_exact",
+               replace_at_t=FALSE, ratio=1,
+               inclusion="incl"),
+    "There are no observations left after applying the inclusion criteria."
+  )
+})
