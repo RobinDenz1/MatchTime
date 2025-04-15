@@ -13,6 +13,7 @@ plot_flowchart <- function(x,
                            perc_inclusion=TRUE,
                            perc_inclusion_total=FALSE,
                            perc_other=FALSE,
+                           perc_type="all",
                            number_format=format,
                            box_main_style="n_last",
                            box_main_text=list(),
@@ -124,14 +125,16 @@ plot_flowchart <- function(x,
                                       perc_inclusion_total=perc_inclusion_total,
                                       remove_0_lines=remove_0_lines,
                                       format_fun=number_format,
-                                      text=sec_labs[["box1l"]], ...)
+                                      text=sec_labs[["box1l"]],
+                                      perc_type=perc_type, ...)
   label_box2.5r <- get_label_inclusion(x=x, type="right1", digits=digits,
                                       incl_names=incl_names,
                                       perc_inclusion=perc_inclusion,
                                       perc_inclusion_total=perc_inclusion_total,
                                       remove_0_lines=remove_0_lines,
                                       format_fun=number_format,
-                                      text=sec_labs[["box1r"]], ...)
+                                      text=sec_labs[["box1r"]],
+                                      perc_type=perc_type, ...)
 
   # 3.5 row left
   label_box3.5l <- get_label_inclusion(x=x, type="left2", digits=digits,
@@ -140,7 +143,8 @@ plot_flowchart <- function(x,
                                       perc_inclusion_total=perc_inclusion_total,
                                       remove_0_lines=remove_0_lines,
                                       format_fun=number_format,
-                                      text=sec_labs[["box2l2"]], ...)
+                                      text=sec_labs[["box2l2"]],
+                                      perc_type=perc_type, ...)
   label_no_match3.5l <- get_label_nomatch(x=x, perc_other=perc_other,
                                           digits=digits,
                                           format_fun=number_format,
@@ -277,7 +281,7 @@ neg_sum <- function(x, ...) {
 
 ## utility function to calculate n (percentage) for the boxes
 ## with inclusion criteria
-calculate_n_box <- function(x, type, digits) {
+calculate_n_box <- function(x, type, digits, perc_type) {
 
   # specify what to calculate based on box
   if (type=="left1") {
@@ -294,16 +298,20 @@ calculate_n_box <- function(x, type, digits) {
     stage <- "stage2"
   }
 
+  # calculate total number of individuals not meeting inclusion criteria
+  n_total_excl <- nrow(x$exclusion[[stage]][eval(cond)])
+  perc_total_excl <- round((n_total_excl / n_total) * 100, digits=digits)
+
+  if (perc_type!="all") {
+    n_total <- n_total_excl
+  }
+
   # calculate n and % of individuals not meeting inclusion criteria x
   n_box <- as.vector(unlist(
     x$exclusion[[stage]][eval(cond), lapply(.SD, neg_sum),
                          .SDcols=x$info$inclusion]
   ))
   perc <- round((n_box / n_total) * 100, digits=digits)
-
-  # calculate total number of individuals not meeting inclusion criteria
-  n_total_excl <- nrow(x$exclusion[[stage]][eval(cond)])
-  perc_total_excl <- round((n_total_excl / n_total) * 100, digits=digits)
 
   # put together
   out <- list(n=n_box, perc=perc, n_total=n_total_excl,
@@ -362,10 +370,12 @@ get_label_inclusion_items <- function(numbers, perc_inclusion,
 ## get entire text in inclusion criteria box
 get_label_inclusion <- function(x, type, digits, incl_names,
                                 perc_inclusion, perc_inclusion_total,
-                                remove_0_lines, format_fun, ...) {
+                                remove_0_lines, format_fun,
+                                perc_type, ...) {
 
   if (!all(is.na(x$info$inclusion))) {
-    numbers <- calculate_n_box(x=x, type=type, digits=digits)
+    numbers <- calculate_n_box(x=x, type=type, digits=digits,
+                               perc_type=perc_type)
     numbers$incl_vec <- incl_names
 
     # remove those with 0

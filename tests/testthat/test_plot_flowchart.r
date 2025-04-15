@@ -67,6 +67,10 @@ test_that("turn on percentages for other numbers", {
   expect_snapshot_output(plot_flowchart(out, perc_other=TRUE))
 })
 
+test_that("using different kinds of percentages", {
+  expect_snapshot_output(plot_flowchart(out, perc_type="excluded"))
+})
+
 test_that("using custom number formatting", {
   format_custom <- function(x) {
     paste0(x, " num")

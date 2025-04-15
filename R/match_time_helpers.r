@@ -283,6 +283,9 @@ set_prognostic_score <- function(d_covars, prog_model, prog_type,
 
 ## checks if the treatment is valid
 check_treatment <- function(data, id) {
+
+  . <- NULL
+
   d_count <- data[, .(n = .N), by=id]
   ids_multi_treat <- d_count[[id]][d_count$n > 1]
 

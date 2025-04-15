@@ -42,6 +42,10 @@
 
     
 
+# using different kinds of percentages
+
+    
+
 # using custom number formatting
 
     

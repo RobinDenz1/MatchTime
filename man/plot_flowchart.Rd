@@ -18,6 +18,7 @@ plot_flowchart(
   perc_inclusion=TRUE,
   perc_inclusion_total=FALSE,
   perc_other=FALSE,
+  perc_type="all",
   number_format=format,
   box_main_style="n_last",
   box_main_text=list(),
@@ -86,13 +87,16 @@ Either \code{TRUE} or \code{FALSE}, specifying whether lines about 0 occurrences
 Either \code{TRUE} or \code{FALSE}, specifying whether boxes that are basically empty because of 0 occurrences should be removed from the plot.
   }
   \item{perc_inclusion}{
-Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for the individual exclusion criteria reasons.
+Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for the individual exclusion criteria reasons. What these percentages use as reference can be controlled using the \code{perc_type} argument.
   }
   \item{perc_inclusion_total}{
 Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for total numbers of individuals excluded because of the inclusion criteria.
   }
   \item{perc_other}{
 Either \code{TRUE} or \code{FALSE}, specifying whether percentages should be shown for all numbers in the side-boxes that are not related to the inclusion criteria.
+  }
+  \item{perc_type}{
+A single character string controlling what the calculated percentages for the inclusion criteria items should be in reference to. If \code{"all"}, the percentages will be in reference to the previous main box, e.g. the percentage of people not fulfilling the inclusion criteria X out of all people it was applied to. If \code{"excluded"} the percentage will be in reference to the number of individuals excluded due to the inclusion criteria instead.
   }
   \item{number_format}{
 A function that can be called on a vector of numbers and outputs those numbers as strings in some form. This can be used to ensure that the same number of digits is shown regardless of number, or to break up large numbers with commas or points. Defaults to the \code{\link[base]{format}} function. Further arguments to this function may be passed through the \code{...} syntax.

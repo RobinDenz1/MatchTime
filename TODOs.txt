@@ -25,6 +25,7 @@ New features:
 	- estimate_ipcw(): function to estimate inverse probability of censoring weights
 	- implement clone-censor-re-weighting approach
 	- implement various analysis functions
+	- allow categorical treatment variables (big reworks + theoretical work needed)
 
 General TODOs:
 	- add vignette showcasing time-dependent matching with match_time()

@@ -35,8 +35,13 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
     setnames(data, old=id, new=x$id)
   }
 
+  # keep only required columns, saves a ton of RAM with large datasets
+  d_matched <- x$data[, c(x$id, ".id_new", ".treat_time"), with=FALSE]
+
   # merge to matched data, creating new rows
-  data <- merge.data.table(x$data, data, by=x$id, all.x=TRUE, sort=FALSE)
+  data <- merge.data.table(d_matched, data, by=x$id, all.x=TRUE, sort=FALSE,
+                           allow.cartesian=TRUE)
+  rm(d_matched)
 
   # calculate difference between event time and inclusion time
   if (is.Date(data$.treat_time)) {
