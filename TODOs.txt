@@ -34,7 +34,6 @@ General TODOs:
 		- what outcomes are allowed per method (recurrent, competing events, ...)?
 	- add usual package stuff
 		- pkgdown website (divide functions into groups here)
-		- sticker
 		- ...
 
 Theoretical:

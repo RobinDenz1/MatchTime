@@ -13,8 +13,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-# MatchTime
-
 <!-- badges: start -->
 [![Project Status: WIP - Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 [![](https://www.r-pkg.org/badges/version/MatchTime?color=green)](https://cran.r-project.org/package=MatchTime)
@@ -22,6 +20,8 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/RobinDenz1/MatchTime/branch/main/graph/badge.svg)](https://app.codecov.io/gh/RobinDenz1/MatchTime?branch=main)
 <!-- badges: end -->
+
+# MatchTime <img src="man/figures/logo.png" height="240" align="right" />
 
 `MatchTime` is an R-Package which can be used to perform different sorts of time-dependent matching, which is also known as *sequential trial emulation*. In this type of matching, the treatment, outcome, and confounders are allowed to change over time. At each point in time where individuals switch from "untreated" to "treated", controls which at this point in time are still "untreated" are matched to these individuals using standard matching methods. The point in time that this matching occurred is considered to be the "point of randomization" or "time-zero" for both cases and their matched controls. The result is a dataset that can be analyzed using standard time-to-event methods, such as simple Cox proportional-hazards regression models, even when
 complex forms of time-dependent confounding and treatment-confounder feedback are present in the data.

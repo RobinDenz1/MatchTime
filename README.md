@@ -1,8 +1,5 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-# MatchTime
-
 <!-- badges: start -->
 
 [![Project Status: WIP - Initial development is in progress, but there
@@ -14,6 +11,8 @@ public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostat
 [![Codecov test
 coverage](https://codecov.io/gh/RobinDenz1/MatchTime/branch/main/graph/badge.svg)](https://app.codecov.io/gh/RobinDenz1/MatchTime?branch=main)
 <!-- badges: end -->
+
+# MatchTime <img src="man/figures/logo.png" height="240" align="right" />
 
 `MatchTime` is an R-Package which can be used to perform different sorts
 of time-dependent matching, which is also known as *sequential trial
