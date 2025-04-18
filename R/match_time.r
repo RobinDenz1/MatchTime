@@ -69,19 +69,20 @@ match_time <- function(formula, data, id, inclusion=NA,
   }
 
   # fix treatment variable if needed
-  if (!is.logical(data[[form$treat]])) {
-    setnames(data, old=form$treat, new=".treat")
+  setnames(data, old=form$treat, new=".treat")
+  if (!is.logical(data$.treat)) {
     data[, .treat := preprocess_treat(.treat)]
-    setnames(data, old=".treat", new=form$treat)
   }
 
   # extract relevant treatment times
-  d_treat <- times_from_start_stop(data=data, name=form$treat, id=id,
+  d_treat <- times_from_start_stop(data=data, name=".treat", id=id,
                                    type="var", time_name=".time",
                                    start=start, stop=stop)
-  data[, (form$treat) := NULL]
+  if (method[1] != "dynamic") {
+    data[, .treat := NULL]
+  }
 
-  check_treatment(data=d_treat, id=id)
+  check_treatment(data=d_treat, id=id, method=method[1])
 
   # call function that does all the work
   out <- match_time.fit(id=id, time=".time", d_treat=d_treat,
@@ -144,7 +145,7 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
     .id_new <- .next_treat_time <- .time <- .stop <- .id <-
     .fully_matched <- .weights <- ..id.. <- .distance <- .ps_score <-
     .lp_ps <- .prog_score <- .lp_prog <- .inclusion <- .remove_all <-
-    .treat_at_0 <- NULL
+    .treat_at_0 <- .treat_stop <- NULL
 
   # save sample sizes of input
   n_input_all <- length(unique(d_covars[[id]]))
@@ -197,12 +198,22 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   }
 
   # time at treatment
-  d_covars <- merge.data.table(d_covars, d_treat, by=".id", all.x=TRUE)
+  if (method != "dynamic") {
+    d_covars <- merge.data.table(d_covars, d_treat, by=".id", all.x=TRUE)
+  }
+
+  # time treatment stops, needed for dynamic allocation only
+  if (method=="dynamic") {
+    d_treat_stop <- simplify_start_stop(data=d_covars, id=".id", start=".start",
+                                        stop=".stop", cols=".treat")
+    d_treat_stop <- d_treat_stop[.treat==TRUE][, c(".id", ".stop"), with=FALSE]
+  }
 
   # applying inclusion criteria
   if (!all(is.na(inclusion))) {
     l_incl <- apply_inclusion_criteria(d_covars=d_covars,
-                                       inclusion=inclusion)
+                                       inclusion=inclusion,
+                                       method=method)
     d_covars <- l_incl$d_covars
   }
 
@@ -211,8 +222,13 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   colnames(d_longest) <- c(id, ".max_t")
 
   # keep only cases that meet inclusion criteria at treatment time
-  include <- d_covars[.time >= .start & .time < .stop]$.id
-  d_treat <- d_treat[.id %fin% include]
+  if (method != "dynamic") {
+    include <- d_covars[.time >= .start & .time < .stop]$.id
+    d_treat_orig <- copy(d_treat)
+    d_treat <- d_treat[.id %fin% include]
+  } else {
+    d_treat_orig <- d_treat
+  }
 
   # save sample sizes after applying inclusion criteria
   n_incl_all <- length(unique(d_covars$.id))
@@ -223,13 +239,15 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   case_times <- sort(unique(d_treat$.time))
 
   # remove time durations after treatment onset
-  min_t_passed <- as.numeric(
-    min(shift(case_times, type="lead") - case_times, na.rm=TRUE)
-  )
-  d_covars <- subset_start_stop(data=d_covars,
-                                last_time=d_covars$.time + min_t_passed,
-                                start=".start", stop=".stop")
-  d_covars[, .time := NULL]
+  if (method != "dynamic") {
+    min_t_passed <- as.numeric(
+      min(shift(case_times, type="lead") - case_times, na.rm=TRUE)
+    )
+    d_covars <- subset_start_stop(data=d_covars,
+                                  last_time=d_covars$.time + min_t_passed,
+                                  start=".start", stop=".stop")
+    d_covars[, .time := NULL]
+  }
 
   # set up .strata for fast_exact_matching(), if used
   if (match_method=="none") {
@@ -275,30 +293,48 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
       next
     }
 
-    # update collection of ids that were used as cases
-    used_as_cases <- c(used_as_cases, ids_cases_i)
+    if (method=="dynamic") {
 
-    # identify all potential controls that fulfill inclusion criteria at t
-    ids_pot_controls_i <- unique(d_covars$.id)
-    ids_pot_controls_i <- ids_pot_controls_i[!ids_pot_controls_i %fin%
-                                               used_as_cases]
+      # everyone fulfilling inclusion criteria at t
+      d_all_i <- d_covars[
+        case_times[i] >= .start & case_times[i] < .stop
+      ][, select_vars, with=FALSE]
 
-    # potentially remove controls that were already used as controls
-    if (!replace_over_t) {
+      # remove current but not new cases
+      d_all_i <- d_all_i[!(.treat==TRUE & !.id %fin% ids_cases_i)]
+
+      # if specified, remove those already used as controls
+      if (!replace_over_t) {
+        d_all_i <- d_all_i[.treat==TRUE | !.id %fin% used_as_controls]
+      }
+
+    } else {
+
+      # update collection of ids that were used as cases
+      used_as_cases <- c(used_as_cases, ids_cases_i)
+
+      # identify all potential controls that fulfill inclusion criteria at t
+      ids_pot_controls_i <- unique(d_covars$.id)
       ids_pot_controls_i <- ids_pot_controls_i[!ids_pot_controls_i %fin%
-                                                used_as_controls]
+                                                 used_as_cases]
+
+      # potentially remove controls that were already used as controls
+      if (!replace_over_t) {
+        ids_pot_controls_i <- ids_pot_controls_i[!ids_pot_controls_i %fin%
+                                                   used_as_controls]
+      }
+
+      # pool all relevant ids
+      all_ids <- c(ids_pot_controls_i, ids_cases_i)
+
+      # get dataset including them all at t
+      d_all_i <- d_covars[.id %fin% all_ids &
+                            case_times[i] >= .start & case_times[i] < .stop
+      ][, select_vars, with=FALSE]
+
+      # identify cases
+      d_all_i[, .treat := .id %fin% ids_cases_i]
     }
-
-    # pool all relevant ids
-    all_ids <- c(ids_pot_controls_i, ids_cases_i)
-
-    # get dataset including them all at t
-    d_all_i <- d_covars[.id %fin% all_ids &
-                        case_times[i] >= .start & case_times[i] < .stop
-                        ][, select_vars, with=FALSE]
-
-    # identify cases
-    d_all_i[, .treat := .id %fin% ids_cases_i]
 
     # for propensity score matching, calculate .ps_score
     if ((method=="psm" | method=="dsm") & ps_type[1]=="ps") {
@@ -364,9 +400,17 @@ match_time.fit <- function(id, time, d_treat, d_covars, match_vars=NULL,
   }
 
   # for controls, add time of next treatment
-  setnames(d_treat, old=".time", new=".next_treat_time")
-  data <- merge.data.table(data, d_treat, by=".id", all.x=TRUE)
-  data[.treat==TRUE, .next_treat_time := NA]
+  data <- add_next_time_data(data=data, d_event=d_treat_orig, id=".id",
+                             time=".time", include_same_t=FALSE,
+                             name=".next_treat_time")
+
+  # in dynamic matching, add time of treatment stop for all treatment periods
+  if (method=="dynamic") {
+    data <- add_next_time_data(data=data, d_event=d_treat_stop, id=".id",
+                               time=".stop", include_same_t=FALSE,
+                               name=".treat_stop")
+    data[.treat==FALSE, .treat_stop := NA]
+  }
 
   # calculate number of actually matched individuals
   if (".id_pair" %in% colnames(data)) {

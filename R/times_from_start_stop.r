@@ -31,7 +31,7 @@ times_from_start_stop <- function(data, id, name, type, start="start",
 
     setkeyv(data, c(id, start))
 
-    # identify times of new occurence
+    # identify times of new occurrence
     set_shift_by(data, col_in=name, col_out=".temp_shift", type="lag",
                  by=id, fill=FALSE)
 

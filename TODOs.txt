@@ -13,6 +13,7 @@ match_time() general
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
 	- do competing risks work with "event_times" argument?
+	- allow previous event counts to be generated as well
 
 long2start_stop()
 	- allow event variables to be specified

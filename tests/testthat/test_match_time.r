@@ -47,7 +47,11 @@ test_that("matching on nothing", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 26)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 28)
+
+  # next treatment is also coded correctly if the person did not fulfill
+  # inclusion criteria at treatment time
+  expect_equal(subset(out, .id==153)$.next_treat_time, 257)
 
   # same output with different names
   setnames(d_single,
@@ -103,7 +107,7 @@ test_that("matching on time-fixed variable", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 29)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 30)
 })
 
 test_that("matching on time-dependent variable", {
@@ -139,7 +143,7 @@ test_that("matching on time-dependent variable", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 49)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 51)
 })
 
 test_that("matching on time-fixed and time-dependent variable", {
@@ -175,7 +179,7 @@ test_that("matching on time-fixed and time-dependent variable", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 42)
 })
 
 test_that("using replace_at_t and replace_over_t", {
@@ -338,7 +342,7 @@ test_that("using matchit", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 42)
 })
 
 test_that("using Date input", {
@@ -380,7 +384,7 @@ test_that("using Date input", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 49)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 51)
 })
 
 test_that("match_method='none' with less controls than cases", {
@@ -527,7 +531,7 @@ test_that("matching on fixed and time-dependent variable with psm method", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 41)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 43)
 })
 
 test_that("using lp in method='psm'", {
@@ -567,7 +571,7 @@ test_that("using lp in method='psm'", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 41)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 43)
 })
 
 test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
@@ -607,7 +611,7 @@ test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 41)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 43)
 
   expect_true(all(!is.na(out$.prog_score)) & is.numeric(out$.prog_score))
 })
@@ -648,7 +652,7 @@ test_that("matching on time-fixed and time-dependent variable, method='dsm'", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 40)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 42)
 
   expect_true(all(!is.na(out$.ps_score)) & is.numeric(out$.ps_score))
   expect_true(all(!is.na(out$.prog_score)) & is.numeric(out$.prog_score))
@@ -671,7 +675,7 @@ test_that("matching using method='greedy'", {
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 18950)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 19561)
 })
 
 test_that("outcomes arg working", {

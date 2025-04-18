@@ -158,7 +158,7 @@ update_select_vars <- function(select_vars, method, ps_type, prog_type) {
 
 ## remove time durations where inclusion criteria are not fulfilled,
 ## and return a list of reasons for exclusion in 2 stages
-apply_inclusion_criteria <- function(d_covars, inclusion) {
+apply_inclusion_criteria <- function(d_covars, inclusion, method) {
 
   .id <- .inclusion <- .remove_all <- .start <- .stop <-
     .time <- .treat <- .treat_at_0 <- NULL
@@ -166,23 +166,30 @@ apply_inclusion_criteria <- function(d_covars, inclusion) {
   .incl <- inclusion
   d_covars[, .inclusion := rowSums(.SD) == length(.incl), .SDcols=.incl]
 
-  # never meet inclusion criteria
-  d_covars[, .remove_all := sum(!.inclusion)==.N, by=.id]
-  d_exclusion1 <- d_covars[.remove_all==TRUE][, c(".id", .incl, ".time"),
-                                              with=FALSE]
-  d_exclusion1[, .treat := !is.na(.time)]
-  d_exclusion1[, .treat_at_0 := fifelse(.time==0, TRUE, FALSE, na=FALSE)]
-  d_exclusion1 <- d_exclusion1[, lapply(.SD, all), by=".id",
-                               .SDcols=c(.incl, ".treat", ".treat_at_0")]
+  if (method != "dynamic") {
+    # never meet inclusion criteria
+    d_covars[, .remove_all := sum(!.inclusion)==.N, by=.id]
+    d_exclusion1 <- d_covars[.remove_all==TRUE][, c(".id", .incl, ".time"),
+                                                with=FALSE]
+    d_exclusion1[, .treat := !is.na(.time)]
+    d_exclusion1[, .treat_at_0 := fifelse(.time==0, TRUE, FALSE, na=FALSE)]
+    d_exclusion1 <- d_exclusion1[, lapply(.SD, all), by=".id",
+                                 .SDcols=c(.incl, ".treat", ".treat_at_0")]
 
-  # inclusion criteria not met at treatment time
-  d_exclusion2 <- d_covars[.time >= .start & .time < .stop & !.inclusion &
-                             !.remove_all]
-  d_exclusion2 <- d_exclusion2[, c(".id", .incl), with=FALSE]
+    # inclusion criteria not met at treatment time
+    d_exclusion2 <- d_covars[.time >= .start & .time < .stop & !.inclusion &
+                               !.remove_all]
+    d_exclusion2 <- d_exclusion2[, c(".id", .incl), with=FALSE]
+
+    d_covars[, .remove_all := NULL]
+  } else {
+    d_exclusion1 <- NULL
+    d_exclusion2 <- NULL
+  }
 
   # remove all rows when inclusion criteria are not met
   d_covars <- d_covars[.inclusion==TRUE]
-  d_covars[, c(inclusion, ".inclusion", ".remove_all") := NULL]
+  d_covars[, c(inclusion, ".inclusion") := NULL]
 
   if (nrow(d_covars)==0) {
     stop("There are no observations left after applying the",
@@ -282,14 +289,16 @@ set_prognostic_score <- function(d_covars, prog_model, prog_type,
 }
 
 ## checks if the treatment is valid
-check_treatment <- function(data, id) {
+check_treatment <- function(data, id, method) {
 
   . <- NULL
 
-  d_count <- data[, .(n = .N), by=id]
-  ids_multi_treat <- d_count[[id]][d_count$n > 1]
+  if (method != "dynamic") {
+    d_count <- data[, .(n = .N), by=id]
+    ids_multi_treat <- d_count[[id]][d_count$n > 1]
 
-  stopifnotm(length(ids_multi_treat)==0,
-             "There should only be one treatment time per person. Multiple",
-             "treatments were detected for ", id, " = ", ids_multi_treat[1])
+    stopifnotm(length(ids_multi_treat)==0,
+               "There should only be one treatment time per person. Multiple",
+               "treatments were detected for ", id, " = ", ids_multi_treat[1])
+  }
 }

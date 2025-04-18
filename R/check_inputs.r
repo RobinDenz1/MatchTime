@@ -119,7 +119,8 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
 
   # correct method
   stopifnotm(is.character(method[1]) &&
-               method[1] %in% c("brsm", "psm", "pgm", "dsm", "greedy"),
+               method[1] %in% c("brsm", "psm", "pgm", "dsm", "greedy",
+                                "dynamic"),
              "'method' must be either 'brsm', 'psm', 'pgm', 'dsm' or 'greedy'.")
 
   # with method="psm"
