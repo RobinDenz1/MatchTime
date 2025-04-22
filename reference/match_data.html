@@ -98,7 +98,7 @@
 <span class="r-in"><span>                    match_method<span class="op">=</span><span class="st">"nearest"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># get data without unmatched individuals</span></span></span>
-<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">match_data</span><span class="op">(</span><span class="va">m_obj</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu">MatchTime</span><span class="fu">::</span><span class="fu">match_data</span><span class="op">(</span><span class="va">m_obj</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>glm.fit: algorithm did not converge</span>
@@ -107,7 +107,23 @@
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>glm.fit: fitted probabilities numerically 0 or 1 occurred</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>glm.fit: fitted probabilities numerically 0 or 1 occurred</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>glm.fit: fitted probabilities numerically 0 or 1 occurred</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in match_data(m_obj):</span> `object` must inherit from class 'matchit'.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Key: &lt;id&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       id .id_new .id_pair .treat .treat_time .next_treat_time .weights event</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;num&gt;   &lt;int&gt;   &lt;char&gt; &lt;lgcl&gt;       &lt;num&gt;            &lt;num&gt;    &lt;num&gt; &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:     1      72       36  FALSE          27               NA        1     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:     3       1        1   TRUE           1               NA        1     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:     4      10        5  FALSE           2               36        1     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4:     4      89       45   TRUE          36               NA        1     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5:     7      86       43  FALSE          32               51        1     0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6:     8      16        8  FALSE           3               NA        1     1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           age      year surgery</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;num&gt;     &lt;num&gt;   &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1: -17.155373 0.1232033       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:   6.297057 0.2655715       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:  -7.737166 0.4900753       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4:  -7.737166 0.4900753       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5:   2.869268 0.7802875       0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6:  -2.650240 0.8350445       0</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
