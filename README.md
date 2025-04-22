@@ -9,7 +9,7 @@ public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostat
 [![](http://cranlogs.r-pkg.org/badges/grand-total/MatchTime?color=blue)](https://cran.r-project.org/package=MatchTime)
 [![R-CMD-check](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/RobinDenz1/MatchTime/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
-coverage](https://codecov.io/gh/RobinDenz1/MatchTime/branch/main/graph/badge.svg)](https://app.codecov.io/gh/RobinDenz1/MatchTime?branch=main)
+coverage](https://codecov.io/gh/RobinDenz1/MatchTime/graph/badge.svg)](https://app.codecov.io/gh/RobinDenz1/MatchTime)
 <!-- badges: end -->
 
 # MatchTime <img src="man/figures/logo.png" height="240" align="right" />

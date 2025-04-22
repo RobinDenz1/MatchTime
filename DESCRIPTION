@@ -11,6 +11,9 @@ Description: Includes multiple methods to perform time-dependent matching with d
 	functions to create and transform start-stop data, because that is the required input for the matching.
 	The package is designed specifically to handle very large datasets.
 License: GPL (>= 3)
+URL: https://github.com/RobinDenz1/MatchTime,
+    https://robindenz1.github.io/MatchTime/
+BugReports: https://github.com/RobinDenz1/MatchTime/issues
 Imports: 
     data.table,
 	fastmatch,

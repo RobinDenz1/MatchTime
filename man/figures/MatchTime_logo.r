@@ -22,7 +22,7 @@ p <- ggplot(plotdata, aes(x=x, y=y)) +
   geom_segment(aes(xend=xend, yend=yend), color=uvic_red, linewidth=1) +
   geom_segment(aes(x=x, xend=x, y=y-0.4, yend=y+0.4), color=uvic_red,
                linewidth=1) +
-  geom_point(aes(x=xend, y=y, shape=kind), color=uvic_yellow) +
+  geom_point(aes(x=xend, y=y, shape=kind), color=uvic_yellow, size=1.7) +
   theme_void() +
   theme(legend.position="none") +
   scale_shape_manual(values=c(16, 4)) +
@@ -38,7 +38,7 @@ s <- hexSticker::sticker(p,
                          p_color=uvic_yellow,
                          s_x=1,
                          s_y=0.93,
-                         s_width=1.3,#1.2,
+                         s_width=1.3,
                          s_height=1.1,
                          filename="logo.png",
                          h_fill=uvic_blue_dark,

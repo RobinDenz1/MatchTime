@@ -5,3 +5,7 @@
 ^TODOs.txt
 ^codemeta\.json$
 ^README\.Rmd$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
