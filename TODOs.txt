@@ -33,9 +33,6 @@ General TODOs:
 	- in this vignette (or another vignette) give a table with supported funtionality
 		- what treatments are allowed (timings, binary vs. categorical, ...)?
 		- what outcomes are allowed per method (recurrent, competing events, ...)?
-	- add usual package stuff
-		- pkgdown website (divide functions into groups here)
-		- ...
 
 Theoretical:
 	- categorical treatments?

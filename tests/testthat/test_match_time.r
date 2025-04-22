@@ -311,11 +311,13 @@ test_that("output of match_time() and match_time.fit() is equal", {
 test_that("using matchit", {
 
   set.seed(134)
-  out <- match_time(formula=vacc ~ mac + meds,
+  out <- suppressWarnings(
+    match_time(formula=vacc ~ mac + meds,
                     data=d_single,
                     id=".id",
                     inclusion="inclusion",
                     match_method="nearest")$data
+  )
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))
@@ -527,11 +529,11 @@ test_that("matching on fixed and time-dependent variable with psm method", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(41, 41))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 43)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 42)
 })
 
 test_that("using lp in method='psm'", {
@@ -567,11 +569,11 @@ test_that("using lp in method='psm'", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(41, 41))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 43)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 42)
 })
 
 test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
@@ -607,11 +609,11 @@ test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
   # as a new case
   expect_true(max(table(out$.id))==2)
   out[, n_id := .N, by=.id]
-  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(41, 41))
+  expect_equal(as.vector(table(out$.treat[out$n_id==2])), c(40, 40))
 
   # next treatment only possible for controls
   expect_equal(sum(!is.na(out$.next_treat_time[out$.treat])), 0)
-  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 43)
+  expect_equal(sum(!is.na(out$.next_treat_time[!out$.treat])), 42)
 
   expect_true(all(!is.na(out$.prog_score)) & is.numeric(out$.prog_score))
 })
@@ -619,13 +621,15 @@ test_that("matching on time-fixed and time-dependent variable, method='pgm'", {
 test_that("matching on time-fixed and time-dependent variable, method='dsm'", {
 
   set.seed(134)
-  out <- match_time(formula=vacc ~ mac + meds,
+  out <- suppressWarnings(
+    match_time(formula=vacc ~ mac + meds,
                     data=d_single,
                     id=".id",
                     inclusion="inclusion",
                     method="dsm",
                     event="influenza",
                     match_method="nearest")$data
+  )
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(229, 229))

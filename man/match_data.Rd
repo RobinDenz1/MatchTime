@@ -57,7 +57,7 @@ m_obj <- match_time(transplant ~ age + surgery, data=heart, id="id",
                     match_method="nearest")
 
 # get data without unmatched individuals
-data <- match_data(m_obj)
+data <- MatchTime::match_data(m_obj)
 head(data)
 }
 }

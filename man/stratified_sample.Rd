@@ -55,7 +55,7 @@ set.seed(344)
 
 data <- data.table(A=stats::rnorm(n=100),
                    B=sample(c("A", "B", "C"), size=100, replace=TRUE),
-                   strat=sample(c("1", "2", "3")))
+                   strat=sample(c("1", "2", "3"), size=100, replace=TRUE))
 
 n <- c(10, 25, 31)
 names(n) <- c("2", "1", "3")
