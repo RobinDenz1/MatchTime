@@ -79,6 +79,9 @@ add_outcome <- function(x, data, censor_at_treat=TRUE,
     x$data[, .time_to_max_t := .max_t - .treat_time]
   }
 
+  # censor if maximum follow-up time < event time
+  x$data[.time_to_max_t < .time_to_next_event, .status := FALSE]
+
   # calculate corresponding event time
   if (censor_at_treat) {
     x$data[, .event_time := pmin(.time_to_next_treat, .time_to_next_event,
