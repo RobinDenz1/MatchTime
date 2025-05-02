@@ -1,9 +1,9 @@
 pandoc: 3.1.11
-pkgdown: 2.1.1
+pkgdown: 2.1.2
 pkgdown_sha: ~
 articles:
   creating_start_stop_data: creating_start_stop_data.html
-last_built: 2025-04-24T15:27Z
+last_built: 2025-05-02T14:36Z
 urls:
   reference: https://robindenz1.github.io/MatchTime/reference
   article: https://robindenz1.github.io/MatchTime/articles
