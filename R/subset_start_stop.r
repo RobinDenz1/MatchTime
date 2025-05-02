@@ -20,7 +20,8 @@ subset_start_stop <- function(data, first_time, last_time,
 
   # some input checks
   if (missing(first_time) & missing(last_time)) {
-    stop("Either 'first_time' or 'last_time' need to be specified.")
+    stop("Either 'first_time' or 'last_time' need to be specified.",
+         call.=FALSE)
   }
 
   check_inputs_subset_start_stop(data=data, start=start, stop=stop,

@@ -28,7 +28,7 @@ fast_exact_matching <- function(formula, data, replace=FALSE, ratio=1,
     strata_vars <- vars[2:length(vars)]
   } else {
     stop("'formula' needs to contain at least one variable on the right-hand",
-         " side to match on.")
+         " side to match on.", call.=FALSE)
   }
 
   # create strata variable

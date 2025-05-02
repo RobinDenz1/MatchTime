@@ -491,7 +491,8 @@ replace_labs_main <- function(labs_main, box_main_text) {
     } else {
       stop("'box_main_text' should be a named list of characters, where ",
            "the names can only be one or more of 'box1', 'box2l', ",
-           "'box2r', 'box3l', 'box3r', 'box4l', 'box4r', not: ", name_i)
+           "'box2r', 'box3l', 'box3r', 'box4l', 'box4r', not: ", name_i,
+           call.=FALSE)
     }
   }
   names(labs_main) <- NULL
@@ -522,7 +523,8 @@ get_sec_labs <- function(box_sec_text) {
     } else {
       stop("'box_sec_text' should be a named list of characters, where ",
            "the names can only be one or more of 'box1l', 'box1r', ",
-           "'box2l1', 'box2l2', 'box2r1', 'box2r2', not: ", name_i)
+           "'box2l1', 'box2l2', 'box2r1', 'box2r2', not: ", name_i,
+           call.=FALSE)
     }
   }
 

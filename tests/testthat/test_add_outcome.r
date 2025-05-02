@@ -35,6 +35,28 @@ test_that("censor_at_treat=FALSE", {
   expect_equal(out, expected)
 })
 
+test_that("events after the maximum follow-up time are censored", {
+
+  d_event2 <- data.table(id=c(1, 2, 3, 4, 4, 5),
+                         time=c(98, 48, 15, 401, 438, 900))
+
+  expected <- data.table(id=c(1, 2, 2, 3, 4, 5),
+                         .id_new=c(1, 2, 6, 3, 4, 5),
+                         .id_pair=c(1, 1, 3, 2, 2, 3),
+                         .treat_time=c(28, 28, 4, 2, 2, 4),
+                         .treat=c(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE),
+                         .next_treat_time=c(NA, NA, 28, 17, NA, NA),
+                         A=c("A", "B", "A", "A", "B", "B"),
+                         .status=c(TRUE, TRUE, TRUE, TRUE, TRUE, FALSE),
+                         .event_time=c(70, 20, 44, 13, 399, 887))
+  setkey(expected, id)
+
+  out <- add_outcome(x=obj, data=d_event, censor_at_treat=FALSE,
+                     censor_pairs=FALSE)$data
+
+  expect_equal(out, expected)
+})
+
 test_that("censor_at_treat=TRUE without censor_pairs", {
 
   expected <- data.table(id=c(1, 2, 2, 3, 4, 5),
@@ -183,27 +205,5 @@ test_that("censor_at_treat=TRUE with censor_pairs, date input", {
 
   out <- add_outcome(x=obj, data=d_event, censor_at_treat=TRUE,
                      censor_pairs=TRUE)$data
-  expect_equal(out, expected)
-})
-
-test_that("events after the maximum follow-up time are censored", {
-
-  d_event2 <- data.table(id=c(1, 2, 3, 4, 4, 5),
-                         time=c(98, 48, 15, 401, 438, 900))
-
-  expected <- data.table(id=c(1, 2, 2, 3, 4, 5),
-                         .id_new=c(1, 2, 6, 3, 4, 5),
-                         .id_pair=c(1, 1, 3, 2, 2, 3),
-                         .treat_time=c(28, 28, 4, 2, 2, 4),
-                         .treat=c(FALSE, TRUE, FALSE, FALSE, TRUE, TRUE),
-                         .next_treat_time=c(NA, NA, 28, 17, NA, NA),
-                         A=c("A", "B", "A", "A", "B", "B"),
-                         .status=c(TRUE, TRUE, TRUE, TRUE, TRUE, FALSE),
-                         .event_time=c(70, 20, 44, 13, 399, 887))
-  setkey(expected, id)
-
-  out <- add_outcome(x=obj, data=d_event, censor_at_treat=FALSE,
-                     censor_pairs=FALSE)$data
-
   expect_equal(out, expected)
 })

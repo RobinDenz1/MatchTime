@@ -50,7 +50,7 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
   if (id_type==".id_pair" && !".id_pair" %in% colnames(x$data)) {
     stop("Cannot use id_type='.id_pair' if a 'match_method' was used in",
          " the original match_time() call that does not create an '.id_pair'",
-         " column.")
+         " column.", call.=FALSE)
   }
 
   # if no id is specified, just take all of them
@@ -73,7 +73,8 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
     plotdata <- subset(x$data, .id_pair %in% include)
     setkey(plotdata, .id_pair)
   } else {
-    stop("'id_type' must be one of x$id, '.id_new' or '.id_pair'.")
+    stop("'id_type' must be one of x$id, '.id_new' or '.id_pair'.",
+         call.=FALSE)
   }
   plotdata[, .id_new := factor(.id_new, levels=.id_new)]
 
@@ -81,13 +82,14 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
   if (length(x$info$added_event_times)==0) {
     stop("Timelines can only be plotted if at least one event was",
          " specified in the 'outcomes' argument of match_time() or added",
-         " to the match_time object using the add_outcome() function.")
+         " to the match_time object using the add_outcome() function.",
+         call.=FALSE)
   } else if (length(x$info$added_event_times)==1 & missing(time_name)) {
     time_name <- x$info$added_event_times
     status_name <- x$info$added_status
   } else if (missing(time_name)) {
     stop("Arguments 'time_name' and 'status_name' must be specified when",
-         " more than one event is present in 'x'.")
+         " more than one event is present in 'x'.", call.=FALSE)
   }
 
   # which way to color the lines and dots

@@ -59,7 +59,7 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
                                          "integer"))) {
       stop("All columns containing variables (columns except 'by', 'start' ",
            "and 'stop') must be of type:\n 'logical', 'numeric' or ",
-           "'character'.")
+           "'character'.", call.=FALSE)
     }
 
     # get supplied data.tables into long format if it contains more than one

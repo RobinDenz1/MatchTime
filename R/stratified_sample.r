@@ -5,7 +5,7 @@ sample_dt <- function(data, n, replace, if_lt_n, max_replace=NULL) {
 
   if (if_lt_n=="stop" && nrow(data) < n && !replace) {
     stop("Cannot sample ", n, " rows from a data.table with only ",
-         nrow(data), " rows if replace=FALSE.")
+         nrow(data), " rows if replace=FALSE.", call.=FALSE)
   } else if (if_lt_n=="warn" && nrow(data) < n && !replace) {
     warning("Could only sample ", nrow(data), " rows from 'data' instead",
             " of ", n, " rows using replace=FALSE.")
@@ -15,7 +15,7 @@ sample_dt <- function(data, n, replace, if_lt_n, max_replace=NULL) {
       (nrow(data) * max_replace) < n) {
     stop("Cannot sample ", n, " rows from a data.table with only ",
          nrow(data), " rows if each unit can only be replaced ",
-         max_replace, " times.")
+         max_replace, " times.", call.=FALSE)
   } else if (!is.null(max_replace) && if_lt_n=="warn" && replace &&
              (nrow(data) * max_replace) < n) {
     warning("Could only sample ", nrow(data)*max_replace, " rows from 'data'",
@@ -60,7 +60,8 @@ stratified_sample <- function(data, n, strata, replace=FALSE,
 
     if (if_lt_n=="stop") {
       stop("Cannot sample ", n[not_in_dt], " rows from strata '", not_in_dt,
-           "' in 'data' because there are no rows in these strata.")
+           "' in 'data' because there are no rows in these strata.",
+           call.=FALSE)
     } else if (if_lt_n=="warn") {
       warning("Ignoring strata: ", not_in_dt, " because there are no rows with",
               " such strata in 'data'.")

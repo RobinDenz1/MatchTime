@@ -24,7 +24,8 @@ set_match_weights <- function(data, treat, estimand, keep_ps=FALSE,
   } else if (estimand=="ATC") {
     data[, .weights := fifelse(.treat==TRUE, (1 - .ps_score)/.ps_score, 1)]
   } else {
-    stop("Only 'ATT' and 'ATC' estimands are currently supported.")
+    stop("Only 'ATT' and 'ATC' estimands are currently supported.",
+         call.=FALSE)
   }
 
   # stabilize the weights to sum to the number of observations in each group

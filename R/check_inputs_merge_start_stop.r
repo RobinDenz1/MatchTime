@@ -150,7 +150,8 @@ check_inputs_merge_start_stop <- function(dlist, first_time, last_time,
     diff <- dlist[[i]][[stop]] - dlist[[i]][[start]]
     if (any(diff==0)) {
       stop("Intervals of length zero are not supported in 'x', 'y', ..., or ",
-           "objects contained in 'dlist'.\nFound in data.table number ", i)
+           "objects contained in 'dlist'.\nFound in data.table number ", i,
+           call.=FALSE)
     }
   }
 

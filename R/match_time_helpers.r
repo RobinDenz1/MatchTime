@@ -15,7 +15,8 @@ preprocess_treat <- function(treat) {
     stop("The treatment variable specified by the LHS of 'formula'",
          " needs to specify a variable coded as one of:\n ",
          "(1) a logical vector, (2) an integer with only 0/1 values",
-         ", (3) a binary factor or (4) a binary character variable.")
+         ", (3) a binary factor or (4) a binary character variable.",
+         call.=FALSE)
   }
   return(treat)
 }

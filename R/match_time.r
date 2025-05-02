@@ -565,7 +565,7 @@ match_at_t <- function(d_all_i, case_times, i, method, ids_cases_i,
         if (e$message=="No matches were found.") {
           return(NULL)
         } else {
-          stop(e)
+          stop(e, call.=FALSE)
         }
       }
     )
