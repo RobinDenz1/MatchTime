@@ -1,4 +1,43 @@
 url: https://robindenz1.github.io/MatchTime/
 template:
   bootstrap: 5
-
+reference:
+    - title: Time-Dependent Matching
+      desc: Perform, visualize and inspect time-dependent matching
+    - contents:
+      - match_time
+      - method_brsm
+      - method_psm
+      - method_pgm
+      - method_dsm
+      - method_greedy
+      - summary.match_time
+      - bal.tab.match_time
+      - plot.match_time
+      - plot_flowchart
+      - plot_timeline
+      - match_data
+    
+    - title: Adding Covariates
+      desc: Adding variables or outcomes to matched data
+    - contents:
+      - add_outcome
+      - add_next_time
+      - add_previous_event
+      - add_previous_event_count
+    
+    - title: Start-Stop Data
+      desc: Creating and transforming start-stop data
+    - contents:
+      - merge_start_stop
+      - simplify_start_stop
+      - subset_start_stop
+      - times_from_start_stop
+      - long2start_stop
+      - start_stop2long
+      - add_missing_intervals
+      
+    - title: Misc
+    - contents:
+      - fast_exact_matching
+      - stratified_sample
