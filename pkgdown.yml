@@ -3,7 +3,7 @@ pkgdown: 2.1.2
 pkgdown_sha: ~
 articles:
   creating_start_stop_data: creating_start_stop_data.html
-last_built: 2025-05-04T09:16Z
+last_built: 2025-05-09T15:17Z
 urls:
   reference: https://robindenz1.github.io/MatchTime/reference
   article: https://robindenz1.github.io/MatchTime/articles
