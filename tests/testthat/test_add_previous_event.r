@@ -87,12 +87,12 @@ test_that("as dates, with include_same_t=TRUE", {
 
   # with a duration of 20
   out <- add_previous_event(x=obj, data=as.data.frame(d_event), duration=20,
-                            include_same_t=TRUE, id="id2")$data
+                            include_same_t=TRUE, id="id2", units="days")$data
   expect_equal(out, expected)
 
   # upping the duration to 400
   out2 <- add_previous_event(x=obj, data=d_event, duration=400,
-                             include_same_t=TRUE, id="id2")$data
+                             include_same_t=TRUE, id="id2", units="days")$data
   expected$.prev_event <- c(rep(TRUE, 3), FALSE, TRUE, FALSE)
   expect_equal(out2, expected)
 })

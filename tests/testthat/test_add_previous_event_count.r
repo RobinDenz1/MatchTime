@@ -15,6 +15,8 @@ class(obj) <- "match_time"
 # event times
 d_event <- data.table(id=c(1, 1, 1, 1, 2, 3, 4, 4, 4),
                       time=c(2, 3, 17, 18, 3, 15, 2, 438, 1))
+d_event2 <- data.table(id=c(1, 1, 1, 1, 2, 3, 4, 4, 4, 4),
+                       time=c(2, 3, 17, 18, 3, 15, 2, 438, 1, NA))
 
 test_that("with include_same_t=FALSE", {
 
@@ -38,6 +40,16 @@ test_that("with include_same_t=FALSE", {
                                    include_same_t=FALSE)$data
   expected[, .prev_event_count := c(4, 1, 1, 0, 1, 0)]
   expect_equal(out2, expected)
+
+  # same results if there is NA in there, but also prints a warning
+  expect_warning(add_previous_event_count(x=obj, data=as.data.frame(d_event2),
+                                          duration=400, include_same_t=FALSE),
+                 "Missing values in column 'time' of 'data' will be ignored.")
+  out3 <- suppressWarnings(
+    add_previous_event_count(x=obj, data=as.data.frame(d_event2),
+                             duration=400, include_same_t=FALSE)$data
+  )
+  expect_equal(out2, out3)
 })
 
 test_that("with include_same_t=FALSE", {

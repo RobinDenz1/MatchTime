@@ -10,7 +10,7 @@ In some cases, some relevant events occur \emph{before} the time at which a case
 \usage{
 add_previous_event(x, data, id=x$id, time=x$time,
                    duration, include_same_t=FALSE,
-                   name=".prev_event")
+                   units="auto", name=".prev_event")
 }
 \arguments{
   \item{x}{
@@ -27,6 +27,9 @@ A single character string specifying a column in \code{data}, specifying the col
   }
   \item{duration}{
 A single positive number or other scala value specifying the duration of the events listed in \code{data}. If the time is a \code{Date} object or something similar, this duration should usually be given in days. Internally, whether an event lies in the duration is determined using the \code{+} S3 method, which defaults to days for \code{Date} objects. Users may use functions from packages like \pkg{lubridate} to use other units by specifying this argument accordingly.
+  }
+  \item{units}{
+Corresponds to the argument of the same name in the \code{\link{difftime}} function. This argument is only used when the \code{time} column corresponds to a \code{Date} (or similar) variable. It should be used to indicate the time-scale of the \code{duration} (seconds, days, years, ...).
   }
   \item{name}{
 A single character string specifying the name of the column containing the indicator that will be added to the \code{data} object contained in \code{x}. Defaults to \code{.prev_event}. If the name is already present, an error message is returned instead.

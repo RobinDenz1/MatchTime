@@ -14,6 +14,9 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
 
   stopifnotm(inherits(x, "match_time"),
    "'x' must be a 'match_time' object created using the match_time() function.")
+  warnifnotm(!anyNA(data[[x$time]]),
+             paste0("Missing values in column '", x$time,
+                    "' of 'data' will be ignored."))
 
   x <- copy(x)
   orig_col_order <- colnames(x$data)
@@ -56,7 +59,7 @@ add_previous_event_count <- function(x, data, id=x$id, time=x$time, duration,
   } else {
     data[, .condition := .diff < 0 & .diff >= -duration]
   }
-  out <- data[, .(.count = sum(.condition)), by=".id_new"]
+  out <- data[, .(.count = sum(.condition, na.rm=TRUE)), by=".id_new"]
   out[is.na(.count), .count := 0]
 
   # merge back to original data
