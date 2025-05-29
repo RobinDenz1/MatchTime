@@ -7,9 +7,9 @@
 #' @importFrom data.table setnames
 #' @importFrom data.table copy
 #' @export
-add_missing_intervals <- function(data, id, start="start", stop="stop",
-                                  first_time=NULL, last_time=NULL,
-                                  missing_indicator=TRUE, ...) {
+fill_gaps_start_stop <- function(data, id, start="start", stop="stop",
+                                 first_time=NULL, last_time=NULL,
+                                 missing_indicator=TRUE, ...) {
 
   . <- .in_data <- .placeholder <- .start <- .stop <- NULL
 
@@ -19,8 +19,8 @@ add_missing_intervals <- function(data, id, start="start", stop="stop",
     data <- copy(data)
   }
 
-  check_inputs_add_missing_intervals(data=data, id=id, start=start, stop=stop,
-                                     missing_indicator=missing_indicator)
+  check_inputs_fill_gaps_start_stop(data=data, id=id, start=start, stop=stop,
+                                    missing_indicator=missing_indicator)
 
   # rename columns to avoid possible issued
   orig_start <- start
@@ -53,8 +53,8 @@ add_missing_intervals <- function(data, id, start="start", stop="stop",
   return(out)
 }
 
-## check inputs for add_missing_intervals() function
-check_inputs_add_missing_intervals <- function(data, id, start, stop,
+## check inputs for fill_gaps_start_stop() function
+check_inputs_fill_gaps_start_stop <- function(data, id, start, stop,
                                                missing_indicator) {
 
   stopifnotm(is_single_character(id) & id %in% colnames(data),

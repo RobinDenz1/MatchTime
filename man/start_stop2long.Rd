@@ -9,7 +9,7 @@ Given a \code{data.table} like object in the start-stop format, this function re
 }
 \usage{
 start_stop2long(data, id, events=NULL, start="start",
-                stop="stop", add_missing_intervals=FALSE,
+                stop="stop", fill_gaps=FALSE,
                 include_last_t=FALSE, time_name="time",
                 ...)
 }
@@ -29,8 +29,8 @@ A single character string specifying a column in \code{data} specifying the begi
   \item{stop}{
 A single character string specifying a column in \code{data} specifying the ending of a time-interval. Defaults to \code{"stop"}.
   }
-  \item{add_missing_intervals}{
-Either \code{TRUE} or \code{FALSE} (default), specifying whether intervals that are missing from \code{data} should still be present in the output. If set to \code{TRUE}, the \code{\link{add_missing_intervals}} function is called on the input \code{data} first.
+  \item{fill_gaps}{
+Either \code{TRUE} or \code{FALSE} (default), specifying whether intervals that are missing from \code{data} should still be present in the output. If set to \code{TRUE}, the \code{\link{fill_gaps_start_stop}} function is called on the input \code{data} first.
   }
   \item{include_last_t}{
 Whether to include the last value of \code{stop} per \code{id} in the output. Whether this should be done or not depends on how the intervals are coded.
@@ -39,7 +39,7 @@ Whether to include the last value of \code{stop} per \code{id} in the output. Wh
 A single character string, specifying the name of the "time" column in the output.
   }
   \item{...}{
-Further arguments passed to \code{\link{add_missing_intervals}} if \code{add_missing_intervals=TRUE}, ignored otherwise.
+Further arguments passed to \code{\link{fill_gaps_start_stop}} if \code{fill_gaps=TRUE}, ignored otherwise.
   }
 }
 \value{
@@ -49,7 +49,7 @@ Returns a single \code{data.table} containing the long-format data. The \code{st
 Robin Denz
 }
 \seealso{
-\code{\link{add_missing_intervals}}, \code{\link{long2start_stop}}
+\code{\link{fill_gaps_start_stop}}, \code{\link{long2start_stop}}
 }
 \examples{
 library(MatchTime)

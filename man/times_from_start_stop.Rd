@@ -54,7 +54,7 @@ If \code{type="event"} is used instead, every single occurence of \code{TRUE} in
 Robin Denz
 }
 \seealso{
-\code{\link{merge_start_stop}}, \code{\link{add_missing_intervals}}, \code{\link{simplify_start_stop}}
+\code{\link{merge_start_stop}}, \code{\link{fill_gaps_start_stop}}, \code{\link{simplify_start_stop}}
 }
 \examples{
 library(MatchTime)

@@ -43,7 +43,7 @@ Returns a single \code{data.table} containing the simplified dataset.
 Robin Denz
 }
 \seealso{
-\code{\link{merge_start_stop}}, \code{\link{add_missing_intervals}}, \code{\link{subset_start_stop}}
+\code{\link{merge_start_stop}}, \code{\link{fill_gaps_start_stop}}, \code{\link{subset_start_stop}}
 }
 \examples{
 library(MatchTime)

@@ -78,7 +78,7 @@ The following functions of `MatchTime` may be used to deal with start-stop data:
 * `merge_start_stop()`: Merges two or more start-stop datasets
 * `subset_start_stop()`: Takes a subset of intervals from a start-stop dataset
 * `simplify_start_stop()`: Combines rows from a start-stop dataset when possible
-* `add_missing_intervals()`: Adds missing time-intervals to "incomplete" start-stop datasets
+* `fill_gaps_start_stop()`: Adds missing time-intervals to "incomplete" start-stop datasets
 * `start_stop2long()`: Creates a long-format dataset from a start-stop dataset
 * `long2start_stop()`: Creates a start-stop dataset from a long-format dataset
 * `times_from_start_stop()`: Extracts specific "event" times from a start-stop dataset

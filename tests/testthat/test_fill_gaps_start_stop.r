@@ -15,13 +15,13 @@ test_that("general test case", {
                              0.46))
   setkey(expected, id, start)
 
-  out <- add_missing_intervals(data, id="id")
+  out <- fill_gaps_start_stop(data, id="id")
   expect_equal(out, expected)
 
   # works with non data.table input
   data <- as.data.frame(data)
 
-  out <- add_missing_intervals(data, id="id")
+  out <- fill_gaps_start_stop(data, id="id")
   expect_equal(out, expected)
 })
 
@@ -33,7 +33,7 @@ test_that("no intervals added because already full", {
                      value=c(0.1, 2.4, 0.8))
   setkey(data, id, start)
 
-  out <- add_missing_intervals(data, id="id", missing_indicator=FALSE)
+  out <- fill_gaps_start_stop(data, id="id", missing_indicator=FALSE)
   expect_equal(out, data)
 })
 
@@ -51,7 +51,7 @@ test_that("using first_time and last_time", {
                          value=c(0.1, 2.4, NA, NA, 0.8, NA))
   setkey(expected, id, start)
 
-  out <- add_missing_intervals(data, id="id", first_time=2, last_time=1000)
+  out <- fill_gaps_start_stop(data, id="id", first_time=2, last_time=1000)
   expect_equal(out, expected)
 })
 
@@ -71,7 +71,7 @@ test_that("using different names for start / stop", {
                              0.46))
   setkey(expected, id, begin)
 
-  out <- add_missing_intervals(data, id="id", start="begin", stop="end")
+  out <- fill_gaps_start_stop(data, id="id", start="begin", stop="end")
 
   expect_equal(out, expected)
 })

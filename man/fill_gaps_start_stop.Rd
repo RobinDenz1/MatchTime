@@ -1,5 +1,5 @@
-\name{add_missing_intervals}
-\alias{add_missing_intervals}
+\name{fill_gaps_start_stop}
+\alias{fill_gaps_start_stop}
 
 \title{
 Add missing intervals to incomplete start-stop data
@@ -8,9 +8,9 @@ Add missing intervals to incomplete start-stop data
 Some start-stop datasets may be missing some intervals for some cases. This function adds those intervals to the data, which might be needed for further processing.
 }
 \usage{
-add_missing_intervals(data, id, start="start", stop="stop",
-                      first_time=NULL, last_time=NULL,
-                      missing_indicator=TRUE, ...)
+fill_gaps_start_stop(data, id, start="start", stop="stop",
+                     first_time=NULL, last_time=NULL,
+                     missing_indicator=TRUE, ...)
 }
 \arguments{
   \item{data}{
@@ -65,11 +65,11 @@ data <- data.table(id=c(1, 1, 1, 2, 2, 3),
                    A=c(10, 122, 3434, 223, 233, 0.46))
 
 # add those intervals back
-out <- add_missing_intervals(data, id="id")
+out <- fill_gaps_start_stop(data, id="id")
 print(out)
 
 # add the missing intervals, but also add missing intervals from 0 to first
 # observed value per id
-out <- add_missing_intervals(data, id="id", first_time=0)
+out <- fill_gaps_start_stop(data, id="id", first_time=0)
 print(out)
 }

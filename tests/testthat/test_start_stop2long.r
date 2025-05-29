@@ -54,7 +54,7 @@ test_that("using events argument", {
   data[, var10 := TRUE]
 
   out <- start_stop2long(data, id="id", events=c("C", "E", "var10"),
-                         add_missing_intervals=TRUE)
+                         fill_gaps=TRUE)
   out[, .in_data := NULL]
 
   expect_true(nrow(out)==113)

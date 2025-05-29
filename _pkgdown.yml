@@ -17,7 +17,7 @@ reference:
       - plot_flowchart
       - plot_timeline
       - match_data
-    
+
     - title: Adding Covariates
       desc: Adding variables or outcomes to matched data
     - contents:
@@ -25,7 +25,7 @@ reference:
       - add_next_time
       - add_previous_event
       - add_previous_event_count
-    
+
     - title: Start-Stop Data
       desc: Creating and transforming start-stop data
     - contents:
@@ -35,8 +35,8 @@ reference:
       - times_from_start_stop
       - long2start_stop
       - start_stop2long
-      - add_missing_intervals
-      
+      - fill_gaps_start_stop
+
     - title: Misc
     - contents:
       - fast_exact_matching

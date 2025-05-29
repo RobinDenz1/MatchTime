@@ -11,7 +11,7 @@
 #' @importFrom data.table merge.data.table
 #' @export
 start_stop2long <- function(data, id, events=NULL, start="start", stop="stop",
-                            add_missing_intervals=FALSE, include_last_t=FALSE,
+                            fill_gaps=FALSE, include_last_t=FALSE,
                             time_name="time", ...) {
 
   .width <- .start <- .stop <- .max_stop <- NULL
@@ -23,13 +23,13 @@ start_stop2long <- function(data, id, events=NULL, start="start", stop="stop",
   }
 
   check_inputs_start_stop2long(data=data, id=id, start=start, stop=stop,
-                               add_missing_intervals=add_missing_intervals,
+                               fill_gaps=fill_gaps,
                                include_last_t=include_last_t,
                                time_name=time_name, events=events)
 
-  if (add_missing_intervals) {
-    data <- add_missing_intervals(data=data, id=id, start=start, stop=stop,
-                                  ...)
+  if (fill_gaps) {
+    data <- fill_gaps_start_stop(data=data, id=id, start=start, stop=stop,
+                                 ...)
   }
 
   setnames(data, old=c(start, stop), new=c(".start", ".stop"))
@@ -90,7 +90,7 @@ start_stop2long <- function(data, id, events=NULL, start="start", stop="stop",
 
 ## check inputs for start_stop2long() function
 check_inputs_start_stop2long <- function(data, id, start, stop,
-                                         add_missing_intervals, include_last_t,
+                                         fill_gaps, include_last_t,
                                          time_name, events) {
 
   stopifnotm(is_single_character(id) & id %in% colnames(data),
@@ -100,8 +100,8 @@ check_inputs_start_stop2long <- function(data, id, start, stop,
   stopifnotm(is_single_character(stop) & stop %in% colnames(data),
     "'stop' must be a single character string, specifying a column in 'data'.")
 
-  stopifnotm(is_single_logical(add_missing_intervals),
-    "'add_missing_intervals' should be either TRUE or FALSE.")
+  stopifnotm(is_single_logical(fill_gaps),
+    "'fill_gaps' should be either TRUE or FALSE.")
   stopifnotm(is_single_logical(include_last_t),
              "'include_last_t' should be either TRUE or FALSE.")
   stopifnotm(is_single_character(time_name),
