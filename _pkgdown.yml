@@ -25,6 +25,7 @@ reference:
       - add_next_time
       - add_previous_event
       - add_previous_event_count
+      - add_from_start_stop
 
     - title: Start-Stop Data
       desc: Creating and transforming start-stop data
