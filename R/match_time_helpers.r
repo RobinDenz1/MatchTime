@@ -25,7 +25,7 @@ preprocess_treat <- function(treat) {
 ## the time-dependent propensity score as defined in Lu (2005)
 fit_ps_model <- function(data, d_treat, match_vars, formula) {
 
-  requireNamespace("survival")
+  requireNamespace("survival", quietly=TRUE)
 
   setnames(d_treat, old=".time", new="time")
 
@@ -55,7 +55,7 @@ fit_ps_model <- function(data, d_treat, match_vars, formula) {
 #' @importFrom data.table merge.data.table
 fit_prog_model <- function(data, d_treat, event, match_vars, formula) {
 
-  requireNamespace("survival")
+  requireNamespace("survival", quietly=TRUE)
 
   # create a new start-stop dataset with everything after treatment removed
   d_outcome <- merge.data.table(data, d_treat, by=".id", all.x=TRUE)

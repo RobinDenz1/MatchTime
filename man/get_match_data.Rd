@@ -1,5 +1,5 @@
-\name{match_data}
-\alias{match_data}
+\name{get_match_data}
+\alias{get_match_data}
 
 \title{
 Construct a matched dataset from a \code{match_time} object
@@ -8,7 +8,7 @@ Construct a matched dataset from a \code{match_time} object
 After performing time-dependent matching using the \code{\link{match_time}} function, users usually want to extract the resulting data. If the resulting data should not contain cases that did not receive the specified number of matches, this function can be called to remove them before data extraction.
 }
 \usage{
-match_data(object, remove_unmatched=TRUE, n_required=object$info$ratio)
+get_match_data(object, remove_unmatched=TRUE, n_required=object$info$ratio)
 }
 \arguments{
   \item{object}{
@@ -57,7 +57,7 @@ m_obj <- match_time(transplant ~ age + surgery, data=heart, id="id",
                     match_method="nearest")
 
 # get data without unmatched individuals
-data <- MatchTime::match_data(m_obj)
+data <- get_match_data(m_obj)
 head(data)
 }
 }

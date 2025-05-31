@@ -19,10 +19,10 @@ A \code{match_time} object created using the \code{\link{match_time}} function.
 Argument of the same name in \code{\link[cobalt]{bal.tab}}.
   }
   \item{remove_unmatched}{
-Whether to remove unmatched individuals before calculating the balance statistics. Internally, the \code{\link{match_data}} function is called for this, please see the documentation of that function for more information. This has no influence on the computed sample sizes.
+Whether to remove unmatched individuals before calculating the balance statistics. Internally, the \code{\link{get_match_data}} function is called for this, please see the documentation of that function for more information. This has no influence on the computed sample sizes.
   }
   \item{n_required}{
-Same as the argument of the same name in \code{\link{match_data}}.
+Same as the argument of the same name in \code{\link{get_match_data}}.
   }
   \item{...}{
 Further arguments passed to \code{\link[cobalt]{bal.tab}}.

@@ -416,7 +416,7 @@ test_that("works with actual continuous data", {
                match_method="nearest",
                matchit_args=list(exact="surgery"))
   )
-  out <- match_data(m_obj)
+  out <- get_match_data(m_obj)
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(52, 52))
@@ -451,7 +451,7 @@ test_that("works with actual continuous data", {
                match_method="nearest",
                matchit_args=list(exact="surgery"))
   )
-  out2 <- match_data(m_obj)
+  out2 <- get_match_data(m_obj)
   out2[, .treat_time := as.numeric(.treat_time)]
   out2[, .next_treat_time := as.numeric(.next_treat_time)]
   out[, n_id := NULL]
@@ -472,7 +472,7 @@ test_that("using replace_at_t=TRUE with MatchIt", {
                matchit_args=list(exact="surgery"),
                replace_at_t=TRUE, ratio=1)
   )
-  out <- match_data(m_obj)
+  out <- get_match_data(m_obj)
 
   # .treat equally distributed
   expect_equal(as.vector(table(out$.treat)), c(54, 54))
@@ -753,7 +753,7 @@ test_that("recruitment period change works", {
                recruitment_start=10, recruitment_stop=200,
                save_matchit=TRUE)
   )
-  out <- match_data(m_obj)
+  out <- get_match_data(m_obj)
 
   expect_true(inherits(m_obj$matchit_objects[[1]], "matchit"))
 

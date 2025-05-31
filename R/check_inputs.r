@@ -14,6 +14,11 @@ is.Date <- function(x) {
   inherits(x, c("Date", "POSIXt", "POSIXct", "POSIXlt"))
 }
 
+## check if a vector contains only 0/1 or is logical
+is_binary <- function(x) {
+  is.logical(x) | all(x %in% c(0, 1))
+}
+
 ## works similar to stopifnot() but allows a custom message in
 ## a more convenient fashion
 stopifnotm <- function(assert, ...) {
@@ -86,11 +91,11 @@ check_inputs_match_time <- function(formula, data, id, inclusion,
   # correct outcomes
   stopifnotm(all(is.na(outcomes)) || (is.character(outcomes) &&
                all(outcomes %in% colnames(data))),
-             "'outcomes' must be a character vector specifying logical",
+             "'outcomes' must be a character vector specifying binary",
              "event variables in 'data'.")
   stopifnotm(all(is.na(outcomes)) ||
-             all(unlist(lapply(data[, outcomes, with=FALSE], is.logical))),
-             "All columns named in 'outcomes' must be logical.")
+             all(unlist(lapply(data[, outcomes, with=FALSE], is_binary))),
+             "All columns named in 'outcomes' must be binary.")
   form_in_outcomes <- form$match_vars[form$match_vars %in% outcomes]
   stopifnotm(length(form_in_outcomes)==0,
              "Cannot match on variables specified as outcome(s):",

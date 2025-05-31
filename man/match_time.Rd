@@ -143,7 +143,7 @@ This function was designed to be work on very large datasets (~ 20 million rows)
 \value{
 Returns a \code{match_time} object containing the following objects:
 
-\item{data}{A \code{data.table} containing the matched data. Note that this dataset also contains unmatched cases. To obtain a dataset without unmatched individuals, please use the \code{\link{match_data}} function. The dataset here contains at least the following columns:
+\item{data}{A \code{data.table} containing the matched data. Note that this dataset also contains unmatched cases. To obtain a dataset without unmatched individuals, please use the \code{\link{get_match_data}} function. The dataset here contains at least the following columns:
 
 \code{id}: the original \code{id} used in the supplied \code{data},
 

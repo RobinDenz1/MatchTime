@@ -4,7 +4,7 @@
 summary.match_time <- function(object, standardize=TRUE, remove_unmatched=TRUE,
                                n_required=object$info$ratio, ...) {
 
-  requireNamespace("MatchIt")
+  requireNamespace("MatchIt", quietly=TRUE)
 
   # get relevant columns
   covariates <- covariates_from_match_time(object)
@@ -12,8 +12,8 @@ summary.match_time <- function(object, standardize=TRUE, remove_unmatched=TRUE,
   # get model matrix
   form <- stats::as.formula(paste0("~ ", paste0(covariates, collapse=" + ")))
   mod_mat <- stats::model.matrix(form,
-    data=match_data(object=object, remove_unmatched=remove_unmatched,
-                    n_required=n_required)
+    data=get_match_data(object=object, remove_unmatched=remove_unmatched,
+                        n_required=n_required)
   )
   mod_mat <- mod_mat[,seq(2, ncol(mod_mat))]
 

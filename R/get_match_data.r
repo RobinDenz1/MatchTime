@@ -3,8 +3,8 @@
 #' @importFrom data.table :=
 #' @importFrom data.table copy
 #' @export
-match_data <- function(object, remove_unmatched=TRUE,
-                       n_required=object$info$ratio) {
+get_match_data <- function(object, remove_unmatched=TRUE,
+                           n_required=object$info$ratio) {
 
   .id_pair <- .count_id_pair <- .fully_matched <- NULL
 

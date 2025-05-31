@@ -14,8 +14,8 @@ bal.tab.match_time <- function(x, s.d.denom, remove_unmatched=TRUE,
   }
 
   if (remove_unmatched){
-    data <- match_data(object=x, remove_unmatched=remove_unmatched,
-                       n_required=n_required)
+    data <- get_match_data(object=x, remove_unmatched=remove_unmatched,
+                           n_required=n_required)
     treat <- data$.treat
     data <- data[, covariates, with=FALSE]
   } else {

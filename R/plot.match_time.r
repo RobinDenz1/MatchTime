@@ -10,7 +10,7 @@ plot.match_time <- function(x, include=c("cases", "controls",
 
   new_cases <- matched_controls <- variable <- time <- value <- NULL
 
-  requireNamespace("ggplot2")
+  requireNamespace("ggplot2", quietly=TRUE)
 
   x <- copy(x$trace)
 

@@ -544,7 +544,7 @@ match_at_t <- function(d_all_i, case_times, i, method, ids_cases_i,
 
   } else {
 
-    requireNamespace("MatchIt")
+    requireNamespace("MatchIt", quietly=TRUE)
 
     # create formulas for matchit call
     main_formula <- get_main_formula(method, match_vars)

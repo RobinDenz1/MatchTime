@@ -20,10 +20,10 @@ A \code{match_time} object created using the \code{\link{match_time}} function.
 Either \code{TRUE} or \code{FALSE}; whether to compute standardized (\code{TRUE}) or unstandardized (\code{FALSE}) statistics. The standardized statistics are the standardized mean difference and the mean and maximum of the difference in the (weighted) empirical cumulative distribution functions (ECDFs). The unstandardized statistics are the raw mean difference and the mean and maximum of the quantile-quantile (QQ) difference. Variance ratios are produced either way. See Details below. Default is \code{TRUE}.
   }
   \item{remove_unmatched}{
-Whether to remove unmatched individuals before calculating the balance statistics. Internally, the \code{\link{match_data}} function is called for this, please see the documentation of that function for more information. This has no influence on the computed sample sizes.
+Whether to remove unmatched individuals before calculating the balance statistics. Internally, the \code{\link{get_match_data}} function is called for this, please see the documentation of that function for more information. This has no influence on the computed sample sizes.
   }
   \item{n_required}{
-Same as the argument of the same name in \code{\link{match_data}}.
+Same as the argument of the same name in \code{\link{get_match_data}}.
   }
   \item{...}{
 Currently not used.

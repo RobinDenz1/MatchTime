@@ -68,8 +68,8 @@ plot_flowchart <- function(x,
   stopifnotm(inherits(x, "match_time"),
              "'x' must be a 'match_time' object created using match_time().")
 
-  requireNamespace("ggplot2")
-  requireNamespace("ggtext")
+  requireNamespace("ggplot2", quietly=TRUE)
+  requireNamespace("ggtext", quietly=TRUE)
 
   # set highlighting for later
   if (n_fontface=="normal") {

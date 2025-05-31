@@ -16,7 +16,7 @@ reference:
       - plot.match_time
       - plot_flowchart
       - plot_timeline
-      - match_data
+      - get_match_data
 
     - title: Adding Covariates
       desc: Adding variables or outcomes to matched data

@@ -14,7 +14,7 @@ plot_timeline <- function(x, include, id_type=x$id, time_name, status_name,
 
   .id_new <- .id_pair <- .next_treat_time <- .treat <- .data <- NULL
 
-  requireNamespace("ggplot2")
+  requireNamespace("ggplot2", quietly=TRUE)
 
   ## various input checks
 
