@@ -1,10 +1,12 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://robindenz1.github.io/MatchTime/404.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/LICENSE.html</loc></url>
+<url><loc>https://robindenz1.github.io/MatchTime/articles/MatchTime.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/articles/creating_start_stop_data.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/articles/index.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/authors.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/index.html</loc></url>
+<url><loc>https://robindenz1.github.io/MatchTime/news/index.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/add_from_start_stop.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/add_next_time.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/add_outcome.html</loc></url>
@@ -13,9 +15,9 @@
 <url><loc>https://robindenz1.github.io/MatchTime/reference/bal.tab.match_time.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/fast_exact_matching.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/fill_gaps_start_stop.html</loc></url>
+<url><loc>https://robindenz1.github.io/MatchTime/reference/get_match_data.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/index.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/long2start_stop.html</loc></url>
-<url><loc>https://robindenz1.github.io/MatchTime/reference/match_data.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/match_time.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/merge_start_stop.html</loc></url>
 <url><loc>https://robindenz1.github.io/MatchTime/reference/method_brsm.html</loc></url>

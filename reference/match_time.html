@@ -17,11 +17,13 @@ Similar to matchit, this page only documents the overall use of match_time(). Sp
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/MatchTime.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/creating_start_stop_data.html">Creating and Dealing with Start-Stop Data in R</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/RobinDenz1/MatchTime/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -162,7 +164,7 @@ Similar to matchit, this page only documents the overall use of match_time(). Sp
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Returns a <code>match_time</code> object containing the following objects:</p>
 <dl><dt>data</dt>
-<dd><p>A <code>data.table</code> containing the matched data. Note that this dataset also contains unmatched cases. To obtain a dataset without unmatched individuals, please use the <code><a href="match_data.html">match_data</a></code> function. The dataset here contains at least the following columns:</p>
+<dd><p>A <code>data.table</code> containing the matched data. Note that this dataset also contains unmatched cases. To obtain a dataset without unmatched individuals, please use the <code><a href="get_match_data.html">get_match_data</a></code> function. The dataset here contains at least the following columns:</p>
 <p><code>id</code>: the original <code>id</code> used in the supplied <code>data</code>,</p>
 <p><code>.id_new</code>: a new case-specific id in which <code>id</code>s who occur multiple times are treated as distinct values,</p>
 <p><code>.id_pair</code>: an id to distinguish the matched pairs, if applicable. This column is not created when <code>match_method</code> is set to a method in <code><a href="https://kosukeimai.github.io/MatchIt/reference/matchit.html" class="external-link">matchit</a></code> that does not allow usage of <code><a href="https://kosukeimai.github.io/MatchIt/reference/match_data.html" class="external-link">get_matches</a></code>,</p>
