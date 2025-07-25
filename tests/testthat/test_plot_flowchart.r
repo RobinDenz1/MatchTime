@@ -154,6 +154,15 @@ test_that("replacing standard text in secondary boxes", {
   )
 })
 
+test_that("shifting secondary boxes", {
+  expect_snapshot_output(
+    plot_flowchart(out,
+                   box_sec_xshift=c(0, 1, 0, 0),
+                   box_sec_yshift=c(1, 0, 0, 0),
+                   line_sec_yshift=0)
+  )
+})
+
 test_that("wrong name supplied to box_sec_text", {
   expect_error({
     plot_flowchart(out, box_sec_text=list(box12="lol",

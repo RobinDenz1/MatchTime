@@ -51,12 +51,15 @@ plot_flowchart(
   box_sec_maxheight=box_main_maxheight,
   box_sec_colour=box_main_colour,
   box_sec_fill="cornsilk",
+  box_sec_xshift=0,
+  box_sec_yshift=0,
   line_main_colour="black",
   line_main_linetype="solid",
   line_main_linewidth=0.5,
   line_sec_colour=line_main_colour,
   line_sec_linetype="dashed",
   line_sec_linewidth=line_main_linewidth,
+  line_sec_yshift=box_sec_yshift,
   arrow=TRUE,
   arrow_type="closed",
   arrow_angle=30,
@@ -194,6 +197,12 @@ Passed to the \code{box.colour} argument in the \code{\link[ggtext]{geom_textbox
   \item{box_sec_fill}{
 Passed to the \code{fill} argument in the \code{\link[ggtext]{geom_textbox}} function used for the secondary boxes.
   }
+  \item{box_sec_xshift}{
+Either a single value or a numeric vector of length 4, specifying the amount the secondary boxes should be shifted to the left (negative values) or to the right (positive values) in regards to the x-axis. The connecting lines are automatically extended or shortened based on these values as well. If a single number is supplied, all boxes are shifted in the same direction equally (similar to when using \code{box_sec_nudgex}). By supplying four values, the boxes can be shifted individually.
+  }
+  \item{box_sec_yshift}{
+Same as \code{box_sec_xshift} but for the y-axis. Note that by default, the connecting lines are shifted equally to keep the lines in the middle of the boxes. If this is not desired, users may additionally use the \code{line_sec_yshift} argument (set to 0 to keep the lines in their default place).
+  }
   \item{line_main_colour}{
 The colour of the main lines connecting the main boxes.
   }
@@ -211,6 +220,9 @@ The type of the lines connecting the secondary boxes to the main lines.
   }
   \item{line_sec_linewidth}{
 The width of the lines connecting the secondary boxes to the main lines.
+  }
+  \item{line_sec_yshift}{
+Either a single value or a numeric vector of length 4, specifying the amount the secondary lines should be shifted up (positive values) or down (negative values) in regards to the y-axis. If a single number is supplied, all lines are shifted equally. If four values are supplied, the lines are shifted separately by each other. Defaults to the values supplied to \code{box_sec_yshift}.
   }
   \item{arrow}{
 Either \code{TRUE} or \code{FALSE}, specifying whether to draw arrows on the main lines.

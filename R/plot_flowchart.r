@@ -47,12 +47,15 @@ plot_flowchart <- function(x,
                            box_sec_maxheight=box_main_maxheight,
                            box_sec_colour=box_main_colour,
                            box_sec_fill="cornsilk",
+                           box_sec_xshift=0,
+                           box_sec_yshift=0,
                            line_main_colour="black",
                            line_main_linetype="solid",
                            line_main_linewidth=0.5,
                            line_sec_colour=line_main_colour,
                            line_sec_linetype="dashed",
                            line_sec_linewidth=line_main_linewidth,
+                           line_sec_yshift=box_sec_yshift,
                            arrow=TRUE,
                            arrow_type="closed",
                            arrow_angle=30,
@@ -65,8 +68,9 @@ plot_flowchart <- function(x,
   .inclusion_names <- .treat_at_0 <- .treat <- . <- .n <- label <- box_id <-
     y <- xend <- yend <- NULL
 
-  stopifnotm(inherits(x, "match_time"),
-             "'x' must be a 'match_time' object created using match_time().")
+  check_inputs_plot_flowchart(x=x, box_sec_xshift=box_sec_xshift,
+                              box_sec_yshift=box_sec_yshift,
+                              line_sec_yshift=line_sec_yshift)
 
   requireNamespace("ggplot2", quietly=TRUE)
   requireNamespace("ggtext", quietly=TRUE)
@@ -164,8 +168,8 @@ plot_flowchart <- function(x,
                             label=labels_main)
 
   # coordinates for secondary boxes
-  d_box_coord2 <- data.frame(x=c(-14, 14, -14, 14),
-                             y=c(2.5, 2.5, -2.5, -2.5),
+  d_box_coord2 <- data.frame(x=c(-14, 14, -14, 14) + box_sec_xshift,
+                             y=c(2.5, 2.5, -2.5, -2.5) + box_sec_yshift,
                              label=c(label_box2.5l, label_box2.5r,
                                      label_box3.5l, label_box3.5r),
                              box_id=c(1, 2, 3, 4))
@@ -178,9 +182,9 @@ plot_flowchart <- function(x,
 
   # coordinates for lines to secondary boxes
   d_lines2 <- data.frame(x=c(-5, 5, -5, 5),
-                         xend=c(-15, 15, -15, 15),
-                         y=c(2.5, 2.5, -2.5, -2.5),
-                         yend=c(2.5, 2.5, -2.5, -2.5),
+                         xend=c(-15, 15, -15, 15) + box_sec_xshift,
+                         y=c(2.5, 2.5, -2.5, -2.5) + line_sec_yshift,
+                         yend=c(2.5, 2.5, -2.5, -2.5) + line_sec_yshift,
                          box_id=c(1, 2, 3, 4))
 
   # coordinates for arrow heads
@@ -529,4 +533,22 @@ get_sec_labs <- function(box_sec_text) {
   }
 
   return(defaults)
+}
+
+## some input checks for the plot_flowchart() function input
+check_inputs_plot_flowchart <- function(x, box_sec_xshift, box_sec_yshift,
+                                        line_sec_yshift) {
+
+  stopifnotm(inherits(x, "match_time"),
+             "'x' must be a 'match_time' object created using match_time().")
+  stopifnotm(length((box_sec_xshift)==1 | length(box_sec_xshift)==4) &
+               is.numeric(box_sec_xshift),
+           "'box_sec_xshift' must be a numeric vector of length 1 or length 4.")
+  stopifnotm(length((box_sec_yshift)==1 | length(box_sec_yshift)==4) &
+               is.numeric(box_sec_yshift),
+           "'box_sec_yshift' must be a numeric vector of length 1 or length 4.")
+  stopifnotm(length((line_sec_yshift)==1 | length(line_sec_yshift)==4) &
+               is.numeric(line_sec_yshift),
+          "'line_sec_yshift' must be a numeric vector of length 1 or length 4.")
+
 }
