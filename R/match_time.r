@@ -57,7 +57,7 @@ match_time <- function(formula, data, id, inclusion=NA,
 
     l_events <- lapply(outcomes, FUN=times_from_start_stop,
                        id=id, type="event", time_name=".time",
-                       data=data)
+                       data=data, start=start, stop=stop)
     data[, (outcomes_remove) := NULL]
   }
 

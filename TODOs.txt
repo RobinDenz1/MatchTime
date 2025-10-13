@@ -9,6 +9,7 @@ match_time() methods
 
 match_time() general
 	- "d_longest" is calculated by ignoring inclusion criteria, an option to change this might be useful
+	- i am not sure if the "hazard" calculation at t is correct for methods "psm", "pgm" and "dsm"
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)

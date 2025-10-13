@@ -689,11 +689,12 @@ test_that("outcomes arg working", {
   heart$event_logical <- as.logical(heart$event)
   heart$event_logical2 <- heart$event_logical
   heart$event_logical2[1:17] <- FALSE
+  heart$start2 <- heart$start
 
   ## time-dependent matching, using "transplant" as treatment and only
   ## "surgery" as variable to match on
   m.obj <- match_time(transplant ~ surgery, data=heart, id="id",
-                      match_method="nearest",
+                      match_method="nearest", start="start2",
                       outcomes=c("event_logical", "event_logical2"))
 
 
@@ -712,6 +713,8 @@ test_that("outcomes arg working", {
 
   expect_true(all(m.obj$data$event_logical2_status==m.obj$data$status2))
   expect_true(all(m.obj$data$event_logical2_time==m.obj$data$time2))
+
+  heart$start2 <- NULL
 })
 
 test_that("vector of inclusion criteria", {
