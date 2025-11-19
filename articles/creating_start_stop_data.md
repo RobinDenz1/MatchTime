@@ -1,0 +1,547 @@
+# Creating and Dealing with Start-Stop Data in R
+
+## Introduction
+
+A very common task in survival analysis, and other types of analyses
+that involve time-varying covariates, is the creation of start-stop
+datasets. These datasets should include multiple intervals per subject
+or case, along with one or multiple covariate values that correspond to
+the value observed during the defined time-intervals. The `MatchTime`
+package offers a wide range of functions to create and transform such
+datasets from other data sources (mostly because they are also required
+as input in its main function,
+[`match_time()`](https://robindenz1.github.io/MatchTime/reference/match_time.md)).
+
+The goal of these functions is to make it easy to create valid
+start-stop datasets and to further process existing ones, even when
+there are millions of cases and/or a large amount of intervals. The
+current standard tool to create start-stop data is the
+[`tmerge()`](https://rdrr.io/pkg/survival/man/tmerge.html) function from
+the `survival` package, which was not originally meant to handle large
+datasets. In contrast, the implementations offered here rely exclusively
+on code written using the `data.table` back-end, making them faster and
+more RAM efficient. Additionally, the functions included in `MatchTime`
+work well with incomplete information, which often occurs in real data.
+
+## What is Start-Stop Data?
+
+### Covariates
+
+First, let’s be a little more clear what exactly constitutes a
+start-stop dataset. Consider the following example:
+
+``` r
+library(data.table)
+library(MatchTime)
+
+data <- data.table(id=c(1, 1, 1, 2, 2, 2, 2),
+                   start=c(0, 10, 50, 0, 28, 120, 125),
+                   stop=c(10, 50, 112, 28, 120, 125, 213),
+                   sex=c("m", "m", "m", "f", "f", "f", "f"),
+                   bmi=c(32, 34, 38, 27, 28, 35, 26))
+print(data)
+```
+
+    ##       id start  stop    sex   bmi
+    ##    <num> <num> <num> <char> <num>
+    ## 1:     1     0    10      m    32
+    ## 2:     1    10    50      m    34
+    ## 3:     1    50   112      m    38
+    ## 4:     2     0    28      f    27
+    ## 5:     2    28   120      f    28
+    ## 6:     2   120   125      f    35
+    ## 7:     2   125   213      f    26
+
+The dataset shown above consists of two individuals (two distinct `id`
+values) with multiple recorded time-intervals each (defined by the
+`start` and `stop` columns). Additionally, it includes information on
+the `sex` and the `bmi` (Body-Mass-Index) of the individual. In this
+concrete example, individual 1 is considered male (`sex="m"`) and
+individual 2 is considered female (`sex="f"`) for the entire observed
+duration. In other words, `sex` is a **time-fixed** of **time-constant**
+variable. On the other hand, each of the two individuals have multiple
+different values in the `bmi` column, making it a **time-varying** or
+**time-dependent** variable.
+
+More specifically, we would say that the value of `bmi` for individual 1
+was 32 from $t = 0$ to $t = 10$. Afterwards it changed to 34 and stayed
+on that value until $t = 50$. Here, the `start` value is *included* in
+the interval, while the `stop` value is *excluded*. This type of coding
+is known as **right-open** or **left-closed** intervals (because the
+`start` value is considered to be in the interval, while the `stop`
+value is not). This is usually denoted as `[start, stop)` and is the
+usual way these intervals are coded for time-to-event purposes.
+Throughout this package we will rely exclusively on this type of
+intervals.
+
+Note that in reality the values of time-dependent variables does not
+necessarily change instantaneously. To allow a data representation it is
+however necessary to define some intervals in which the value stays
+constant. The width of these intervals is usually dependent on the type
+of data one has access to.
+
+### Outcomes
+
+In addition to time-fixed and time-dependent variables we usually also
+need to consider **outcomes**. In classic start-stop datasets, outcomes
+are usually either binary or categorical indicators of an event
+(possibly of some type) occurring at specific points in time. These sort
+of events need to be coded slightly differently than standard
+time-dependent variables. Below we give an example of the same dataset
+shown earlier, with an additional `event` column added to it, which
+contains a binary outcome event indicator:
+
+``` r
+data <- data.table(id=c(1, 1, 1, 2, 2, 2, 2, 2, 2),
+                   start=c(0, 10, 50, 0, 28, 35, 120, 125, 127),
+                   stop=c(10, 50, 112, 28, 35, 120, 125, 127, 213),
+                   sex=c("m", "m", "m", "f", "f", "f", "f", "f", "f"),
+                   bmi=c(32, 34, 38, 27, 28, 28, 35, 26, 26),
+                   event=c(0, 0, 1, 0, 1, 0, 0, 1, 0))
+print(data)
+```
+
+    ##       id start  stop    sex   bmi event
+    ##    <num> <num> <num> <char> <num> <num>
+    ## 1:     1     0    10      m    32     0
+    ## 2:     1    10    50      m    34     0
+    ## 3:     1    50   112      m    38     1
+    ## 4:     2     0    28      f    27     0
+    ## 5:     2    28    35      f    28     1
+    ## 6:     2    35   120      f    28     0
+    ## 7:     2   120   125      f    35     0
+    ## 8:     2   125   127      f    26     1
+    ## 9:     2   127   213      f    26     0
+
+The main difference between the coding of time-varying variables and
+outcome events is that while the intervals should always reflect time
+durations in which the covariates stay constant, events are instead
+coded to occur exactly at the end of an interval. So in essence,
+existing intervals are simply broken off into two if a single event
+happens during it. With terminal events, such as death, the observation
+period ends with the first event. In the dataset above, `id = 1` would
+be an example for this phenomenon. This individual experiences an event
+at 112, with no more data afterwards.
+
+An example for recurrent events is given in `id = 2`. This person
+experiences an event at $t = 35$ and $t = 127$. As can be seen in the
+data, although neither `sex` nor `bmi` changed between $t = 28$ and
+$t = 120$, the interval is broken into two rows to show that the event
+occurred at $t = 35$. While we use right-open intervals for covariates,
+events are always coded to occur *exactly* at the `stop` value.
+
+We could directly use this sort of data to fit a Cox proportional
+hazards regression model with time-dependent covariates, using the
+following syntax:
+
+``` r
+library(survival)
+
+model <- coxph(Surv(start, stop, event) ~ bmi + sex, data=data)
+summary(model)
+```
+
+    ## Call:
+    ## coxph(formula = Surv(start, stop, event) ~ bmi + sex, data = data)
+    ## 
+    ##   n= 9, number of events= 3 
+    ## 
+    ##            coef  exp(coef)   se(coef)      z Pr(>|z|)
+    ## bmi   1.060e+01  4.019e+04  1.421e+04  0.001    0.999
+    ## sexm -8.481e+01  1.468e-37  1.172e+05 -0.001    0.999
+    ## 
+    ##      exp(coef) exp(-coef) lower .95 upper .95
+    ## bmi  4.019e+04  2.488e-05         0       Inf
+    ## sexm 1.468e-37  6.811e+36         0       Inf
+    ## 
+    ## Concordance= 1  (se = 0 )
+    ## Likelihood ratio test= 2.77  on 2 df,   p=0.3
+    ## Wald test            = 0  on 2 df,   p=1
+    ## Score (logrank) test = 2  on 2 df,   p=0.4
+
+Note that in this case the outcome is entirely nonsensical, because the
+data is made up and there are only two individuals in it, but the
+overall structure is exactly what would be required for a
+[`coxph()`](https://rdrr.io/pkg/survival/man/coxph.html) call (or
+[`match_time()`](https://robindenz1.github.io/MatchTime/reference/match_time.md)
+call).
+
+## Overview of Included Functions
+
+The following functions of `MatchTime` may be used to deal with
+start-stop data:
+
+- [`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md):
+  Merges two or more start-stop datasets
+- [`subset_start_stop()`](https://robindenz1.github.io/MatchTime/reference/subset_start_stop.md):
+  Takes a subset of intervals from a start-stop dataset
+- [`simplify_start_stop()`](https://robindenz1.github.io/MatchTime/reference/simplify_start_stop.md):
+  Combines rows from a start-stop dataset when possible
+- [`fill_gaps_start_stop()`](https://robindenz1.github.io/MatchTime/reference/fill_gaps_start_stop.md):
+  Adds missing time-intervals to “incomplete” start-stop datasets
+- [`start_stop2long()`](https://robindenz1.github.io/MatchTime/reference/start_stop2long.md):
+  Creates a long-format dataset from a start-stop dataset
+- [`long2start_stop()`](https://robindenz1.github.io/MatchTime/reference/long2start_stop.md):
+  Creates a start-stop dataset from a long-format dataset
+- [`times_from_start_stop()`](https://robindenz1.github.io/MatchTime/reference/times_from_start_stop.md):
+  Extracts specific “event” times from a start-stop dataset
+
+If a complete long-format dataset already exists, the easiest way to
+obtain a start-stop dataset is to use the
+[`long2start_stop()`](https://robindenz1.github.io/MatchTime/reference/long2start_stop.md)
+function. This, however, only works for discrete-time data and is only a
+feasibly alternative if the full long-format data is small enough to fit
+into the available RAM, which is not always the case.
+
+Most users will only need the
+[`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+function to create a single start-stop dataset from different datasets
+containing time-dependent information. This function has the advantage
+that it does not blow up the dataset to the long-format, making it
+feasible to create start-stop data for very large datasets. The other,
+more advanced, functions are most useful when dealing with messy
+real-world data.
+
+## The `merge_start_stop()` function
+
+The most important function to create start-stop data included in this
+package is the
+[`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+function. Its’ main purpose is to merge two or more datasets that
+contain information about time-intervals.
+
+Suppose you have the following information about the treatment status of
+multiple individuals:
+
+``` r
+d_treat <- data.table(id=c(1, 1, 1, 1, 2, 2, 3, 3, 4, 4),
+                      start=c(0, 16, 21, 27, 0, 12, 0, 2, 0, 3),
+                      stop=c(16, 21, 27, 101, 12, 66, 2, 98, 3, 88),
+                      treatment=c(0, 1, 0, 1, 0, 1, 1, 0, 1, 0))
+print(d_treat)
+```
+
+    ##        id start  stop treatment
+    ##     <num> <num> <num>     <num>
+    ##  1:     1     0    16         0
+    ##  2:     1    16    21         1
+    ##  3:     1    21    27         0
+    ##  4:     1    27   101         1
+    ##  5:     2     0    12         0
+    ##  6:     2    12    66         1
+    ##  7:     3     0     2         1
+    ##  8:     3     2    98         0
+    ##  9:     4     0     3         1
+    ## 10:     4     3    88         0
+
+This dataset is already in the start-stop format, but it contains only
+information about the treatment status of each individual. Note that
+`treatment` is coded as (`0` = treatment absent, `1` = treatment
+present). For example, `id = 1` received the treatment between 16-21 and
+27-101 only, while `id = 2` only received the treatment during the
+interval 12-66.
+
+Imagine that you also have some information on an additional
+time-dependent covariate, which is the individuals place of residence
+(denoted `region`), also in the start-stop format,:
+
+``` r
+d_region <- data.table(id=c(1, 2, 2, 3, 4),
+                       start=c(0, 0, 20, 0, 0),
+                       stop=c(101, 20, 66, 98, 88),
+                       region=c("A", "B", "A", "C", "D"))
+print(d_region)
+```
+
+    ##       id start  stop region
+    ##    <num> <num> <num> <char>
+    ## 1:     1     0   101      A
+    ## 2:     2     0    20      B
+    ## 3:     2    20    66      A
+    ## 4:     3     0    98      C
+    ## 5:     4     0    88      D
+
+In this dataset, only the individual with `id = 2` moved (from `B` to
+`A` at $t = 20$). Finally, we have another dataset which includes the
+time of death for all individuals, if they are known to have died:
+
+``` r
+d_death <- data.table(id=c(1, 3),
+                      time=c(101, 98))
+print(d_death)
+```
+
+    ##       id  time
+    ##    <num> <num>
+    ## 1:     1   101
+    ## 2:     3    98
+
+Our goal is now to combine these different datasets into a single
+start-stop dataset. This can be done using the following
+[`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+call:
+
+``` r
+d_out <- merge_start_stop(d_treat, d_region,
+                          by="id",
+                          start="start",
+                          stop="stop",
+                          event_times=d_death,
+                          time_to_first_event=TRUE)
+print(d_out)
+```
+
+    ## Key: <id>
+    ##        id start  stop region treatment status
+    ##     <num> <num> <num> <char>     <num> <lgcl>
+    ##  1:     1     0    16      A         0  FALSE
+    ##  2:     1    16    21      A         1  FALSE
+    ##  3:     1    21    27      A         0  FALSE
+    ##  4:     1    27   101      A         1   TRUE
+    ##  5:     2     0    12      B         0  FALSE
+    ##  6:     2    12    20      B         1  FALSE
+    ##  7:     2    20    66      A         1  FALSE
+    ##  8:     3     0     2      C         1  FALSE
+    ##  9:     3     2    98      C         0   TRUE
+    ## 10:     4     0     3      D         1  FALSE
+    ## 11:     4     3    88      D         0  FALSE
+
+In this function call, we supplied the datasets containing
+time-dependent variables to the `x` and `y` argument, but passed the
+dataset containing the outcome events (`death`) to the `event_times`
+argument instead. We do this here because events usually have to be
+coded differently than time-dependent covariates, as described earlier.
+
+On the surface, all that
+[`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+does here is to combine (e.g. merge) the different start-stop datasets.
+And this is in fact all that it does. However, this is also all that
+needs to be done in order to create useful start-stop datasets. All that
+users have to do is to create datasets for each time-dependent variable
+(or groups of them) and to combine them afterwards. Below we will
+illustrate this in a little more depth.
+
+## Generating Start-Stop Datasets from Scratch
+
+In the preceeding section, we gave a small example of combining
+different datasets that were already in the start-stop format
+themselves. In this section, we will relax this assumption by
+considering less structured input.
+
+### The Input
+
+In many cases the information that should be included in the desired
+start-stop dataset is stored in different tables that are not already in
+the start-stop format themselves. For example, suppose we are interested
+in creating a start-stop dataset including information about the `bmi`,
+`sex`, `birthyear` and `chemo`-therapy status of different individuals
+over time. Suppose further that we only have the following three
+datasets:
+
+``` r
+d_demographics <- data.table(id=c(1, 2),
+                             sex=c("m", "f"),
+                             birthyear=c(1954, 1962))
+print(d_demographics)
+```
+
+    ##       id    sex birthyear
+    ##    <num> <char>     <num>
+    ## 1:     1      m      1954
+    ## 2:     2      f      1962
+
+``` r
+d_bmi <- data.table(id=c(1, 1, 1, 2, 2),
+                    start=c(25, 190, 256, 78, 235),
+                    bmi=c(41, 37, 32, 39, 31))
+print(d_bmi)
+```
+
+    ##       id start   bmi
+    ##    <num> <num> <num>
+    ## 1:     1    25    41
+    ## 2:     1   190    37
+    ## 3:     1   256    32
+    ## 4:     2    78    39
+    ## 5:     2   235    31
+
+``` r
+d_chemo <- data.table(id=c(1, 2),
+                      start=c(112, 82))
+print(d_chemo)
+```
+
+    ##       id start
+    ##    <num> <num>
+    ## 1:     1   112
+    ## 2:     2    82
+
+In this example all three datasets contain information about two
+fictional individuals, `id = 1` and `id = 2`. The dataset
+`d_demographics` contains some time-constant information about each
+individual (`sex` and `birthyear`). The dataset `d_bmi` on the other
+hand, consists of `bmi` measurements of each person taken at a specific
+point in time. Similarly, the `d_chemo` dataset includes the time at
+which a person received a chemotherapy. To generate a start-stop dataset
+from these three tables, we will have to make some decisions on how the
+resulting dataset should look like. Based on these decisions, we need to
+augment them a little bit before we can use the functions included in
+this package.
+
+The general course of action should be:
+
+- 1.) Define singular start-stop datasets for each time-varying variable
+- 2.) Merge them together using
+  [`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+
+These points are explained in detail below.
+
+### Defining Time-Intervals for each Time-Varying Variable
+
+#### BMI
+
+The first question we need to ask is: How do we interpolate between
+`bmi` measurements? Since we only took measurements at specific times,
+we don’t actually know the value of `bmi` between those measurements. In
+this case we will simply assume that the value stayed constant until the
+next measurement (which is what is usually done in practice). Given this
+decision, we have to create time-intervals that define where the
+respective `bmi` value applies. I conveniently already named the time
+variable `start` here to make this a little more obvious. This can be
+done in three steps.
+
+*1.) Sort the dataset by `id` and `time`*
+
+Using the `data.table` package, this can be done like this (although it
+is already sorted in this example):
+
+``` r
+setkey(d_bmi, id, start)
+```
+
+*2.) Shift the time variable*
+
+Next we again use the `data.table` package to shift the time variable up
+by one row per `id`, creating the `stop` column:
+
+``` r
+d_bmi[, stop := shift(start, type="lead"), by=id]
+```
+
+*3.) Deal with the last row*
+
+Through step 2 we were able to create a `stop` value for each row per
+person, except the last one. The question in this case is, how long can
+the last measured value of `bmi` be expected to be valid? In many cases
+there is some administrative end of the follow-up which can serve to
+define this point in time. In other cases some assumptions may be
+reasonable. If neither of these options work, it might be best to just
+remove those rows. In our example we will consider a final follow-up
+time of $t = 500$:
+
+``` r
+d_bmi[is.na(stop), stop := 500]
+```
+
+The result looks like this:
+
+``` r
+print(d_bmi)
+```
+
+    ## Key: <id, start>
+    ##       id start   bmi  stop
+    ##    <num> <num> <num> <num>
+    ## 1:     1    25    41   190
+    ## 2:     1   190    37   256
+    ## 3:     1   256    32   500
+    ## 4:     2    78    39   235
+    ## 5:     2   235    31   500
+
+Essentially, this is now a start-stop dataset by itself, which is the
+exactly the goal of this exercise. Once we have start-stop datasets for
+each time-varying variable, we can simply merge them using the
+[`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+function.
+
+Note that it may also be a valid choice to “flip” the intervals. In this
+case we could have coded the intervals to start at 0 (or some other t)
+and stay at the first observed value of `bmi` until $t = 25$ for id = 1.
+Which option to choose might have serious consequences, but depends
+entirely on what kind of data you are dealing with.
+
+#### Chemo
+
+The next question we need to answer is: What kind of `chemo` variable do
+we need? There is a unlimited variety of options here. We could, for
+example, be interested in a sort of variable which includes the
+information “has received a `chemo` in the last x time units”. For
+exemplary purposes we will first produce a variable that simply states
+whether someone received a `chemo` in the last 100 time units. This can
+be done by again defining a fitting `stop` column:
+
+``` r
+d_chemo[, stop := start + 100]
+```
+
+We have now created a start-stop dataset again. Secondly, we have to
+define the value that this variable should have if that condition is
+met. We could use something like `"yes"` or `1`, but the simplest (and
+most memory efficient) approach is to use `TRUE`. Since the mini
+start-stop dataset only includes rows where the condition is met, we can
+simple set the entire column to this value:
+
+``` r
+d_chemo[, chemo := TRUE]
+```
+
+The resulting dataset looks like this:
+
+``` r
+print(d_chemo)
+```
+
+    ##       id start  stop  chemo
+    ##    <num> <num> <num> <lgcl>
+    ## 1:     1   112   212   TRUE
+    ## 2:     2    82   182   TRUE
+
+Note that there is no need to change the `d_demographics` dataset,
+because it does not contain any time-varying information.
+
+### Merging the Time-Intervals for each Time-Varying Variable
+
+All that is left to do is call the
+[`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+function to, well, merge the time-intervals of `bmi` and `chemo`. The
+following function call may be used:
+
+``` r
+out <- merge_start_stop(d_chemo, d_bmi, by="id",
+                        defaults=list(chemo=FALSE),
+                        constant_vars=d_demographics)
+print(out)
+```
+
+    ## Key: <id>
+    ##       id start  stop   bmi  chemo    sex birthyear
+    ##    <num> <num> <num> <num> <lgcl> <char>     <num>
+    ## 1:     1    25   112    41  FALSE      m      1954
+    ## 2:     1   112   190    41   TRUE      m      1954
+    ## 3:     1   190   212    37   TRUE      m      1954
+    ## 4:     1   212   256    37  FALSE      m      1954
+    ## 5:     1   256   500    32  FALSE      m      1954
+    ## 6:     2    78    82    39  FALSE      f      1962
+    ## 7:     2    82   182    39   TRUE      f      1962
+    ## 8:     2   182   235    39  FALSE      f      1962
+    ## 9:     2   235   500    31  FALSE      f      1962
+
+Again, we simply supply the variable-specific start-stop datasets first
+and set the `by` argument to the person identifier. Additionally, we set
+the `defaults` argument to `list(chemo=FALSE)`, which essentially tells
+the
+[`merge_start_stop()`](https://robindenz1.github.io/MatchTime/reference/merge_start_stop.md)
+function that the value of the `chemo` column should be `FALSE` for all
+time-intervals outside of the ones defined by the `d_chemo` dataset.
+Additionally, since the information in `d_demographics` is
+time-independent, it should be supplied to the `constant_vars` argument.
