@@ -11,6 +11,7 @@
 #' @importFrom data.table :=
 #' @importFrom data.table rbindlist
 #' @importFrom data.table shift
+#' @importFrom data.table uniqueN
 #' @export
 merge_start_stop <- function(x, y, ..., dlist, by, start="start",
                              stop="stop", all=FALSE, all.x=all, all.y=all,
@@ -58,7 +59,7 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
     if (!all(unlist(type_value_i) %in% c("logical", "numeric", "character",
                                          "integer"))) {
       stop("All columns containing variables (columns except 'by', 'start' ",
-           "and 'stop') must be of type:\n 'logical', 'numeric' or ",
+           "and 'stop') must be of type:\n 'logical', 'numeric', 'integer' or ",
            "'character'.", call.=FALSE)
     }
 
@@ -73,6 +74,12 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
                         variable.name=".dataset",
                         variable.factor=FALSE)
       )
+    }
+
+    # check if all values in a dataset are unique
+    if (uniqueN(dlist[[i]]) != nrow(dlist[[i]])) {
+      stop("Duplicate rows found in dataset ", i, ". Remove duplicates",
+           " and re-run the function.", call.=FALSE)
     }
   }
 

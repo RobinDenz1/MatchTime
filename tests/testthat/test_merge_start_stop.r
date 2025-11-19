@@ -601,3 +601,21 @@ test_that("general test cases, 2 datasets, integers", {
   output <- merge_start_stop(dlist=dlist, by="ID", center_on_first=TRUE)
   expect_true(all(output[, .(start = min(start)), by=ID]$start==0))
 })
+
+test_that("error with duplicate rows", {
+
+  d1 <- data.table(ID=c(1, 1, 1, 1, 2, 2, 3, 5),
+                   start=c(20, 210, 370, 370, 55, 98, 1, 9),
+                   stop=c(189, 301, 375, 375, 90, 190, 900, 10),
+                   d1=c(TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE))
+
+  d2 <- data.table(ID=c(1, 1, 1, 2, 2, 3, 5),
+                   start=c(17, 211, 370, 58, 98, 1, 9),
+                   stop=c(189, 321, 375, 90, 191, 94, 11),
+                   d2=c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE))
+  dlist <- list(d1, d2)
+
+  expect_error({merge_start_stop(d1, d2, by="ID")},
+               paste0("Duplicate rows found in dataset 1. Remove ",
+                      "duplicates and re-run the function."))
+})
