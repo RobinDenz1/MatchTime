@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   creating_start_stop_data: creating_start_stop_data.html
   MatchTime: MatchTime.html
-last_built: 2025-11-19T11:42Z
+last_built: 2025-12-04T12:23Z
 urls:
   reference: https://robindenz1.github.io/MatchTime/reference
   article: https://robindenz1.github.io/MatchTime/articles
