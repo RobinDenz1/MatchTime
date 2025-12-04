@@ -131,7 +131,7 @@ check_inputs_merge_start_stop <- function(dlist, first_time, last_time,
     stopifnotm("time" %in% colnames(event_times),
                paste0("'event_times' must contain a column named 'time', ",
                       "containing the event times, if specified."))
-    stopifnotm(class(event_times[["time"]])==start_types[1],
+    stopifnotm(all(class(event_times[["time"]]) %in% start_types),
                paste0("The 'time' column in 'event_times' must be of the",
                       " same type as 'start' and 'stop'."))
   }

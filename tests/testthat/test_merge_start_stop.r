@@ -436,6 +436,13 @@ test_that("POSIXct start / stop", {
   output <- merge_start_stop(dlist=dlist, center_on_first=TRUE, all=TRUE,
                              by="id")
   expect_true(all(output[, .(start = min(start)), by=id]$start==0))
+
+  # with center_on_first=TRUE and event_times specified
+  event_times <- data.table(id=3, time=as.POSIXct("2023-12-03"))
+  output <- merge_start_stop(dlist=dlist, center_on_first=TRUE, all=TRUE,
+                             by="id", event_times=event_times)
+  expect_true(all(output[, .(start = min(start)), by=id]$start==0))
+  expect_true(sum(output$status)==1)
 })
 
 test_that("include time-invariant variables", {

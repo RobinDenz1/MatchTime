@@ -206,6 +206,27 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
     }
   }
 
+  # add event indicator, if event times were supplied
+  if (!is.null(event_times)) {
+
+    if (time_to_first_event) {
+      event_times <- event_times[, .(.event_time = min(.event_time)), by=.id]
+    }
+
+    data <- merge.data.table(data, event_times, by=".id", all.x=TRUE,
+                             allow.cartesian=TRUE)
+    data[, (status) := any(stop==.event_time), by=c(".id", "start")]
+    data[is.na(eval(status)), (status) := FALSE]
+
+    if (time_to_first_event) {
+      data <- data[stop <= .event_time | is.na(.event_time)]
+      data[, .event_time := NULL]
+    } else {
+      data[, .event_time := NULL]
+      data <- unique(data)
+    }
+  }
+
   # center output on first time, if specified
   if (center_on_first) {
 
@@ -231,27 +252,6 @@ merge_start_stop <- function(x, y, ..., dlist, by, start="start",
     setnames(constant_vars, by, ".id")
     data <- merge.data.table(data, constant_vars, by=".id", all.x=TRUE,
                              all.y=FALSE)
-  }
-
-  # add event indicator, if event times were supplied
-  if (!is.null(event_times)) {
-
-    if (time_to_first_event) {
-      event_times <- event_times[, .(.event_time = min(.event_time)), by=.id]
-    }
-
-    data <- merge.data.table(data, event_times, by=".id", all.x=TRUE,
-                             allow.cartesian=TRUE)
-    data[, (status) := any(stop==.event_time), by=c(".id", "start")]
-    data[is.na(eval(status)), (status) := FALSE]
-
-    if (time_to_first_event) {
-      data <- data[stop <= .event_time | is.na(.event_time)]
-      data[, .event_time := NULL]
-    } else {
-      data[, .event_time := NULL]
-      data <- unique(data)
-    }
   }
 
   # set names back to user-supplied names

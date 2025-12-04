@@ -6,21 +6,24 @@ match_time() methods
 	- in method="pgm" / "dsm": allow fit of risk score model to be made on either all units or only on
 	  untreated units as described in He (2020)
 	- method="psm" / "pgm" / "dsm" fail when strata() is used in formula of cox model
-
+	- method="brsm" man page: disentangle sequential stratification and actual brsm, add option "all" or similar to
+	  ratio so that actual sequential stratification can be used
+	
 match_time() general
 	- "d_longest" is calculated by ignoring inclusion criteria, an option to change this might be useful
-	- i am not sure if the "hazard" calculation at t is correct for methods "psm", "pgm" and "dsm"
+	- i am not sure if the "hazard" calculation at t is correct for methods "psm", "pgm" and "dsm" (probably not)
 
 merge_start_stop()
 	- allow multiple event variables in event_times (probably best to allow a list of data.tables)
 	- do competing risks work with "event_times" argument?
 	- allow previous event counts to be generated as well
+	- in the input checks, the start_types thing might be wrong (checking only the first?)
 
 long2start_stop()
 	- allow event variables to be specified
 
 add_outcome()
-	- maybe allow different types of outcomes (event counts, binary etc.)
+	- maybe allow different types of outcomes (recurrent events, event counts, binary etc.)
 
 New features:
 	- add_covariate(): similar to add_outcome() but for covariates of different types
